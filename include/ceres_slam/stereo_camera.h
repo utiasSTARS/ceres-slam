@@ -8,18 +8,21 @@
 
 namespace ceres_slam {
 
+//! A ROS-compatible Stereo camera model
 class StereoCamera {
 public:
-    // Typedefs
     typedef std::shared_ptr<StereoCamera> Ptr;
     typedef const std::shared_ptr<StereoCamera> ConstPtr;
 
+    typedef Eigen::Vector3d Point;
+    typedef Eigen::Vector3d PointVariance;
+    typedef Eigen::Matrix<double, 3, 4, Eigen::RowMajor> PointJacobian;
     typedef Eigen::Vector4d Observation;
-    typedef Eigen::Vector3d Point3D;
+    typedef Eigen::Vector4d ObservationVariance;
+    typedef Eigen::Matrix<double, 4, 3, Eigen::RowMajor> ObservationJacobian;
     typedef Eigen::Matrix<double, 3, 4, Eigen::RowMajor> ProjectionMatrix;
 
-    // Constructors, destructor
-    StereoCamera(const sensor_msgs::CameraInfo &left_camera_info, const sensor_msgs::CameraInfo &right_camera_info);
+    StereoCamera(const sensor_msgs::CameraInfo& left_camera_info, const sensor_msgs::CameraInfo& right_camera_info);
     ~StereoCamera();
 
     // Accessors
@@ -39,12 +42,17 @@ public:
     const double Tv_right();
     const double b();
 
-    // Stereo functions
-    Observation pointToObservation(const Point3D &pt_c);
-    Point3D observationToPoint(const Observation &obs);
+    //! Projects a 3D point in the camera frame into the camera
+    //! to get a 4D stereo observation.
+    Observation pointToObservation(const Point& pt_c, ObservationJacobian* jacobian_ptr = nullptr);
+
+    //! Triangulates a 3D point in the camera frame
+    //! from a 4D stereo observation.
+    Point observationToPoint(const Observation& obs, PointJacobian* jacobian_ptr = nullptr);
 
 private:
-    ProjectionMatrix P_left_, P_right_;
+    ProjectionMatrix P_left_;   //!< Left camera 3x4 projection matrix
+    ProjectionMatrix P_right_;  //!< Right camera 3x4 projection matrix
 
 }; // class StereoCamera
 

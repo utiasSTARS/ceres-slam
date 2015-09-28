@@ -6,7 +6,7 @@
 #include <ceres_slam/stereo_camera.h>
 
 int main() {
-    ceres_slam::StereoCamera::Point3D pt;
+    ceres_slam::StereoCamera::Point pt;
     pt << 1.0, 1.0, 1.0;
 
     double fu = 300.0;
@@ -37,7 +37,7 @@ int main() {
     ceres_slam::StereoCamera::Observation obs = cam.pointToObservation(pt);
     std::cout << "pointToObservation: " << std::endl << obs << std::endl;
 
-    ceres_slam::StereoCamera::Point3D pt2 = cam.observationToPoint(obs);
+    ceres_slam::StereoCamera::Point pt2 = cam.observationToPoint(obs);
     std::cout << "observationToPoint: " << std::endl << pt2 << std::endl;
 
     return EXIT_SUCCESS;

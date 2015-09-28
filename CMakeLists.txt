@@ -49,7 +49,8 @@ include_directories(
   ${CERES_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME} src/stereo_camera.cpp)
+add_library(${PROJECT_NAME} src/stereo_camera.cpp
+							src/stereo_reprojection_error.cpp)
 target_link_libraries(${PROJECT_NAME} ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES})
 
 add_executable(main src/main.cpp)
