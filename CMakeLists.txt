@@ -48,3 +48,9 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}
 )
+
+add_library(${PROJECT_NAME} src/stereo_camera.cpp)
+target_link_libraries(${PROJECT_NAME} ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES})
+
+add_executable(main src/main.cpp)
+target_link_libraries(main ${PROJECT_NAME} ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES})
