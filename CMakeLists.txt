@@ -64,3 +64,6 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
 add_executable(ceres_odometry_node src/nodes/odometry_node.cpp)
 target_link_libraries(ceres_odometry_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
+
+add_executable(camera_test src/nodes/camera_test.cpp)
+target_link_libraries(camera_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})

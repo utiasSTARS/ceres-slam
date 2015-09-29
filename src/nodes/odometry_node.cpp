@@ -36,7 +36,7 @@ public:
         ros::NodeHandle private_nh("~");
         private_nh.param("queue_size", queue_size_, 5);
         private_nh.param("approximate_sync", do_approximate_sync_, false);
-        private_nh.param("num_features", num_features_, 300);
+        private_nh.param("num_features", num_features_, 600);
         private_nh.param("match_goodness", match_goodness_, 0.9);
 
         // Resolve topic names
@@ -87,10 +87,6 @@ public:
                           std::placeholders::_1, std::placeholders::_2,
                           std::placeholders::_3, std::placeholders::_4) );
         }
-
-        // Setup TF pose publisher
-
-
     }
 
     ~OdometryNode() {}
@@ -129,21 +125,24 @@ public:
         detect(right_cv_ptr->image, cv::noArray(),
                right_keypoints, right_descriptors);
 
-        // Find the 2 closest matches for each feature
+        // Find the closest match for each feature
         cv::BFMatcher matcher(cv::NORM_L2);
-        std::vector<std::vector<cv::DMatch>> left_right_matches;
-        matcher.knnMatch(left_descriptors, right_descriptors,
-                         left_right_matches, 2);
+        std::vector<cv::DMatch> left_right_matches;
 
-        // Filter for good matches based on goodness ratio
+        // NOTE: left is query, right is train in DMatch!!
+        matcher.match(left_descriptors, right_descriptors, left_right_matches);
+
+        // Filter for good matches by ensuring they are approximately
+        // on the same line. Assumes stereo images have been rectified.
         std::vector<cv::KeyPoint> curr_left_keypoints, curr_right_keypoints;
         cv::Mat curr_left_descriptors, curr_right_descriptors;
         int left_idx, right_idx;
+        
         for(unsigned int i = 0; i < left_right_matches.size(); ++i) {
-            if (left_right_matches[i][0].distance <
-                        match_goodness_ * left_right_matches[i][1].distance) {
-                left_idx = left_right_matches[i][0].trainIdx;
-                right_idx = left_right_matches[i][0].queryIdx;
+            left_idx = left_right_matches[i].queryIdx;
+            right_idx = left_right_matches[i].trainIdx;
+
+            if (abs(left_keypoints[left_idx].pt.y - right_keypoints[right_idx].pt.y) < 5 ) {
 
                 curr_left_keypoints.push_back(left_keypoints[left_idx]);
                 curr_right_keypoints.push_back(right_keypoints[right_idx]);
@@ -177,8 +176,8 @@ public:
             for(unsigned int i = 0; i < prev_curr_matches.size(); ++i) {
                 if (prev_curr_matches[i][0].distance <
                         match_goodness_ * prev_curr_matches[i][1].distance) {
-                    prev_idx = prev_curr_matches[i][0].trainIdx;
-                    curr_idx = prev_curr_matches[i][0].queryIdx;
+                    prev_idx = prev_curr_matches[i][0].queryIdx;
+                    curr_idx = prev_curr_matches[i][0].trainIdx;
 
                     vo_prev_left_keypoints.push_back(
                         prev_left_keypoints_[prev_idx]);
@@ -191,21 +190,23 @@ public:
                 }
             }
 
-            // Triangulate to 3D points
+            // Triangulate to 3D points if disparity is positive
             std::vector<ceres_slam::StereoCamera::Point> prev_pts, curr_pts;
             ceres_slam::StereoCamera::Observation prev_obs, curr_obs;
             for(unsigned int i = 0; i < vo_prev_left_keypoints.size(); ++i) {
-                prev_obs << vo_prev_left_keypoints[i].pt.x,
-                            vo_prev_left_keypoints[i].pt.y,
-                            vo_prev_right_keypoints[i].pt.x,
-                            vo_prev_right_keypoints[i].pt.y;
-                prev_pts.push_back(camera_->observationToPoint(prev_obs));
+                if(vo_prev_right_keypoints[i].pt.x < vo_prev_left_keypoints[i].pt.x) {
+                    prev_obs << vo_prev_left_keypoints[i].pt.x,
+                                vo_prev_left_keypoints[i].pt.y,
+                                vo_prev_right_keypoints[i].pt.x,
+                                vo_prev_right_keypoints[i].pt.y;
+                    prev_pts.push_back(camera_->observationToPoint(prev_obs));
 
-                curr_obs << vo_curr_left_keypoints[i].pt.x,
-                            vo_curr_left_keypoints[i].pt.y,
-                            vo_curr_right_keypoints[i].pt.x,
-                            vo_curr_right_keypoints[i].pt.y;
-                curr_pts.push_back(camera_->observationToPoint(curr_obs));
+                    curr_obs << vo_curr_left_keypoints[i].pt.x,
+                                vo_curr_left_keypoints[i].pt.y,
+                                vo_curr_right_keypoints[i].pt.x,
+                                vo_curr_right_keypoints[i].pt.y;
+                    curr_pts.push_back(camera_->observationToPoint(curr_obs));
+                }
             }
 
             // Filter outliers and generate initial guess with RANSAC
@@ -224,6 +225,8 @@ public:
         prev_right_keypoints_ = curr_right_keypoints;
         prev_left_descriptors_ = curr_left_descriptors;
         prev_right_descriptors_ = curr_right_descriptors;
+        prev_left_cv_ptr_ = left_cv_ptr;
+        prev_right_cv_ptr_ = right_cv_ptr;
     }
 
     //! RANSAC stereo point cloud alignment
@@ -270,7 +273,7 @@ public:
             inlier_idx.clear();
             for(unsigned int i = 0; i < pts_0.size(); ++i) {
                 error = pts_1[i] - T_test * pts_0[i];
-                if(error.squaredNorm() < 2 * thresh) {
+                if(error.squaredNorm() < thresh) {
                     inlier_idx.push_back(i);
                 }
             }
@@ -301,7 +304,7 @@ public:
 
         // Compute W_1_0
         Eigen::Matrix3d W_1_0 = Eigen::Matrix3d::Zero();
-        for(unsigned int i = 0; i < pts_0.size(); ++i) {
+        for(unsigned int i = 0; i < n_pts; ++i) {
             W_1_0 += (pts_1[i] - p_1) * (pts_0[i] - p_0).transpose();
         }
         W_1_0 /= n_pts;
@@ -350,9 +353,10 @@ private:
     // Camera pose
     Eigen::Affine3d T_curr_map_;
 
-    // Storage for previous frame's keypoints and descriptors
+    // Storage for previous frame's keypoints, descriptors, and images
     std::vector<cv::KeyPoint> prev_left_keypoints_, prev_right_keypoints_;
     cv::Mat prev_left_descriptors_, prev_right_descriptors_;
+    cv_bridge::CvImagePtr prev_left_cv_ptr_, prev_right_cv_ptr_;
 
     // Subscribers and setup for synchronization
     image_transport::SubscriberFilter left_image_sub_, right_image_sub_;
