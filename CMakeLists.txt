@@ -19,6 +19,8 @@ find_package(catkin REQUIRED COMPONENTS
 	message_filters
 	rosconsole
 	cmake_modules
+	tf
+	tf_conversions
 )
 
 find_package(Eigen REQUIRED)
@@ -36,6 +38,8 @@ catkin_package(
 		message_filters
 		rosconsole
 		cmake_modules
+		tf
+		tf_conversions
 	DEPENDS
 		Eigen
 		Ceres
