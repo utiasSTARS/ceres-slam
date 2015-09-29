@@ -22,7 +22,7 @@ public:
     typedef Eigen::Matrix<double, 4, 3, Eigen::RowMajor> ObservationJacobian;
     typedef Eigen::Matrix<double, 3, 4, Eigen::RowMajor> ProjectionMatrix;
 
-    StereoCamera(const sensor_msgs::CameraInfo& left_camera_info, const sensor_msgs::CameraInfo& right_camera_info);
+    StereoCamera(const sensor_msgs::CameraInfoConstPtr& left_camera_info, const sensor_msgs::CameraInfoConstPtr& right_camera_info);
     ~StereoCamera();
 
     // Accessors

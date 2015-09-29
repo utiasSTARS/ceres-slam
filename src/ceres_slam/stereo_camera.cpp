@@ -7,15 +7,17 @@
 
 namespace ceres_slam {
 
-StereoCamera::StereoCamera(const sensor_msgs::CameraInfo& left_camera_info, const sensor_msgs::CameraInfo& right_camera_info) {
-    P_left_ = Eigen::Map<const ProjectionMatrix>(left_camera_info.P.data());
-    P_right_ = Eigen::Map<const ProjectionMatrix>(right_camera_info.P.data());
+StereoCamera::StereoCamera(const sensor_msgs::CameraInfoConstPtr& left_camera_info, const sensor_msgs::CameraInfoConstPtr& right_camera_info) {
+    P_left_ = Eigen::Map<const ProjectionMatrix>(left_camera_info->P.data());
+    P_right_ = Eigen::Map<const ProjectionMatrix>(right_camera_info->P.data());
 }
 
 StereoCamera::~StereoCamera() {}
 
-const StereoCamera::ProjectionMatrix StereoCamera::P_left() { return P_left_; }
-const StereoCamera::ProjectionMatrix StereoCamera::P_right() { return P_right_; }
+const StereoCamera::ProjectionMatrix StereoCamera::P_left()
+    { return P_left_; }
+const StereoCamera::ProjectionMatrix StereoCamera::P_right()
+    { return P_right_; }
 const double StereoCamera::fu_left() { return P_left_(0,0); }
 const double StereoCamera::fv_left() { return P_left_(1,1); }
 const double StereoCamera::cu_left() { return P_left_(0,2); }

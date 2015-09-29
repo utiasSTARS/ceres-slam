@@ -16,6 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
 	geometry_msgs
 	image_transport
 	cv_bridge
+	message_filters
+	rosconsole
 	cmake_modules
 )
 
@@ -31,6 +33,8 @@ catkin_package(
 		geometry_msgs
 		image_transport
 		cv_bridge
+		message_filters
+		rosconsole
 		cmake_modules
 	DEPENDS
 		Eigen
@@ -43,15 +47,16 @@ set(CMAKE_CXX_FLAGS
 
 include_directories(
   include
-  ${CATKIN_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
   ${EIGEN_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME} src/stereo_camera.cpp
-							src/stereo_reprojection_error.cpp)
-target_link_libraries(${PROJECT_NAME} ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES})
+add_library(${PROJECT_NAME}
+	src/ceres_slam/stereo_camera.cpp
+	src/ceres_slam/stereo_reprojection_error.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
-add_executable(main src/main.cpp)
-target_link_libraries(main ${PROJECT_NAME} ${CATKIN_LIBRARIES} ${EIGEN_LIBRARIES})
+add_executable(ceres_odometry_node src/nodes/odometry_node.cpp)
+target_link_libraries(ceres_odometry_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
