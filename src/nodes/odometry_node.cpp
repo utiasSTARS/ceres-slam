@@ -126,7 +126,8 @@ public:
                right_keypoints, right_descriptors);
 
         // Find the closest match for each feature
-        cv::BFMatcher matcher(cv::NORM_L2);
+        // crossCheck is true, so matcher only returns reciprocal best matches
+        cv::BFMatcher matcher(cv::NORM_HAMMING, true);
         std::vector<cv::DMatch> left_right_matches;
 
         // NOTE: left is query, right is train in DMatch!!
@@ -137,7 +138,7 @@ public:
         std::vector<cv::KeyPoint> curr_left_keypoints, curr_right_keypoints;
         cv::Mat curr_left_descriptors, curr_right_descriptors;
         int left_idx, right_idx;
-        
+
         for(unsigned int i = 0; i < left_right_matches.size(); ++i) {
             left_idx = left_right_matches[i].queryIdx;
             right_idx = left_right_matches[i].trainIdx;
@@ -163,9 +164,9 @@ public:
             // Find matches between previous stereo pair and current stereo pair
             // We'll just reuse the matcher object from before
             // and match between the left images
-            std::vector<std::vector<cv::DMatch>> prev_curr_matches;
-            matcher.knnMatch(prev_left_descriptors_, curr_left_descriptors,
-                prev_curr_matches, 2);
+            std::vector<cv::DMatch> prev_curr_matches;
+            matcher.match(prev_left_descriptors_, curr_left_descriptors,
+                prev_curr_matches);
 
             // Again, filter for good matches based on goodness ratio
             std::vector<cv::KeyPoint> vo_prev_left_keypoints,
@@ -174,10 +175,10 @@ public:
                                       vo_curr_right_keypoints;
             int prev_idx, curr_idx;
             for(unsigned int i = 0; i < prev_curr_matches.size(); ++i) {
-                if (prev_curr_matches[i][0].distance <
-                        match_goodness_ * prev_curr_matches[i][1].distance) {
-                    prev_idx = prev_curr_matches[i][0].queryIdx;
-                    curr_idx = prev_curr_matches[i][0].trainIdx;
+                // if (prev_curr_matches[i][0].distance <
+                //         match_goodness_ * prev_curr_matches[i][1].distance) {
+                    prev_idx = prev_curr_matches[i].queryIdx;
+                    curr_idx = prev_curr_matches[i].trainIdx;
 
                     vo_prev_left_keypoints.push_back(
                         prev_left_keypoints_[prev_idx]);
@@ -187,7 +188,7 @@ public:
                         curr_left_keypoints[curr_idx]);
                     vo_curr_right_keypoints.push_back(
                         curr_right_keypoints[curr_idx]);
-                }
+                // }
             }
 
             // Triangulate to 3D points if disparity is positive
