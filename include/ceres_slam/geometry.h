@@ -89,11 +89,11 @@ public:
     //! Construct from 3 scalars
     Vector3D( T i, T j, T k ) : Homogeneous3D<T>(i, j, k, 0.) { }
 
-    //! Addition operator
+    //! Addition operator for two vectors
     const Vector3D operator+( const Vector3D<T>& other ) const {
         return Vector3D( this->cartesian() + other.cartesian() );
     }
-    //! Subtraction operator
+    //! Subtraction operator for two vectors
     const Vector3D operator-( const Vector3D<T>& other ) const {
         return Vector3D( this->cartesian() - other.cartesian() );
     }
@@ -129,13 +129,17 @@ public:
     //! Construct from 3 scalars
     Point3D( T x, T y, T z ) : Homogeneous3D<T>(x, y, z, 1.) { }
 
-    //! Addition operator
+    //! Addition operator for point and vector
     const Point3D operator+( const Vector3D<T>& other ) const {
         return Point3D( this->cartesian() + other.cartesian() );
     }
-    //! Subtraction operator
+    //! Subtraction operator for point and vector
     const Point3D operator-( const Vector3D<T>& other ) const {
         return Point3D( this->cartesian() - other.cartesian() );
+    }
+    //! Subtraction operator for point and point
+    const Vector3D operator-( const Point3D<T>& other ) const {
+        return Vector3D( this->cartesian() - other.cartesian() );
     }
 
     //! Ostream operator for homogeneous quantities
