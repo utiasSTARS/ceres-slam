@@ -21,36 +21,40 @@ public:
     //! Dimension of the space
     static const int dim = 3;
     //! Euclidean type
-    typedef Eigen::Matrix<Scalar, dim, 1> CartesianScalar;
+    typedef Eigen::Matrix<Scalar, dim, 1> CartesianType;
     //! Homogeneous type
-    typedef Eigen::Matrix<Scalar, dim+1, 1> HomogeneousScalar;
+    typedef Eigen::Matrix<Scalar, dim+1, 1> HomogeneousType;
 
     //! Default constructor
-    Homogeneous3D() : Homogeneous3D(HomogeneousScalar::Zero()) { }
+    Homogeneous3D() : Homogeneous3D(HomogeneousType::Zero()) { }
     //! Copy constructor
     Homogeneous3D( const Homogeneous3D& other ) :
         Homogeneous3D(other.homogeneous) { }
     //! Construct from a 4-vector
-    Homogeneous3D( const HomogeneousScalar& vector ) :
+    Homogeneous3D( const HomogeneousType& vector ) :
         Homogeneous3D(vector.head(3), vector(3)) { }
     //! Construct from a 3-vector and a scalar
-    Homogeneous3D( const CartesianScalar& epsilon, const Scalar eta ) :
-        _epsilon(epsilon), _eta(eta) { }
+    Homogeneous3D( const CartesianType& cartesian, const Scalar scale ) :
+        _cartesian(cartesian), _scale(scale) { }
     //! Construct from 4 scalars
     Homogeneous3D( Scalar x, Scalar y, Scalar z, Scalar w ) :
-        _epsilon(CartesianScalar(x, y, z)), _eta(w) { }
+        _cartesian(CartesianType(x, y, z)), _scale(w) { }
 
     //! Return the cartesian form of the point/vector
-    const CartesianScalar cartesian() const { return _epsilon; }
+    const CartesianType cartesian() const { return _cartesian; }
     //! Return the homogeneous scale part of the point/vector
-    const Scalar scale() const { return _eta; }
+    const Scalar scale() const { return _scale; }
     //! Return the homogeneous form of the point
-    const HomogeneousScalar homogeneous() const {
-        HomogeneousScalar h;
+    const HomogeneousType homogeneous() const {
+        HomogeneousType h;
         h.head(3) = cartesian();
         h(3) = scale();
         return h;
     }
+    //! Accessor operator, mutable
+    Scalar& operator()(int i) { return _cartesian(i); }
+    //! Accessor operator, const
+    const Scalar& operator()(int i) const { return _cartesian(i); }
 
     //! Ostream operator for homogeneous quantities
     friend std::ostream& operator<<(
@@ -61,9 +65,9 @@ public:
     }
 protected:
     //! Cartesian part
-    CartesianScalar _epsilon;
+    CartesianType _cartesian;
     //! Homogeneous scale part
-    Scalar _eta;
+    Scalar _scale;
 };
 
 //! Vector in 3D space
@@ -75,17 +79,17 @@ public:
     //! Const pointer type
     typedef const std::shared_ptr<Vector3D> ConstPtr;
     //! Cartesian type
-    typedef typename Homogeneous3D<Scalar>::CartesianScalar CartesianScalar;
+    typedef typename Homogeneous3D<Scalar>::CartesianType CartesianType;
     //! Homogeneous type
-    typedef typename Homogeneous3D<Scalar>::HomogeneousScalar HomogeneousScalar;
+    typedef typename Homogeneous3D<Scalar>::HomogeneousType HomogeneousType;
 
     //! Default constructor
-    Vector3D() : Vector3D(CartesianScalar::Zero()) { }
+    Vector3D() : Vector3D(CartesianType::Zero()) { }
     //! Copy constructor
     Vector3D(const Vector3D& other) : Vector3D(other.cartesian()) { }
     //! Construct from a 3-vector
-    Vector3D(const CartesianScalar& epsilon) :
-        Homogeneous3D<Scalar>(epsilon, 0.) { }
+    Vector3D(const CartesianType& cartesian) :
+        Homogeneous3D<Scalar>(cartesian, 0.) { }
     //! Construct from 3 scalars
     Vector3D( Scalar i, Scalar j, Scalar k ) :
         Homogeneous3D<Scalar>(i, j, k, 0.) { }
@@ -117,17 +121,17 @@ public:
     //! Const pointer type
     typedef const std::shared_ptr<Point3D> ConstPtr;
     //! Cartesian type
-    typedef typename Homogeneous3D<Scalar>::CartesianScalar CartesianScalar;
+    typedef typename Homogeneous3D<Scalar>::CartesianType CartesianType;
     //! Homogeneous type
-    typedef typename Homogeneous3D<Scalar>::HomogeneousScalar HomogeneousScalar;
+    typedef typename Homogeneous3D<Scalar>::HomogeneousType HomogeneousType;
 
     //! Default constructor
-    Point3D() : Point3D(CartesianScalar::Zero()) { }
+    Point3D() : Point3D(CartesianType::Zero()) { }
     //! Copy constructor
     Point3D(const Point3D& other) : Point3D(other.cartesian()) { }
     //! Construct from a 3-vector
-    Point3D(const CartesianScalar& epsilon) :
-        Homogeneous3D<Scalar>(epsilon, 1.) { }
+    Point3D(const CartesianType& cartesian) :
+        Homogeneous3D<Scalar>(cartesian, 1.) { }
     //! Construct from 3 scalars
     Point3D( Scalar x, Scalar y, Scalar z ) :
         Homogeneous3D<Scalar>(x, y, z, 1.) { }
@@ -400,7 +404,7 @@ public:
     }
 
     //! SE(3) odot operator as defined by Barfoot
-    //! (for a homogeneous point/vector p = [epsilon^T eta]^T)
+    //! (for a homogeneous point/vector p = [cartesian^T scale]^T)
     inline
     static const TransformedPointJacobian transformed_point_jacobian(
         const Homogeneous3D<Scalar>& h ) {
