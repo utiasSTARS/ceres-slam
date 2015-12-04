@@ -12,87 +12,95 @@ namespace ceres_slam {
 
 //! Base class for homogeneous points/vectors
 template <typename Scalar>
-class Homogeneous3D {
+class HomogeneousBase3D {
 public:
     //! Pointer type
-    typedef std::shared_ptr<Homogeneous3D> Ptr;
+    typedef std::shared_ptr<HomogeneousBase3D> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<Homogeneous3D> ConstPtr;
+    typedef const std::shared_ptr<HomogeneousBase3D> ConstPtr;
     //! Dimension of the space
     static const int dim = 3;
-    //! Euclidean type
-    typedef Eigen::Matrix<Scalar, dim, 1> CartesianType;
+    //! Cartesian type
+    typedef Eigen::Matrix<Scalar, dim, 1> Cartesian;
     //! Homogeneous type
-    typedef Eigen::Matrix<Scalar, dim+1, 1> HomogeneousType;
+    typedef Eigen::Matrix<Scalar, dim+1, 1> Homogeneous;
 
     //! Default constructor
-    Homogeneous3D() : Homogeneous3D(HomogeneousType::Zero()) { }
+    HomogeneousBase3D() : HomogeneousBase3D(Homogeneous::Zero()) { }
     //! Copy constructor
-    Homogeneous3D( const Homogeneous3D& other ) :
-        Homogeneous3D(other.homogeneous) { }
+    HomogeneousBase3D( const HomogeneousBase3D& other ) :
+        HomogeneousBase3D(other.homogeneous) { }
     //! Construct from a 4-vector
-    Homogeneous3D( const HomogeneousType& vector ) :
-        Homogeneous3D(vector.head(3), vector(3)) { }
+    HomogeneousBase3D( const Homogeneous& vector ) :
+        HomogeneousBase3D(vector.head(3), vector(3)) { }
     //! Construct from a 3-vector and a scalar
-    Homogeneous3D( const CartesianType& cartesian, const Scalar scale ) :
-        _cartesian(cartesian), _scale(scale) { }
+    HomogeneousBase3D( const Cartesian& cartesian, const Scalar scale ) :
+        cartesian_(cartesian), scale_(scale) { }
     //! Construct from 4 scalars
-    Homogeneous3D( Scalar x, Scalar y, Scalar z, Scalar w ) :
-        _cartesian(CartesianType(x, y, z)), _scale(w) { }
+    HomogeneousBase3D( const Scalar x, const Scalar y,
+                       const Scalar z, const Scalar w ) :
+        cartesian_(Cartesian(x, y, z)), scale_(w) { }
+    //! Construct from a 4-element POD array
+    HomogeneousBase3D( const Scalar* s ) :
+        HomogeneousBase3D(s[0], s[1], s[2], s[3]) { }
 
     //! Return the cartesian form of the point/vector
-    const CartesianType cartesian() const { return _cartesian; }
+    const Cartesian cartesian() const { return cartesian_; }
     //! Return the homogeneous scale part of the point/vector
-    const Scalar scale() const { return _scale; }
+    const Scalar scale() const { return scale_; }
     //! Return the homogeneous form of the point
-    const HomogeneousType homogeneous() const {
-        HomogeneousType h;
+    const Homogeneous homogeneous() const {
+        Homogeneous h;
         h.head(3) = cartesian();
         h(3) = scale();
         return h;
     }
     //! Accessor operator, mutable
-    Scalar& operator()(int i) { return _cartesian(i); }
+    Scalar& operator()(int i) { return cartesian_(i); }
     //! Accessor operator, const
-    const Scalar& operator()(int i) const { return _cartesian(i); }
+    const Scalar& operator()(int i) const { return cartesian_(i); }
 
     //! Ostream operator for homogeneous quantities
     friend std::ostream& operator<<(
-        std::ostream& os, const Homogeneous3D<Scalar>& h ) {
+        std::ostream& os, const HomogeneousBase3D<Scalar>& h ) {
         os << "Homogeneous quantity" << std::endl
            << h.homogeneous() << std::endl;
         return os;
     }
 protected:
     //! Cartesian part
-    CartesianType _cartesian;
+    Cartesian cartesian_;
     //! Homogeneous scale part
-    Scalar _scale;
+    Scalar scale_;
 };
 
 //! Vector in 3D space
 template <typename Scalar>
-class Vector3D : public Homogeneous3D<Scalar> {
+class Vector3D : public HomogeneousBase3D<Scalar> {
 public:
     //! Pointer type
     typedef std::shared_ptr<Vector3D> Ptr;
     //! Const pointer type
     typedef const std::shared_ptr<Vector3D> ConstPtr;
     //! Cartesian type
-    typedef typename Homogeneous3D<Scalar>::CartesianType CartesianType;
+    typedef typename HomogeneousBase3D<Scalar>::Cartesian Cartesian;
     //! Homogeneous type
-    typedef typename Homogeneous3D<Scalar>::HomogeneousType HomogeneousType;
+    typedef typename HomogeneousBase3D<Scalar>::Homogeneous Homogeneous;
 
     //! Default constructor
-    Vector3D() : Vector3D(CartesianType::Zero()) { }
+    Vector3D() : Vector3D(Cartesian::Zero()) { }
     //! Copy constructor
-    Vector3D(const Vector3D& other) : Vector3D(other.cartesian()) { }
+    Vector3D( const Vector3D& other ) : Vector3D(other.cartesian()) { }
     //! Construct from a 3-vector
-    Vector3D(const CartesianType& cartesian) :
-        Homogeneous3D<Scalar>(cartesian, 0.) { }
+    Vector3D( const Cartesian& cartesian ) :
+        HomogeneousBase3D<Scalar>(cartesian, 0.) { }
     //! Construct from 3 scalars
-    Vector3D( Scalar i, Scalar j, Scalar k ) :
-        Homogeneous3D<Scalar>(i, j, k, 0.) { }
+    Vector3D( const Scalar i, const Scalar j, const Scalar k ) :
+        HomogeneousBase3D<Scalar>(i, j, k, 0.) { }
+    //! Construct from a 3-element POD array
+    Vector3D( const Scalar* s ) :
+        Vector3D(s[0], s[1], s[2]) { }
+
 
     //! Addition operator for two vectors
     const Vector3D operator+( const Vector3D<Scalar>& other ) const {
@@ -114,27 +122,30 @@ public:
 
 //! Point in 3D space
 template <typename Scalar>
-class Point3D : public Homogeneous3D<Scalar> {
+class Point3D : public HomogeneousBase3D<Scalar> {
 public:
     //! Pointer type
     typedef std::shared_ptr<Point3D> Ptr;
     //! Const pointer type
     typedef const std::shared_ptr<Point3D> ConstPtr;
     //! Cartesian type
-    typedef typename Homogeneous3D<Scalar>::CartesianType CartesianType;
+    typedef typename HomogeneousBase3D<Scalar>::Cartesian Cartesian;
     //! Homogeneous type
-    typedef typename Homogeneous3D<Scalar>::HomogeneousType HomogeneousType;
+    typedef typename HomogeneousBase3D<Scalar>::Homogeneous Homogeneous;
 
     //! Default constructor
-    Point3D() : Point3D(CartesianType::Zero()) { }
+    Point3D() : Point3D(Cartesian::Zero()) { }
     //! Copy constructor
-    Point3D(const Point3D& other) : Point3D(other.cartesian()) { }
+    Point3D( const Point3D& other ) : Point3D(other.cartesian()) { }
     //! Construct from a 3-vector
-    Point3D(const CartesianType& cartesian) :
-        Homogeneous3D<Scalar>(cartesian, 1.) { }
+    Point3D( const Cartesian& cartesian ) :
+        HomogeneousBase3D<Scalar>(cartesian, 1.) { }
     //! Construct from 3 scalars
-    Point3D( Scalar x, Scalar y, Scalar z ) :
-        Homogeneous3D<Scalar>(x, y, z, 1.) { }
+    Point3D( const Scalar x, const Scalar y, const Scalar z ) :
+        HomogeneousBase3D<Scalar>(x, y, z, 1.) { }
+    //! Construct from a 3-element POD array
+    Point3D( const Scalar* s ) :
+        Point3D(s[0], s[1], s[2]) { }
 
     //! Addition operator for point and vector
     const Point3D operator+( const Vector3D<Scalar>& other ) const {
@@ -158,14 +169,14 @@ public:
     }
 };
 
-//! SO3 Lie group (3D rotations)
+//! SO3Group Lie group (3D rotations)
 template <typename Scalar>
-class SO3 {
+class SO3Group {
 public:
     //! Pointer type
-    typedef std::shared_ptr<SO3> Ptr;
+    typedef std::shared_ptr<SO3Group> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<SO3> ConstPtr;
+    typedef const std::shared_ptr<SO3Group> ConstPtr;
     //! Degrees of freedom (3 for rotation)
     static const int dof = 3;
     //! Dimension of transformation matrix
@@ -175,23 +186,25 @@ public:
     //! Vector type
     typedef Vector3D<Scalar> Vector;
     //! Group transformation type
-    typedef Eigen::Matrix<Scalar, dim, dim> TransformationMatrix;
+    typedef Eigen::Matrix<Scalar, dim, dim, Eigen::RowMajor>
+        TransformationMatrix;
     //! Tangent vector type
     typedef Eigen::Matrix<Scalar, dof, 1> TangentVector;
     //! Adjoint transformation type
-    typedef Eigen::Matrix<Scalar, dof, dof> AdjointMatrix;
+    typedef Eigen::Matrix<Scalar, dof, dof, Eigen::RowMajor> AdjointMatrix;
     //! Transformed point Jacobian matrix
-    typedef Eigen::Matrix<Scalar, dim, dof> TransformedPointJacobian;
+    typedef Eigen::Matrix<Scalar, Point::dim, dof, Eigen::RowMajor>
+        TransformedPointJacobian;
 
     //! Default constructor (identity)
-    SO3() : SO3(TransformationMatrix::Identity()) { }
+    SO3Group() : SO3Group(TransformationMatrix::Identity()) { }
     //! Copy constructor
-    SO3( const SO3& other ) : _mat(other.matrix()) { };
+    SO3Group( const SO3Group& other ) : mat_(other.matrix()) { };
     //! Construct from a matrix
-    SO3( const TransformationMatrix& mat ) : _mat(mat) { }
+    SO3Group( const TransformationMatrix& mat ) : mat_(mat) { }
     //! Matrix exponential: rotation matrix from axis-angle tangent vector
     inline
-    static const SO3 exp( const TangentVector& a ) {
+    static const SO3Group exp( const TangentVector& a ) {
         Scalar phi = a.norm();
         Scalar cp = cos(phi);
         Scalar sp = sin(phi);
@@ -201,32 +214,37 @@ public:
         TransformationMatrix mat = cp * TransformationMatrix::Identity()
                                     + (1 - cp) * a_unit * a_unit.transpose()
                                     + sp * wedge(a_unit);
-        return SO3(mat);
+        return SO3Group(mat);
+    }
+    //! Matrix exponential from a 3-element POD array
+    inline
+    static const SO3Group exp( const Scalar* a ) {
+        return exp( TangentVector(a[0], a[1], a[2]) );
     }
 
     // TODO: Matrix logarithm: axis-angle tangent vector from rotation matrix
 
     //! Return the transformation matrix
     inline
-    const TransformationMatrix matrix() const { return _mat; }
+    const TransformationMatrix matrix() const { return mat_; }
 
     //! Return the inverse of the transformation matrix
     inline
-    const SO3 inverse() const {
-        return SO3(matrix().transpose());
+    const SO3Group inverse() const {
+        return SO3Group(matrix().transpose());
     }
 
     //! Assignment operator
     inline
-    SO3 operator=( const SO3& other ) {
-        _mat = other.matrix();
+    SO3Group operator=( const SO3Group& other ) {
+        mat_ = other.matrix();
         return *this;
     }
 
     //! Multiply two group elements
     inline
-    const SO3 operator*( const SO3& other ) const {
-        SO3 result(matrix() * other.matrix());
+    const SO3Group operator*( const SO3Group& other ) const {
+        SO3Group result(matrix() * other.matrix());
         return result;
     }
 
@@ -269,31 +287,31 @@ public:
     //! SO(3) transformed point Jacobian
     inline
     static const TransformedPointJacobian transformed_point_jacobian(
-        const Homogeneous3D<Scalar>& h) {
+                                            const HomogeneousBase3D<Scalar>& h) {
         TransformedPointJacobian result = -wedge(h.cartesian());
         return result;
     }
 
     //! Ostream operator for SO(3)
     friend std::ostream& operator<<( std::ostream& os,
-        const SO3<Scalar>& so3 ) {
+                                     const SO3Group<Scalar>& so3 ) {
         os << "SO(3) Rotation Matrix" << std::endl << so3.matrix() << std::endl;
         return os;
     }
 
 private:
     //! Internal storage
-    TransformationMatrix _mat;
+    TransformationMatrix mat_;
 };
 
-//! SE3 Lie group (3D rigid body transformations)
+//! SE3Group Lie group (3D rigid body transformations)
 template <typename Scalar>
-class SE3 {
+class SE3Group {
 public:
     //! Pointer type
-    typedef std::shared_ptr<SE3> Ptr;
+    typedef std::shared_ptr<SE3Group> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<SE3> ConstPtr;
+    typedef const std::shared_ptr<SE3Group> ConstPtr;
     //! Degrees of freedom (3 for rotation)
     static const int dof = 6;
     //! Dimension of transformation matrix
@@ -302,38 +320,53 @@ public:
     typedef Point3D<Scalar> Point;
     //! Vector type
     typedef Vector3D<Scalar> Vector;
-    //! Rotation type
-    typedef SO3<Scalar> Rotation;
+    //! SO(3) type
+    typedef SO3Group<Scalar> SO3;
     //! Group transformation type
-    typedef Eigen::Matrix<Scalar, dim, dim> TransformationMatrix;
+    typedef Eigen::Matrix<Scalar, dim, dim, Eigen::RowMajor>
+        TransformationMatrix;
     //! Tangent vector type
     typedef Eigen::Matrix<Scalar, dof, 1> TangentVector;
     //! Adjoint transformation type
-    typedef Eigen::Matrix<Scalar, dof, dof> AdjointMatrix;
+    typedef Eigen::Matrix<Scalar, dof, dof, Eigen::RowMajor> AdjointMatrix;
     //! Transformed (Cartesian) point Jacobian matrix
-    typedef Eigen::Matrix<Scalar, dim, dof> TransformedPointJacobian;
+    typedef Eigen::Matrix<Scalar, Point::dim, dof, Eigen::RowMajor>
+        TransformedPointJacobian;
 
     //! Default constructor (identity)
-    SE3() : SE3(TransformationMatrix::Identity()) { }
+    SE3Group() : SE3Group(TransformationMatrix::Identity()) { }
     //! Construct from a rotation and a translation
-    SE3( const Rotation& rotation, const Vector& translation )
-        : _rotation(rotation), _translation(translation) { }
+    SE3Group( const SO3& rotation, const Vector& translation )
+        : rotation_(rotation), translation_(translation) { }
     //! Construct from a matrix
-    SE3( const TransformationMatrix& mat ) {
-        _rotation = Rotation(mat.block(0,0,3,3));
-        _translation = Vector(mat.block(0,3,3,1));
+    SE3Group( const TransformationMatrix& mat ) {
+        rotation_ = SO3(mat.block(0,0,3,3));
+        translation_ = Vector(mat.block(0,3,3,1));
+    }
+    //! Matrix exponential: transformation matrix from axis-angle tangent vector
+    //! This isn't quite right because the translational component needs to be
+    //! multiplied by the SO(3) Jacobian, which is not yet implemented
+    inline
+    static const SE3Group exp( const TangentVector& xi ) {
+        return SE3Group( SO3::exp(xi.tail(3)), Vector(xi.head(3)) );
+    }
+    //! Matrix exponential from a 6-element POD array
+    inline
+    static const SE3Group exp( const Scalar* a ) {
+        TangentVector xi;
+        xi << a[0], a[1], a[2], a[3], a[4], a[5];
+        return exp(xi);
     }
 
-    // TODO: Matrix exponential: rotation matrix from axis-angle tangent vector
     // TODO: Matrix logarithm: axis-angle tangent vector from rotation matrix
 
-    //! Return the SO3 rotation
+    //! Return the SO(3) rotation
     inline
-    const Rotation rotation() const { return _rotation; }
+    const SO3 rotation() const { return rotation_; }
 
     //! Return the translation vector
     inline
-    const Vector translation() const { return _translation; }
+    const Vector translation() const { return translation_; }
 
     //! Return the transformation matrix
     inline
@@ -347,26 +380,26 @@ public:
 
     //! Return the inverse of the transformation matrix
     inline
-    const SE3 inverse() const {
+    const SE3Group inverse() const {
         TransformationMatrix inv;
         inv.block(0,0,3,3) = rotation().inverse().matrix();
         inv.block(0,3,3,1) = rotation().inverse() * translation().cartesian();
         inv.bottomRows(1) << 0., 0., 0., 1.;
-        return SE3(inv);
+        return SE3Group(inv);
     }
 
     //! Assignment operator
     inline
-    SE3 operator=( const SE3& other ) {
-        _rotation = other.rotation();
-        _translation = other.translation();
+    SE3Group operator=( const SE3Group& other ) {
+        rotation_ = other.rotation();
+        translation_ = other.translation();
         return *this;
     }
 
     //! Multiply two group elements
     inline
-    const SE3 operator*( const SE3& other ) {
-        return SE3( rotation() * other.rotation(),
+    const SE3Group operator*( const SE3Group& other ) {
+        return SE3Group( rotation() * other.rotation(),
                     rotation() * other.translation() + translation() );
     }
 
@@ -388,7 +421,7 @@ public:
     inline
     static const TransformationMatrix wedge( const TangentVector& xi ) {
         TransformationMatrix Xi;
-        Xi.block(0,0,3,3) = SO3<Scalar>::wedge(xi.tail(3));
+        Xi.block(0,0,3,3) = SO3::wedge(xi.tail(3));
         Xi.block(0,3,3,1) = xi.head(3);
         Xi.bottomRows(1) << 0., 0., 0., 0.;
         return Xi;
@@ -399,34 +432,35 @@ public:
     static const TangentVector vee( const TransformationMatrix& Xi ) {
         TangentVector xi;
         xi.head(3) = Xi.block(0,3,3,1);
-        xi.tail(3) = Rotation::vee(Xi.block(0,0,3,3));
+        xi.tail(3) = SO3::vee(Xi.block(0,0,3,3));
         return xi;
     }
 
     //! SE(3) odot operator as defined by Barfoot
     //! (for a homogeneous point/vector p = [cartesian^T scale]^T)
+    //! NOTE: omits the bottom row so the scale isn't in the state
     inline
     static const TransformedPointJacobian transformed_point_jacobian(
-        const Homogeneous3D<Scalar>& h ) {
+                                            const HomogeneousBase3D<Scalar>& h ) {
         TransformedPointJacobian result;
         result.block(0,0,3,3) =
-            h.scale() * Rotation::TransformationMatrix::Identity();
+            h.scale() * SO3::TransformationMatrix::Identity();
         result.block(0,3,3,3) =
-            Rotation::transformed_point_jacobian(h);
-        result.bottomRows(1) << 0., 0., 0., 0., 0., 0.;
+            SO3::transformed_point_jacobian(h);
         return result;
     }
 
     //! Ostream operator for SE(3)
-    friend std::ostream& operator<<(std::ostream& os, const SE3<Scalar>& se3) {
+    friend std::ostream& operator<<( std::ostream& os,
+                                     const SE3Group<Scalar>& se3 ) {
         os << "SE(3) Transformation Matrix" << std::endl << se3.matrix() << std::endl;
         return os;
     }
 
 private:
     //! Internal storage
-    Rotation _rotation;
-    Vector _translation;
+    SO3 rotation_;
+    Vector translation_;
 };
 
 } // namespace ceres_slam

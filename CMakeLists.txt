@@ -57,14 +57,15 @@ include_directories(
   ${CERES_INCLUDE_DIRS}
 )
 
-# add_library(${PROJECT_NAME})
+# add_library(${PROJECT_NAME}
+# 	src/ceres_slam/stereo_reprojection_error.cpp)
 # target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
 # add_executable(ceres_odometry_node src/nodes/odometry_node.cpp)
 # target_link_libraries(ceres_odometry_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
-add_executable(camera_test src/nodes/camera_test.cpp)
+add_executable(camera_test src/tests/camera_test.cpp)
 target_link_libraries(camera_test ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
-add_executable(geometry_check src/ceres_slam/geometry_check.cpp)
-target_link_libraries(geometry_check ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
+add_executable(geometry_test src/tests/geometry_test.cpp)
+target_link_libraries(geometry_test ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})

@@ -19,48 +19,54 @@ public:
     //! Const pointer type
     typedef const std::shared_ptr<StereoCamera> ConstPtr;
     //! Dimension of the observation (u, v, d)
-    static const int dim = 3;
+    static const int obs_dim = 3;
     //! Point type
     typedef Point3D<Scalar> Point;
     //! Point Jacobian type
-    typedef Eigen::Matrix<Scalar, 3, dim> PointJacobian;
+    typedef Eigen::Matrix<Scalar, Point::dim, obs_dim, Eigen::RowMajor>
+        PointJacobian;
     //! Observation type
-    typedef Eigen::Matrix<Scalar, dim, 1> Observation;
+    typedef Eigen::Matrix<Scalar, obs_dim, 1> Observation;
     //! Observation variance type
-    typedef Eigen::Matrix<Scalar, dim, 1> ObservationVariance;
+    typedef Eigen::Matrix<Scalar, obs_dim, 1>
+        ObservationVariance;
+    //! Observation covariance matrix type
+    typedef Eigen::Matrix<Scalar, obs_dim, obs_dim, Eigen::RowMajor>
+        ObservationCovariance;
     //! Observation Jacobian type
-    typedef Eigen::Matrix<Scalar, dim, 3> ObservationJacobian;
+    typedef Eigen::Matrix<Scalar, obs_dim, Point::dim, Eigen::RowMajor>
+        ObservationJacobian;
 
     //! Copy constructor
     StereoCamera( StereoCamera& other ) :
-        _fu(other.fu()), _fv(other.fv()),
-        _cu(other.cu()), _cv(other.cv()),
-        _b(other.b()) { }
+        fu_(other.fu()), fv_(other.fv()),
+        cu_(other.cu()), cv_(other.cv()),
+        b_(other.b()) { }
     //! Construct from parameters
     StereoCamera( Scalar fu, Scalar fv, Scalar cu, Scalar cv, Scalar b ) :
-        _fu(fu), _fv(fv),
-        _cu(cu), _cv(cv),
-        _b(b) { }
+        fu_(fu), fv_(fv),
+        cu_(cu), cv_(cv),
+        b_(b) { }
     //! Construct from ROS CameraInfo messages
     StereoCamera(const sensor_msgs::CameraInfoConstPtr& left_camera_info,
                  const sensor_msgs::CameraInfoConstPtr& right_camera_info) :
-        _fu(left_camera_info->P[0]), _fv(left_camera_info->P[5]),
-        _cu(left_camera_info->P[2]), _cv(left_camera_info->P[6]),
-        _b(-right_camera_info->P[3] / right_camera_info->P[0]) { }
+        fu_(left_camera_info->P[0]), fv_(left_camera_info->P[5]),
+        cu_(left_camera_info->P[2]), cv_(left_camera_info->P[6]),
+        b_(-right_camera_info->P[3] / right_camera_info->P[0]) { }
 
     //! Return horizontal focal length
-    const Scalar fu() const { return _fu; }
+    const Scalar fu() const { return fu_; }
     //! Return vertical focal length
-    const Scalar fv() const { return _fv; }
+    const Scalar fv() const { return fv_; }
     //! Return horizontal principal point coordinate
-    const Scalar cu() const { return _cu; }
+    const Scalar cu() const { return cu_; }
     //! Return vertical horizontal principal point coordinate
-    const Scalar cv() const { return _cv; }
+    const Scalar cv() const { return cv_; }
     //! Return baseline
-    const Scalar b() const { return _b; }
+    const Scalar b() const { return b_; }
 
     //! Projects a 3D point in the camera frame into the camera
-    //! to get a 3D stereo observation.
+    //! to get a uvd stereo observation.
     const Observation pointToObservation(
         const Point& pt_c, ObservationJacobian* jacobian_ptr = nullptr) const {
         Observation obs; // [u_l, v_l, d]
@@ -94,7 +100,7 @@ public:
     }
 
     //! Triangulates a 3D point in the camera frame
-    //! from a 3D stereo observation.
+    //! from a uvd stereo observation.
     const Point observationToPoint(
         const Observation& obs, PointJacobian* jacobian_ptr = nullptr) const {
         Point pt_c;
@@ -122,11 +128,11 @@ public:
     }
 
 private:
-    Scalar _fu; //!< Horizontal focal length [px]
-    Scalar _fv; //!< Vertical focal length [px]
-    Scalar _cu; //!< Horizontal principal point coordinate [px]
-    Scalar _cv; //!< Vertical principal point coordinate [px]
-    Scalar _b;  //!< Stereo baseline [m]
+    Scalar fu_; //!< Horizontal focal length [px]
+    Scalar fv_; //!< Vertical focal length [px]
+    Scalar cu_; //!< Horizontal principal point coordinate [px]
+    Scalar cv_; //!< Vertical principal point coordinate [px]
+    Scalar b_;  //!< Stereo baseline [m]
 }; // class StereoCamera
 
 } // namespace ceres_slam

@@ -5,6 +5,8 @@
 
 #include <ceres_slam/stereo_camera.h>
 
+// TODO: Rewrite this as a proper unit test
+
 using StereoCamera = ceres_slam::StereoCamera<double>;
 
 int main() {
