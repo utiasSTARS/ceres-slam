@@ -51,5 +51,10 @@ int main() {
     SE3 T5 = SE3::exp(xi2);
     std::cout << T5 << std::endl;
 
+    ceres_slam::Vector3D<double> vec2(1.,2.,3.);
+    std::cout << vec2 << std::endl << vec2.norm() << std::endl;
+    vec2.normalize();
+    std::cout << vec2 << std::endl << vec2.norm() << std::endl;
+
     return EXIT_SUCCESS;
 }

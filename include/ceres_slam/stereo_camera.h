@@ -38,12 +38,14 @@ public:
         ObservationJacobian;
 
     //! Copy constructor
-    StereoCamera( StereoCamera& other ) :
+    StereoCamera( const StereoCamera& other ) :
         fu_(other.fu()), fv_(other.fv()),
         cu_(other.cu()), cv_(other.cv()),
         b_(other.b()) { }
     //! Construct from parameters
-    StereoCamera( Scalar fu, Scalar fv, Scalar cu, Scalar cv, Scalar b ) :
+    StereoCamera( const Scalar fu, const Scalar fv,
+                  const Scalar cu, const Scalar cv,
+                  const Scalar b ) :
         fu_(fu), fv_(fv),
         cu_(cu), cv_(cv),
         b_(b) { }
@@ -116,8 +118,8 @@ public:
     }
 
     //! Ostream operator for StereoCamera
-    friend std::ostream& operator<<(
-        std::ostream& os, const StereoCamera<Scalar>& c ) {
+    friend std::ostream& operator<<( std::ostream& os, const
+                                     StereoCamera<Scalar>& c ) {
         os << "StereoCamera" << std::endl
            << "fu: " << c.fu() << std::endl
            << "fv: " << c.fv() << std::endl

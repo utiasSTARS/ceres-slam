@@ -61,8 +61,8 @@ public:
     const Scalar& operator()(int i) const { return cartesian_(i); }
 
     //! Ostream operator for homogeneous quantities
-    friend std::ostream& operator<<(
-        std::ostream& os, const HomogeneousBase3D<Scalar>& h ) {
+    friend std::ostream& operator<<( std::ostream& os, const
+                                     HomogeneousBase3D<Scalar>& h ) {
         os << "Homogeneous quantity" << std::endl
            << h.homogeneous() << std::endl;
         return os;
@@ -101,6 +101,14 @@ public:
     Vector3D( const Scalar* s ) :
         Vector3D(s[0], s[1], s[2]) { }
 
+    //! Compute the norm of the vector
+    const Scalar norm() const { return this->cartesian().norm(); }
+    //! Normalize the vector
+    void normalize() { this->cartesian_.normalize(); }
+    //! Compute the dot product of two vectors
+    const Scalar dot( const Vector3D& other ) const {
+        return this->cartesian().dot(other.cartesian());
+    }
 
     //! Addition operator for two vectors
     const Vector3D operator+( const Vector3D<Scalar>& other ) const {
@@ -113,7 +121,7 @@ public:
 
     //! Ostream operator for homogeneous quantities
     friend std::ostream& operator<<( std::ostream& os,
-        const Vector3D<Scalar>& v ) {
+                                     const Vector3D<Scalar>& v ) {
         os << "Homogeneous vector" << std::endl
            << v.homogeneous() << std::endl;
         return os;
@@ -162,9 +170,35 @@ public:
 
     //! Ostream operator for homogeneous quantities
     friend std::ostream& operator<<( std::ostream& os,
-        const Point3D<Scalar>& p ) {
+                                     const Point3D<Scalar>& p ) {
         os << "Homogeneous point" << std::endl
            << p.homogeneous() << std::endl;
+        return os;
+    }
+};
+
+//! Vertex object for use with shading
+template <typename Scalar>
+struct Vertex3D {
+    //! Convenience constructor
+    Vertex3D(Point3D<Scalar> p, Vector3D<Scalar> n, Scalar a, Scalar d) :
+        position(p), normal(n), ambient(a), diffuse(d) { }
+
+    Point3D<Scalar> position; //!< Vertex position
+    Vector3D<Scalar> normal;  //!< Vertex surface normal
+    Scalar ambient;           //!< Ambient reflectance
+    Scalar diffuse;           //!< Diffuse reflectance
+
+    //! Ostream operator for vertices
+    friend std::ostream& operator<<( std::ostream& os,
+                                     const Vertex3D<Scalar>& v ) {
+        os << "Vertex" << std::endl
+           << "Position: " << std::endl
+           << v.position << std::endl
+           << "Normal: " << std::endl
+           << v.normal << std::endl
+           << "Ambient reflectance: " << v.ambient << std::endl
+           << "Diffuse reflectance: " << v.diffuse << std::endl;
         return os;
     }
 };
@@ -202,7 +236,10 @@ public:
     SO3Group( const SO3Group& other ) : mat_(other.matrix()) { };
     //! Construct from a matrix
     SO3Group( const TransformationMatrix& mat ) : mat_(mat) { }
-    //! Matrix exponential: rotation matrix from axis-angle tangent vector
+    //! Exponential map for SO(3)
+    /*!
+        Computes a rotation matrix from axis-angle tangent vector
+    */
     inline
     static const SO3Group exp( const TangentVector& a ) {
         Scalar phi = a.norm();
@@ -216,7 +253,7 @@ public:
                                     + sp * wedge(a_unit);
         return SO3Group(mat);
     }
-    //! Matrix exponential from a 3-element POD array
+    //! Exponential map for SO(3) from a 3-element POD array
     inline
     static const SO3Group exp( const Scalar* a ) {
         return exp( TangentVector(a[0], a[1], a[2]) );
@@ -228,7 +265,7 @@ public:
     inline
     const TransformationMatrix matrix() const { return mat_; }
 
-    //! Return the inverse of the transformation matrix
+    //! Return the inverse transformation
     inline
     const SO3Group inverse() const {
         return SO3Group(matrix().transpose());
@@ -312,7 +349,7 @@ public:
     typedef std::shared_ptr<SE3Group> Ptr;
     //! Const pointer type
     typedef const std::shared_ptr<SE3Group> ConstPtr;
-    //! Degrees of freedom (3 for rotation)
+    //! Degrees of freedom (3 for rotation + 3 for translation)
     static const int dof = 6;
     //! Dimension of transformation matrix
     static const int dim = 4;
@@ -343,14 +380,17 @@ public:
         rotation_ = SO3(mat.block(0,0,3,3));
         translation_ = Vector(mat.block(0,3,3,1));
     }
-    //! Matrix exponential: transformation matrix from axis-angle tangent vector
-    //! This isn't quite right because the translational component needs to be
-    //! multiplied by the SO(3) Jacobian, which is not yet implemented
+    //! Exponential map for SE(3)
+    /*!
+        Computes a transformation matrix from SE(3) tangent vector
+        This isn't quite right because the translational component needs to be
+        multiplied by the SO(3) Jacobian, which is not yet implemented
+    */
     inline
     static const SE3Group exp( const TangentVector& xi ) {
         return SE3Group( SO3::exp(xi.tail(3)), Vector(xi.head(3)) );
     }
-    //! Matrix exponential from a 6-element POD array
+    //! Exponential map for SE(3) from a 6-element POD array
     inline
     static const SE3Group exp( const Scalar* a ) {
         TangentVector xi;
@@ -378,7 +418,7 @@ public:
         return mat;
     }
 
-    //! Return the inverse of the transformation matrix
+    //! Return the inverse transformation
     inline
     const SE3Group inverse() const {
         TransformationMatrix inv;
