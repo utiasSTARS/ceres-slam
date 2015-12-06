@@ -13,10 +13,12 @@ int main() {
                         0.3, 0.7 );
 
     PointLight<double> l( Point3D<double>(5., 5., 5.) );
+    PointLight<double>::ColourJacobian l_jacobian;
 
     std::cout << v << std::endl;
     std::cout << l << std::endl;
-    std::cout << l.shade(v) << std::endl;
+    std::cout << l.shade(v, &l_jacobian) << std::endl;
+    std::cout << l_jacobian << std::endl;
 
     return EXIT_SUCCESS;
 }

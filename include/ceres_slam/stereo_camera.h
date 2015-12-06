@@ -71,15 +71,16 @@ public:
     //! to get a uvd stereo observation.
     const Observation pointToObservation(
         const Point& pt_c, ObservationJacobian* jacobian_ptr = nullptr) const {
+        double one_over_z = 1. / pt_c(2);
+
         Observation obs; // [u_l, v_l, d]
-        obs(0) = fu() * pt_c(0) / pt_c(2) + cu();
-        obs(1) = fv() * pt_c(1) / pt_c(2) + cv();
-        obs(2) = fu() * b() / pt_c(2);
+        obs(0) = fu() * pt_c(0) * one_over_z + cu();
+        obs(1) = fv() * pt_c(1) * one_over_z + cv();
+        obs(2) = fu() * b() * one_over_z;
 
         if(jacobian_ptr != nullptr) {
-            ObservationJacobian jacobian = *jacobian_ptr;
+            ObservationJacobian& jacobian = *jacobian_ptr;
 
-            double one_over_z = 1 / pt_c(2);
             double one_over_z2 = one_over_z * one_over_z;
 
             // d(u_l) / d(pt_c)

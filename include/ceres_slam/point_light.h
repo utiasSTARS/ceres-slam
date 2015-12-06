@@ -31,8 +31,7 @@ public:
     //! Observation covariance matrix type
     typedef Scalar ColourCovariance;
     //! Observation Jacobian type
-    typedef Eigen::Matrix<Scalar, obs_dim, Point::dim, Eigen::RowMajor>
-        ColourJacobian;
+    typedef Eigen::Matrix<Scalar, 1, 11, Eigen::RowMajor> ColourJacobian;
 
     //! Default constructor
     PointLight( const Point& position ) :
@@ -46,28 +45,69 @@ public:
     const Colour diffuse() const { return diffuse_; }
     // TODO: Add specular components
 
-    //! Shade a 3D vertex.
+    //! Shade a 3D vertex using Phong lighting (without specularities)
     /*!
         NOTE: The vertex must be expressed in the same
         frame as the light position!
     */
-    inline const Colour shade( const Vertex& vertex ) {
+    const Colour shade( const Vertex& vertex,
+                        ColourJacobian* jacobian_ptr=nullptr ) const {
         // Vector from point to light
-        Vector light_dir = position() - vertex.position;
+        Vector light_vec = position() - vertex.position;
+        // Unit vector in direction of light from point
+        Vector light_dir = light_vec;
         light_dir.normalize();
+        // Dot product of light direction and surface normal
+        Scalar light_dir_dot_normal = light_dir.dot(vertex.normal);
 
-        return shade_ambient(vertex) + shade_diffuse(vertex, light_dir);
+        Colour col = ambient() * vertex.ambient
+                   + diffuse() * vertex.diffuse *
+                        fmax(0., light_dir_dot_normal);
+
+        if(jacobian_ptr != nullptr) {
+            ColourJacobian& jacobian = *jacobian_ptr;
+            jacobian = ColourJacobian::Zero();
+
+            Scalar light_norm = light_vec.norm();
+            Scalar two_light_norm2 = 2. * light_norm * light_norm;
+            Scalar one_over_two_light_norm3 =
+                1. / (two_light_norm2 * light_norm);
+
+            // d(I)/d(pj) = d(I)/d(l) d(l)/d(pj)
+            if(light_dir_dot_normal >= 0.) {
+                jacobian.block(0,0,1,3) =
+                    // d(I)/d(l) (1 x 3)
+                    diffuse() * vertex.diffuse *
+                        vertex.normal.cartesian().transpose()
+                    // d(l)/d(pj) (3 x 3)
+                    * (-one_over_two_light_norm3)
+                        * ( two_light_norm2
+                            * Eigen::Matrix<Scalar, 3, 3,
+                                            Eigen::RowMajor>::Identity()
+                            - light_vec.cartesian() *
+                                light_vec.cartesian().transpose() );
+            }
+            // else zeros
+
+            // d(I)/d(nj)
+            if(light_dir_dot_normal >= 0.) {
+                jacobian.block(0,3,1,3) = diffuse() * vertex.diffuse
+                                        * light_dir.cartesian().transpose();
+            }
+            // else zeros
+
+            // d(I)/d(ka)
+            jacobian(0,6) = 1.;
+
+            // d(I)/d(kd)
+            jacobian(0,7) = fmax(0., light_dir_dot_normal);
+
+            // d(I)/d(pL)
+            jacobian.block(0,8,1,3) = -jacobian.block(0,0,1,3);
+        }
+
+        return col;
     }
-    //! Ambient component of Phong lighting
-    inline const Colour shade_ambient( const Vertex& vertex ) {
-        return ambient() * vertex.ambient;
-    }
-    //! Diffuse component of Phong lighting
-    inline const Colour shade_diffuse( const Vertex& vertex,
-                                       const Vector& light_dir ) {
-        return fmax(0., light_dir.dot(vertex.normal));
-    }
-    // TODO: Specular component of Phong lighting
 
     //! Ostream operator for PointLight
     friend std::ostream& operator<<( std::ostream& os,
