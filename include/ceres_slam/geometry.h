@@ -180,14 +180,23 @@ public:
 //! Vertex object for use with shading
 template <typename Scalar>
 struct Vertex3D {
+    //! Point type
+    typedef Point3D<Scalar> Point;
+    //! Vector type
+    typedef Vector3D<Scalar> Vector;
+    //! Observation type
+    typedef Scalar Colour;
+    //! Vertex dimension
+    static const int dim = Point::dim + Vector::dim + 2;
+
     //! Convenience constructor
-    Vertex3D(Point3D<Scalar> p, Vector3D<Scalar> n, Scalar a, Scalar d) :
+    Vertex3D(Point p, Vector n, Scalar a, Scalar d) :
         position(p), normal(n), ambient(a), diffuse(d) { }
 
-    Point3D<Scalar> position; //!< Vertex position
-    Vector3D<Scalar> normal;  //!< Vertex surface normal
-    Scalar ambient;           //!< Ambient reflectance
-    Scalar diffuse;           //!< Diffuse reflectance
+    Point position; //!< Vertex position
+    Vector normal;  //!< Vertex surface normal
+    Scalar ambient; //!< Ambient reflectance
+    Scalar diffuse; //!< Diffuse reflectance
 
     //! Ostream operator for vertices
     friend std::ostream& operator<<( std::ostream& os,

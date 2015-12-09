@@ -33,9 +33,10 @@ public:
     virtual ~StereoReprojectionError();
 
     //! Evaluates the reprojection error and jacobians for Ceres.
-    //! parameters[0][0-2] is the vehicle translation in the global frame
-    //! parameters[0][3-5] is the vehicle rotation in the global frame
-    //! parametsrs[1][0-2] is the map point in the global frame
+    /*! parameters[0][0-2] is the vehicle translation in the global frame
+        parameters[0][3-5] is the vehicle rotation in the global frame
+        parametsrs[1][0-2] is the map point in the global frame
+    */
     virtual bool Evaluate(double const* const* parameters,
                           double* residuals,
                           double** jacobians) const;

@@ -31,7 +31,8 @@ public:
     //! Observation covariance matrix type
     typedef Scalar ColourCovariance;
     //! Observation Jacobian type
-    typedef Eigen::Matrix<Scalar, 1, 11, Eigen::RowMajor> ColourJacobian;
+    typedef Eigen::Matrix<Scalar, obs_dim,
+        Vertex::dim + Point::dim, Eigen::RowMajor> ColourJacobian;
 
     //! Default constructor
     PointLight( const Point& position ) :
@@ -49,6 +50,14 @@ public:
     /*!
         NOTE: The vertex must be expressed in the same
         frame as the light position!
+
+        The Jacobian is 1 x 11 for each colour channel and is organized
+        [d(I)/d(pj)  d(I)/d(nj)  d(I)/d(ka)  d(I)/d(kd)  d(I)/d(pL)]
+        where pj: map point position
+              nj: map point normal vector
+              ka: map point ambient reflectance
+              kd: map point diffuse reflectance
+              pL: light source position
     */
     const Colour shade( const Vertex& vertex,
                         ColourJacobian* jacobian_ptr=nullptr ) const {
@@ -86,15 +95,13 @@ public:
                                             Eigen::RowMajor>::Identity()
                             - light_vec.cartesian() *
                                 light_vec.cartesian().transpose() );
-            }
-            // else zeros
+            } // else zeros
 
             // d(I)/d(nj)
             if(light_dir_dot_normal >= 0.) {
                 jacobian.block(0,3,1,3) = diffuse() * vertex.diffuse
                                         * light_dir.cartesian().transpose();
-            }
-            // else zeros
+            } // else zeros
 
             // d(I)/d(ka)
             jacobian(0,6) = 1.;

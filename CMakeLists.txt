@@ -57,8 +57,13 @@ include_directories(
   ${CERES_INCLUDE_DIRS}
 )
 
+file(GLOB ${PROJECT_NAME}_HEADERS "include/ceres_slam/*.h")
+file(GLOB ${PROJECT_NAME}_SOURCES "src/ceres_slam/*.cpp")
+
 add_library(${PROJECT_NAME}
-	src/ceres_slam/stereo_reprojection_error.cpp)
+	${${PROJECT_NAME}_HEADERS}
+	${${PROJECT_NAME}_SOURCES}
+)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
 # add_executable(ceres_odometry_node src/nodes/odometry_node.cpp)
@@ -72,6 +77,9 @@ target_link_libraries(geometry_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_
 
 add_executable(light_test src/tests/light_test.cpp)
 target_link_libraries(light_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
+
+add_executable(dataset_ba src/tests/dataset_ba.cpp)
+target_link_libraries(dataset_ba ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
 add_custom_target(docs ALL
 	COMMAND "doxygen" "doxygen.config"
