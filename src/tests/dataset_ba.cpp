@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     // Generate initial guess using scalar-weighted point cloud alignment
     ceres_slam::PointCloudAligner point_cloud_aligner;
     ceres_slam::DatasetProblem::SE3 T =
-        point_cloud_aligner.compute_transformation();
+        point_cloud_aligner.compute_transformation(nullptr, nullptr);
     std::cout << T << std::endl;
 
     // Build the problem

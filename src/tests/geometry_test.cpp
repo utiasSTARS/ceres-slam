@@ -56,5 +56,10 @@ int main() {
     vec2.normalize();
     std::cout << vec2 << std::endl << vec2.norm() << std::endl;
 
+    std::cout << rot1.str() << std::endl;
+    std::cout << pt.str() << std::endl;
+    std::cout << vec2.str() << std::endl;
+    std::cout << T2.str() << std::endl;
+
     return EXIT_SUCCESS;
 }

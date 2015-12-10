@@ -18,19 +18,12 @@ public:
     typedef Point3D<double> Point;
 
     //! Default constructor
-    PointCloudAligner();
-
-    //! Set the input point clouds
-    void set_input_clouds(std::vector<Point>* const pts_0,
-                          std::vector<Point>* const pts_1);
+    PointCloudAligner() { }
 
     //! Compute the transformation that aligns
-    //! the origin cloud onto the destimation cloud.
-    SE3 compute_transformation();
-
-private:
-    std::vector<Point>* pts_0_; //!< Origin point cloud
-    std::vector<Point>* pts_1_; //!< Desination point cloud
+    //! the origin cloud (pts_0) onto the destination cloud (pts_1).
+    SE3 compute_transformation(std::vector<Point>* const pts_0,
+                               std::vector<Point>* const pts_1);
 };
 
 } // namespace ceres_slam

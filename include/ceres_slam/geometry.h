@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <iostream>
+#include <string>
 #include <sstream>
 
 #include <Eigen/Core>
@@ -59,6 +60,16 @@ public:
     Scalar& operator()(int i) { return cartesian_(i); }
     //! Accessor operator, const
     const Scalar& operator()(int i) const { return cartesian_(i); }
+
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << cartesian_(0) << ","
+           << cartesian_(1) << ","
+           << cartesian_(2) << ","
+           << scale_;
+        return ss.str();
+    }
 
     //! Ostream operator for homogeneous quantities
     friend std::ostream& operator<<( std::ostream& os, const
@@ -342,6 +353,15 @@ public:
         return result;
     }
 
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << mat_(0,0) << "," << mat_(0,1) << "," << mat_(0,2) << ","
+           << mat_(1,0) << "," << mat_(1,1) << "," << mat_(1,2) << ","
+           << mat_(2,0) << "," << mat_(2,1) << "," << mat_(2,2);
+        return ss.str();
+    }
+
     //! Ostream operator for SO(3)
     friend std::ostream& operator<<( std::ostream& os,
                                      const SO3Group<Scalar>& so3 ) {
@@ -501,6 +521,13 @@ public:
         result.block(0,3,3,3) =
             SO3::transformed_point_jacobian(h);
         return result;
+    }
+
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << rotation_.str() << "," << translation_.str();
+        return ss.str();
     }
 
     //! Ostream operator for SE(3)
