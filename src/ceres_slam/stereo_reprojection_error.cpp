@@ -45,10 +45,10 @@ bool StereoReprojectionError::Evaluate(double const* const* parameters,
 
     if(need_jacobians) {
         predicted_observation =
-            camera_->pointToObservation(r_c_f_c, &camera_jacobian);
+            camera_->project(r_c_f_c, &camera_jacobian);
     }
     else {
-        predicted_observation = camera_->pointToObservation(r_c_f_c);
+        predicted_observation = camera_->project(r_c_f_c);
     }
 
     // Compute the stiffness matrix to apply to the residuals

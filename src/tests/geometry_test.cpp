@@ -61,5 +61,8 @@ int main() {
     std::cout << vec2.str() << std::endl;
     std::cout << T2.str() << std::endl;
 
+    std::cout << rot2 * rot2.inverse() << std::endl;
+    std::cout << T2 * T2.inverse() << std::endl;
+
     return EXIT_SUCCESS;
 }

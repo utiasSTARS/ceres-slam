@@ -20,8 +20,8 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
             p_0_cart += (*pts_0)[i].cartesian(); // Ugly syntax :(
             p_1_cart += (*pts_1)[i].cartesian();
         }
-        p_0_cart /= n_pts;
-        p_1_cart /= n_pts;
+        p_0_cart /= double(n_pts);
+        p_1_cart /= double(n_pts);
 
         Point p_0(p_0_cart);
         Point p_1(p_1_cart);
@@ -32,7 +32,7 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
             W_1_0 += ((*pts_1)[i] - p_1).cartesian()
                         * ((*pts_0)[i] - p_0).cartesian().transpose();
         }
-        W_1_0 /= n_pts;
+        W_1_0 /= double(n_pts);
 
         // Compute rotation
         Eigen::JacobiSVD<SO3::TransformationMatrix>

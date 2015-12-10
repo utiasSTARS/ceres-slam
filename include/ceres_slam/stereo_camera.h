@@ -69,7 +69,7 @@ public:
 
     //! Projects a 3D point in the camera frame into the camera
     //! to get a uvd stereo observation.
-    const Observation pointToObservation(
+    const Observation project(
         const Point& pt_c, ObservationJacobian* jacobian_ptr = nullptr) const {
         double one_over_z = 1. / pt_c(2);
 
@@ -104,7 +104,7 @@ public:
 
     //! Triangulates a 3D point in the camera frame
     //! from a uvd stereo observation.
-    const Point observationToPoint(
+    const Point triangulate(
         const Observation& obs, PointJacobian* jacobian_ptr = nullptr) const {
         Point pt_c;
         pt_c(2) = obs(2) / (fu() * b());
@@ -112,7 +112,7 @@ public:
         pt_c(0) = pt_c(2) * (obs(0) - cu()) / fu();
 
         if(jacobian_ptr != nullptr) {
-            std::cerr << "StereoCamera::observationToPoint jacobian not yet implemented." << std::endl;
+            std::cerr << "StereoCamera::triangulate jacobian not yet implemented." << std::endl;
         }
 
         return pt_c;

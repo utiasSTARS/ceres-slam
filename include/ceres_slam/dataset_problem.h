@@ -40,7 +40,9 @@ public:
     //! Map points in base frame (to be estimated)
     std::vector<Point> map_points;
     //! Map point IDs in obs_list
-    std::vector<unsigned int> j;
+    std::vector<unsigned int> point_ids;
+    //! True if map point j has been initialized
+    std::vector<bool> initialized_point;
     //! List of stereo observations
     std::vector<Camera::Observation> obs_list;
     //! Variance of stereo observations
@@ -57,14 +59,20 @@ public:
               d: disparity
               I: intensity
     */
-    bool read_csv(const std::string filename);
+    const bool read_csv(const std::string filename);
 
     //! Write result to a CSV file
-    bool write_csv(const std::string filename);
+    const bool write_csv(const std::string filename) const;
+
+    //! Return list of indices corresponding to a specified state index
+    const std::vector<unsigned int> indices_at_state(int k) const ;
 
 private:
     //! Split a delimited string into a vector of tokens
-    std::vector<std::string> split(std::string str, char delimiter);
+    std::vector<std::string> split(std::string str, char del);
+
+    //! List of lists of indices corresponding to each state index
+    std::vector<std::vector<unsigned int>> state_indices_;
 
 }; // class DatasetProblem
 

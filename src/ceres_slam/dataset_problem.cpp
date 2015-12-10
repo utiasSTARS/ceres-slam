@@ -12,13 +12,14 @@
 
 namespace ceres_slam {
 
-bool DatasetProblem::read_csv(std::string filename) {
+const bool DatasetProblem::read_csv(std::string filename) {
     std::string line;
     std::vector<std::string> tokens;
     std::ifstream file(filename);
 
     // Quit if you can't open the file
     if(!file.is_open()) {
+        std::cerr << "Error: Couldn't open file " << filename << std::endl;
         return false;
     }
 
@@ -27,8 +28,11 @@ bool DatasetProblem::read_csv(std::string filename) {
     tokens = split(line, ',');
     num_states = std::stoi(tokens.at(0));
     num_points = std::stoi(tokens.at(1));
-    poses.reserve(num_states);
-    map_points.reserve(num_points);
+    poses.resize(num_states);
+    map_points.resize(num_points);
+    for(unsigned int i = 0; i < num_points; ++i) {
+        initialized_point.push_back(false);
+    }
 
     // Read camera intrinsics
     std::getline(file, line);
@@ -44,35 +48,66 @@ bool DatasetProblem::read_csv(std::string filename) {
     while(std::getline(file, line)) {
         tokens = split(line, ',');
         t.push_back( std::stod(tokens.at(0)) );
-        j.push_back( std::stoi(tokens.at(1)) );
+        point_ids.push_back( std::stoi(tokens.at(1)) );
         double u = std::stod(tokens.at(2));
         double v = std::stod(tokens.at(3));
         double d = std::stod(tokens.at(4));
         obs_list.push_back( Camera::Observation(u,v,d) );
     }
 
-    std::cout << t[t.size()-1] << std::endl << j[j.size()-1] << std::endl
-              << obs_list[obs_list.size()-1] << std::endl;
+    // Generate a list of observation indices for each state
+    std::vector<unsigned int> t_indices;
+    t_indices.push_back(0);
+    for(unsigned int idx = 1; idx < t.size(); ++idx) {
+        if(t.at(idx) != t.at(idx-1)) {
+            state_indices_.push_back(t_indices);
+            t_indices.clear();
+        }
+        t_indices.push_back(idx);
+    }
+    state_indices_.push_back(t_indices);
 
     file.close();
     return true;
 }
 
-bool DatasetProblem::write_csv(std::string filename) {
+const bool DatasetProblem::write_csv(std::string filename) const {
+    std::ofstream file(filename);
+
+    // Quit if you can't open the file
+    if(!file.is_open()) {
+        std::cerr << "Error: Couldn't open file " << filename << std::endl;
+        return false;
+    }
+
+    // Convert poses to CSV entries
+    for(SE3 T : poses) {
+        file << T.str() << std::endl;
+    }
+
+    // Convert map points to CSV entries
+    for(Point p : map_points) {
+        file << p.str() << std::endl;
+    }
+
+    file.close();
     return true;
 }
 
-std::vector<std::string>
-DatasetProblem::split(std::string str, char delimiter) {
-    std::vector<std::string> internal;
-    std::stringstream ss(str); // Turn the string into a stream.
+const std::vector<unsigned int> DatasetProblem::indices_at_state(int k) const {
+    return state_indices_.at(k);
+}
+
+std::vector<std::string> DatasetProblem::split(std::string str, char del) {
+    std::stringstream ss(str); // Copy the string into a stream
+    std::vector<std::string> tokens;
     std::string tok;
 
-    while(getline(ss, tok, delimiter)) {
-        internal.push_back(tok);
+    while(getline(ss, tok, del)) {
+        tokens.push_back(tok);
     }
 
-    return internal;
+    return tokens;
 }
 
 } // namespace ceres_slam

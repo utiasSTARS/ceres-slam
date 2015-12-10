@@ -38,13 +38,13 @@ int main() {
     std::cout << cam << std::endl;
 
     StereoCamera::ObservationJacobian obs_jac;
-    StereoCamera::Observation obs = cam.pointToObservation(pt, &obs_jac);
-    std::cout << "pointToObservation: " << std::endl << obs << std::endl;
+    StereoCamera::Observation obs = cam.project(pt, &obs_jac);
+    std::cout << "project: " << std::endl << obs << std::endl;
     std::cout << obs_jac << std::endl;
 
     StereoCamera::PointJacobian pt2_jac;
-    StereoCamera::Point pt2 = cam.observationToPoint(obs, &pt2_jac);
-    std::cout << "observationToPoint: " << std::endl << pt2 << std::endl;
+    StereoCamera::Point pt2 = cam.triangulate(obs, &pt2_jac);
+    std::cout << "triangulate: " << std::endl << pt2 << std::endl;
     std::cout << pt2_jac << std::endl;
 
     return EXIT_SUCCESS;

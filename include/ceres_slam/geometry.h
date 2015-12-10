@@ -11,6 +11,9 @@
 
 namespace ceres_slam {
 
+//! String formatting for Eigen file IO
+const Eigen::IOFormat CommaInitFmt(4, 1, ",", ",", "", "", "", "");
+
 //! Base class for homogeneous points/vectors
 template <typename Scalar>
 class HomogeneousBase3D {
@@ -64,10 +67,7 @@ public:
     //! Convert to a string
     inline const std::string str() const {
         std::stringstream ss;
-        ss << cartesian_(0) << ","
-           << cartesian_(1) << ","
-           << cartesian_(2) << ","
-           << scale_;
+        ss << cartesian().format(CommaInitFmt);
         return ss.str();
     }
 
@@ -356,9 +356,7 @@ public:
     //! Convert to a string
     inline const std::string str() const {
         std::stringstream ss;
-        ss << mat_(0,0) << "," << mat_(0,1) << "," << mat_(0,2) << ","
-           << mat_(1,0) << "," << mat_(1,1) << "," << mat_(1,2) << ","
-           << mat_(2,0) << "," << mat_(2,1) << "," << mat_(2,2);
+        ss << matrix().format(CommaInitFmt);
         return ss.str();
     }
 
@@ -456,7 +454,8 @@ public:
     const SE3Group inverse() const {
         TransformationMatrix inv;
         inv.block(0,0,3,3) = rotation().inverse().matrix();
-        inv.block(0,3,3,1) = rotation().inverse() * translation().cartesian();
+        inv.block(0,3,3,1) =
+            -(rotation().inverse() * translation()).cartesian();
         inv.bottomRows(1) << 0., 0., 0., 1.;
         return SE3Group(inv);
     }
@@ -471,20 +470,20 @@ public:
 
     //! Multiply two group elements
     inline
-    const SE3Group operator*( const SE3Group& other ) {
+    const SE3Group operator*( const SE3Group& other ) const {
         return SE3Group( rotation() * other.rotation(),
                     rotation() * other.translation() + translation() );
     }
 
     //! Transform a 3D point
     inline
-    const Point operator*( const Point& pt ) {
+    const Point operator*( const Point& pt ) const {
         return Point(rotation() * pt + translation());
     }
 
     //! Transform a 3D vector
     inline
-    const Vector operator*( const Vector& vec ) {
+    const Vector operator*( const Vector& vec ) const {
         // For normal vectors, this should technically be the inverse-transpose,
         // but they cancel out for rotation matrices
         return rotation() * vec;
@@ -526,7 +525,7 @@ public:
     //! Convert to a string
     inline const std::string str() const {
         std::stringstream ss;
-        ss << rotation_.str() << "," << translation_.str();
+        ss << matrix().format(CommaInitFmt);
         return ss.str();
     }
 
