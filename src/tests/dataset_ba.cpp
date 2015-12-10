@@ -74,7 +74,8 @@ int main(int argc, char** argv) {
         // guess from the first point cloud, transformed into the base frame
         for(unsigned int i = 0; i < j_km1.size(); ++i) {
             if(!dataset.initialized_point[ j_km1[i] ]) {
-                dataset.map_points[ j_km1[i] ] = pts_km1[i];
+                dataset.map_points[ j_km1[i] ] =
+                    dataset.poses[k-1].inverse() * pts_km1[i];
                 dataset.initialized_point[ j_km1[i] ] = true;
             }
         }
