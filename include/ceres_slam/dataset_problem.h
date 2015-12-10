@@ -31,21 +31,26 @@ public:
     Camera::Ptr camera;
     //! Timestamps (measured)
     std::vector<double> t;
-    //! Map point IDs in obs_list
-    std::vector<int> j;
-    //! List of stereo observations
-    std::vector<Camera::Observation> obs_list;
-    //! Variance of stereo observations
-    Camera::ObservationVariance obs_var;
+    //! Number of states to optimize
+    unsigned int num_states;
+    //! Number of map points to optimize
+    unsigned int num_points;
     //! Camera poses in base frame (to be estimated)
     std::vector<SE3> poses;
     //! Map points in base frame (to be estimated)
     std::vector<Point> map_points;
+    //! Map point IDs in obs_list
+    std::vector<unsigned int> j;
+    //! List of stereo observations
+    std::vector<Camera::Observation> obs_list;
+    //! Variance of stereo observations
+    Camera::ObservationVariance obs_var;
 
     //! Read dataset from a CSV file
     /*!
-        Assuming first row is intrinsics, and remaining rows are observations
-        of the form [t,j,u,v,d,I]
+        Assuming first row is num_states, num_points,
+        second row is intrinsics,
+        and remaining rows are observations of the form [t,j,u,v,d,I]
         where t: timestemp
               j: point index
               (u,v): left image coordinates

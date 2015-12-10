@@ -118,6 +118,10 @@ public:
     const Vector3D operator-( const Vector3D<Scalar>& other ) const {
         return Vector3D( this->cartesian() - other.cartesian() );
     }
+    //! Unary minus operator for vector
+    const Vector3D operator-() const {
+        return Vector3D( -this->cartesian() );
+    }
 
     //! Ostream operator for homogeneous quantities
     friend std::ostream& operator<<( std::ostream& os,

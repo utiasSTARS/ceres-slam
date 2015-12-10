@@ -10,7 +10,9 @@
 #include <ceres_slam/geometry.h>
 #include <ceres_slam/stereo_camera.h>
 
-bool ceres_slam::DatasetProblem::read_csv(std::string filename) {
+namespace ceres_slam {
+
+bool DatasetProblem::read_csv(std::string filename) {
     std::string line;
     std::vector<std::string> tokens;
     std::ifstream file(filename);
@@ -19,6 +21,14 @@ bool ceres_slam::DatasetProblem::read_csv(std::string filename) {
     if(!file.is_open()) {
         return false;
     }
+
+    // Read number of states and points and allocate space
+    std::getline(file, line);
+    tokens = split(line, ',');
+    num_states = std::stoi(tokens.at(0));
+    num_points = std::stoi(tokens.at(1));
+    poses.reserve(num_states);
+    map_points.reserve(num_points);
 
     // Read camera intrinsics
     std::getline(file, line);
@@ -34,7 +44,7 @@ bool ceres_slam::DatasetProblem::read_csv(std::string filename) {
     while(std::getline(file, line)) {
         tokens = split(line, ',');
         t.push_back( std::stod(tokens.at(0)) );
-        j.push_back( std::stod(tokens.at(1)) );
+        j.push_back( std::stoi(tokens.at(1)) );
         double u = std::stod(tokens.at(2));
         double v = std::stod(tokens.at(3));
         double d = std::stod(tokens.at(4));
@@ -48,12 +58,12 @@ bool ceres_slam::DatasetProblem::read_csv(std::string filename) {
     return true;
 }
 
-bool ceres_slam::DatasetProblem::write_csv(std::string filename) {
+bool DatasetProblem::write_csv(std::string filename) {
     return true;
 }
 
 std::vector<std::string>
-ceres_slam::DatasetProblem::split(std::string str, char delimiter) {
+DatasetProblem::split(std::string str, char delimiter) {
     std::vector<std::string> internal;
     std::stringstream ss(str); // Turn the string into a stream.
     std::string tok;
@@ -64,3 +74,5 @@ ceres_slam::DatasetProblem::split(std::string str, char delimiter) {
 
     return internal;
 }
+
+} // namespace ceres_slam
