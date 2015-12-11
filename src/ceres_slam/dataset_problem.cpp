@@ -15,6 +15,8 @@ namespace ceres_slam {
 const bool DatasetProblem::read_csv(std::string filename) {
     std::string line;
     std::vector<std::string> tokens;
+
+    std::cerr << "Loading file " << filename << std::endl;
     std::ifstream file(filename);
 
     // Quit if you can't open the file
@@ -24,6 +26,7 @@ const bool DatasetProblem::read_csv(std::string filename) {
     }
 
     // Read number of states and points and allocate space
+    std::cerr << "Reading metadata... ";
     std::getline(file, line);
     tokens = split(line, ',');
     num_states = std::stoi(tokens.at(0));
@@ -33,8 +36,11 @@ const bool DatasetProblem::read_csv(std::string filename) {
     for(unsigned int i = 0; i < num_points; ++i) {
         initialized_point.push_back(false);
     }
+    std::cerr << "expecting " << num_states << " states"
+              << " and " << num_points << " points" << std::endl;
 
     // Read camera intrinsics
+    std::cerr << "Reading camera intrinsics" << std::endl;
     std::getline(file, line);
     tokens = split(line, ',');
     double fu = std::stod(tokens.at(0));
@@ -43,8 +49,10 @@ const bool DatasetProblem::read_csv(std::string filename) {
     double cv = std::stod(tokens.at(3));
     double b  = std::stod(tokens.at(4));
     camera = std::make_shared<Camera>(fu, fv, cu, cv, b);
+    std::cerr << *camera << std::endl;
 
     // Read in the observations
+    std::cerr << "Reading observation data... ";
     while(std::getline(file, line)) {
         tokens = split(line, ',');
         t.push_back( std::stod(tokens.at(0)) );
@@ -54,8 +62,10 @@ const bool DatasetProblem::read_csv(std::string filename) {
         double d = std::stod(tokens.at(4));
         obs_list.push_back( Camera::Observation(u,v,d) );
     }
+    std::cerr << "read " << obs_list.size() << " observations" << std::endl;
 
     // Generate a list of observation indices for each state
+    std::cerr << "Generating observation indices from timestamps... ";
     std::vector<unsigned int> t_indices;
     t_indices.push_back(0);
     for(unsigned int idx = 1; idx < t.size(); ++idx) {
@@ -66,6 +76,8 @@ const bool DatasetProblem::read_csv(std::string filename) {
         t_indices.push_back(idx);
     }
     state_indices_.push_back(t_indices);
+    std::cerr << "found " << state_indices_.size()
+              << " unique timestamps" << std::endl;
 
     file.close();
     return true;
@@ -85,9 +97,11 @@ const bool DatasetProblem::write_csv(std::string filename) const {
         file << T.str() << std::endl;
     }
 
-    // Convert map points to CSV entries
-    for(Point p : map_points) {
-        file << p.str() << std::endl;
+    // Convert initialized map points to CSV entries
+    for(unsigned int j = 0; j < map_points.size(); ++j) {
+        if(initialized_point[j]) {
+            file << j << "," << map_points[j].str() << std::endl;
+        }
     }
 
     file.close();

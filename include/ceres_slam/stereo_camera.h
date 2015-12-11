@@ -107,7 +107,7 @@ public:
     const Point triangulate(
         const Observation& obs, PointJacobian* jacobian_ptr = nullptr) const {
         Point pt_c;
-        pt_c(2) = obs(2) / (fu() * b());
+        pt_c(2) = fu() * b() / obs(2);
         pt_c(1) = pt_c(2) * (obs(1) - cv()) / fv();
         pt_c(0) = pt_c(2) * (obs(0) - cu()) / fu();
 
@@ -126,7 +126,7 @@ public:
            << "fv: " << c.fv() << std::endl
            << "cu: " << c.cu() << std::endl
            << "cv: " << c.cv() << std::endl
-           << "b: "  << c.b()  << std::endl;
+           << "b: "  << c.b();
         return os;
     }
 
