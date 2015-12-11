@@ -31,7 +31,7 @@ const bool DatasetProblem::read_csv(std::string filename) {
     tokens = split(line, ',');
     num_states = std::stoi(tokens.at(0));
     num_points = std::stoi(tokens.at(1));
-    poses.resize(num_states);
+    pose_vectors.resize(num_states);
     map_points.resize(num_points);
     for(unsigned int i = 0; i < num_points; ++i) {
         initialized_point.push_back(false);
@@ -93,8 +93,8 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     }
 
     // Convert poses to CSV entries
-    for(SE3 T : poses) {
-        file << T.str() << std::endl;
+    for(SE3::TangentVector xi : pose_vectors) {
+        file << SE3::exp(xi).str() << std::endl;
     }
 
     // Convert initialized map points to CSV entries

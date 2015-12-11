@@ -36,7 +36,7 @@ public:
     //! Number of map points to optimize
     unsigned int num_points;
     //! Camera poses in base frame (to be estimated)
-    std::vector<SE3> poses;
+    std::vector<SE3::TangentVector> pose_vectors;
     //! Map points in base frame (to be estimated)
     std::vector<Point> map_points;
     //! Map point IDs in obs_list

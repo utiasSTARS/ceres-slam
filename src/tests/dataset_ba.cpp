@@ -6,6 +6,9 @@
 #include <ceres_slam/dataset_problem.h>
 #include <ceres_slam/point_cloud_aligner.h>
 
+using SE3 = ceres_slam::DatasetProblem::SE3;
+using Point = ceres_slam::DatasetProblem::Point;
+
 int main(int argc, char** argv) {
     if (argc < 2) {
       std::cerr << "usage: dataset_ba <input_file> <optional: output_file>"
@@ -15,18 +18,22 @@ int main(int argc, char** argv) {
 
     // Read dataset from file
     ceres_slam::DatasetProblem dataset;
-    dataset.read_csv(std::string(argv[1]));
+    if( !dataset.read_csv(std::string(argv[1])) ) {
+        return EXIT_FAILURE;
+    }
 
     // Generate initial guess for poses and map points
     // using scalar-weighted point cloud alignment for stereo VO
-    std::vector<ceres_slam::DatasetProblem::Point> pts_km1, pts_k;
+    std::vector<Point> pts_km1, pts_k;
     std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
 
-    // First pose is the base frame
-    dataset.poses[0] = ceres_slam::DatasetProblem::SE3(); // Identity
+    // First pose defines the base frame,
+    // so set it to the identity transformation
+    dataset.pose_vectors[0] = SE3::TangentVector::Zero();
 
     // Iterate over all poses
+    std::cerr << "Computing VO initial guess" << std::endl;
     for(unsigned int k = 1; k < dataset.num_states; ++k) {
         pts_km1.clear();
         pts_k.clear();
@@ -64,27 +71,34 @@ int main(int argc, char** argv) {
         }
 
         // Compute the transform from the first to the second point cloud
-        ceres_slam::DatasetProblem::SE3 T_k_km1 =
+        SE3 T_k_km1 =
             point_cloud_aligner.compute_transformation(&pts_km1, &pts_k);
 
         // Compound the transformation estimate onto the previous one
-        dataset.poses[k] = T_k_km1 * dataset.poses[k-1];
+        dataset.pose_vectors[k] =
+            SE3::log(T_k_km1 * SE3::exp(dataset.pose_vectors[k-1]));
 
         // If the map point does not have an initial guess already, use the
         // guess from the first point cloud, transformed into the base frame
         for(unsigned int i = 0; i < j_km1.size(); ++i) {
             if(!dataset.initialized_point[ j_km1[i] ]) {
                 dataset.map_points[ j_km1[i] ] =
-                    dataset.poses[k-1].inverse() * pts_km1[i];
+                    SE3::exp(dataset.pose_vectors[k-1]).inverse() * pts_km1[i];
                 dataset.initialized_point[ j_km1[i] ] = true;
             }
         }
     }
 
     // Build the problem
+    std::cerr << "Building problem" << std::endl;
     ceres::Problem problem;
 
+    for(SE3::TangentVector xi : dataset.pose_vectors) {
+
+    }
+
     // Solve the problem
+    std::cerr << "Solving" << std::endl;
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = true;
     solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
@@ -101,6 +115,7 @@ int main(int argc, char** argv) {
     if (argc > 2) {
         out_file = std::string(argv[2]);
     }
+    std::cerr << "Outputting to file " << out_file << std::endl;
     dataset.write_csv(out_file);
 
     return EXIT_SUCCESS;

@@ -262,7 +262,8 @@ public:
     SO3Group( const TransformationMatrix& mat ) : mat_(mat) { }
     //! Exponential map for SO(3)
     /*!
-        Computes a rotation matrix from axis-angle tangent vector
+        Computes a rotation matrix from axis-angle tangent vector.
+        This is the inverse operation to SO3Group::log.
     */
     inline
     static const SO3Group exp( const TangentVector& a ) {
@@ -284,12 +285,19 @@ public:
         return SO3Group(mat);
     }
     //! Exponential map for SO(3) from a 3-element POD array
+    /*!
+        \see SO3Group::exp
+    */
     inline
     static const SO3Group exp( const Scalar* a ) {
         return exp( TangentVector(a[0], a[1], a[2]) );
     }
 
-    //! Matrix log: axis-angle tangent vector from rotation matrix
+    //! Logarithmic map for SO(3)
+    /*!
+        Computes an axis-angle tangent vector from a rotation matrix.
+        This is the inverse operation to SO3Group::exp.
+    */
     inline
     static const TangentVector log( const SO3Group& C ) {
         // Special case if C is identity
@@ -360,6 +368,9 @@ public:
     // TODO: Left Jacobian of an element of SO(3)
 
     //! SO(3) wedge operator as defined by Barfoot
+    /*!
+        This is the inverse operator to SO3::vee.
+    */
     inline
     static const TransformationMatrix wedge( const TangentVector& phi ) {
         TransformationMatrix Phi;
@@ -370,6 +381,9 @@ public:
     }
 
     //! SO(3) vee operator as defined by Barfoot
+    /*!
+        This is the inverse operator to SO3::wedge.
+    */
     inline
     static const TangentVector vee( const TransformationMatrix& Phi ) {
         TangentVector phi;
@@ -402,7 +416,7 @@ public:
     }
 
 private:
-    //! Internal storage
+    //! Internal storage for the rotation
     TransformationMatrix mat_;
 };
 
@@ -447,15 +461,20 @@ public:
     }
     //! Exponential map for SE(3)
     /*!
-        Computes a transformation matrix from SE(3) tangent vector
-        This isn't quite right because the translational component needs to be
-        multiplied by the SO(3) Jacobian, which is not yet implemented
+        Computes a transformation matrix from SE(3) tangent vector.
+        This isn't quite right because the translational component
+        needs to be multiplied by the SO(3) Jacobian, which is
+        not yet implemented.
+        This is the inverse operator to SE3Group::log.
     */
     inline
     static const SE3Group exp( const TangentVector& xi ) {
         return SE3Group( SO3::exp(xi.tail(3)), Vector(xi.head(3)) );
     }
     //! Exponential map for SE(3) from a 6-element POD array
+    /*!
+        \see SE3Group::exp
+    */
     inline
     static const SE3Group exp( const Scalar* a ) {
         TangentVector xi;
@@ -463,7 +482,21 @@ public:
         return exp(xi);
     }
 
-    // TODO: Matrix logarithm: axis-angle tangent vector from rotation matrix
+    //! Logarithmic map for SE(3)
+    /*!
+        Computes a SE(3) tangent vector from a transformation matrix.
+        This isn't quite right because the translational component
+        needs to be multiplied by the inverse SO(3) Jacobian, which is
+        not yet implemented.
+        This is the inverse operator to SE3Group::exp.
+    */
+    inline
+    static const TangentVector log( const SE3Group& T ) {
+        TangentVector xi;
+        xi.head(3) = T.translation().cartesian();
+        xi.tail(3) = SO3::log(T.rotation());
+        return xi;
+    }
 
     //! Return the SO(3) rotation
     inline
@@ -523,7 +556,10 @@ public:
         return rotation() * vec;
     }
 
-    //! SE(3) wedge operator as defined by Barfoot
+    //! SE(3) vee operator as defined by Barfoot
+    /*!
+        This is the inverse operator to SE3::vee.
+    */
     inline
     static const TransformationMatrix wedge( const TangentVector& xi ) {
         TransformationMatrix Xi;
@@ -534,6 +570,9 @@ public:
     }
 
     //! SE(3) vee operator as defined by Barfoot
+    /*!
+        This is the inverse operator to SE3::wedge.
+    */
     inline
     static const TangentVector vee( const TransformationMatrix& Xi ) {
         TangentVector xi;
@@ -571,8 +610,9 @@ public:
     }
 
 private:
-    //! Internal storage
+    //! Internal storage for the rotation
     SO3 rotation_;
+    //! Internal storage for the translation
     Vector translation_;
 };
 

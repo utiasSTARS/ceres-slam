@@ -68,7 +68,16 @@ int main() {
     std::cout << SO3::log(SO3::exp(SO3::TangentVector(0.,0.,0.))) << std::endl;
     SO3::TransformationMatrix badC;
     badC << 1,1,1, 1,1,1, 1,1,1;
-    std::cout << SO3::log(badC) << std::endl;
+    std::cout << SO3::log(SO3(badC)) << std::endl;
+
+    std::cout << SE3::log(T5) << std::endl << SE3::TangentVector(xi2) << std::endl;
+    std::cout << SE3::exp(SE3::log(T5)) << std::endl << T5 << std::endl;
+    SE3::TangentVector xi0;
+    xi0 << 0.,0.,0.,0.,0.,0.;
+    std::cout << SE3::log(SE3::exp(xi0)) << std::endl;
+    SE3::TransformationMatrix badT;
+    badT << 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1;
+    std::cout << SE3::log(SE3(badT)) << std::endl;
 
     return EXIT_SUCCESS;
 }
