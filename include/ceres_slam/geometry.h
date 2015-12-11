@@ -267,6 +267,12 @@ public:
     inline
     static const SO3Group exp( const TangentVector& a ) {
         Scalar phi = a.norm();
+
+        // Special case for phi == 0 (identity)
+        if(phi <= std::numeric_limits<Scalar>::epsilon()) {
+            return SO3Group(TransformationMatrix::Identity());
+        }
+
         Scalar cp = cos(phi);
         Scalar sp = sin(phi);
 
@@ -283,7 +289,35 @@ public:
         return exp( TangentVector(a[0], a[1], a[2]) );
     }
 
-    // TODO: Matrix logarithm: axis-angle tangent vector from rotation matrix
+    //! Matrix log: axis-angle tangent vector from rotation matrix
+    inline
+    static const TangentVector log( const SO3Group& C ) {
+        // Special case if C is identity
+        if(C.matrix().isIdentity()) {
+            return TangentVector(0.,0.,0.);
+        }
+
+        // Get the rotation angle from the trace of C
+        Scalar phi = acos(0.5 * C.matrix().trace() - 0.5);
+
+        // Get the rotation axis by finding an eigenvector of C
+        // that corresponds to an eigenvalue of 1 (since Ca = a)
+        Eigen::EigenSolver<TransformationMatrix> es(C.matrix());
+        for(int i = 0; i < es.eigenvalues().size(); ++i) {
+            if(abs(es.eigenvalues().real()[i] - 1.)
+                <= std::numeric_limits<Scalar>::epsilon()) {
+                return phi *
+                    TangentVector(es.eigenvectors().real().col(i));
+            }
+        }
+
+        // Return identity by Default
+        std::cerr << "In SO3Group::log" << std::endl
+                  << C.matrix() << std::endl
+                  << "is not a valid rotation matrix "
+                  << "(no eigenvalue == 1)" << std::endl;
+        return TangentVector(0.,0.,0.);
+    }
 
     //! Return the transformation matrix
     inline

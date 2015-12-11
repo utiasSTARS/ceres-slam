@@ -64,5 +64,11 @@ int main() {
     std::cout << rot2 * rot2.inverse() << std::endl;
     std::cout << T2 * T2.inverse() << std::endl;
 
+    std::cout << SO3::log(rot2) << std::endl << phi << std::endl;
+    std::cout << SO3::log(SO3::exp(SO3::TangentVector(0.,0.,0.))) << std::endl;
+    SO3::TransformationMatrix badC;
+    badC << 1,1,1, 1,1,1, 1,1,1;
+    std::cout << SO3::log(badC) << std::endl;
+
     return EXIT_SUCCESS;
 }
