@@ -5,6 +5,7 @@
 #include <ceres/ceres.h>
 #include <ceres_slam/dataset_problem.h>
 #include <ceres_slam/point_cloud_aligner.h>
+#include <ceres_slam/stereo_reprojection_error.h>
 
 using SE3 = ceres_slam::DatasetProblem::SE3;
 using Point = ceres_slam::DatasetProblem::Point;
@@ -39,8 +40,8 @@ int main(int argc, char** argv) {
         pts_k.clear();
         j_km1.clear();
         j_k.clear();
-        idx_km1 = dataset.indices_at_state(k-1);
-        idx_k = dataset.indices_at_state(k);
+        idx_km1 = dataset.obs_indices_at_state(k-1);
+        idx_k = dataset.obs_indices_at_state(k);
 
         // Find point IDs for both poses
         for(unsigned int i : idx_km1) { j_km1.push_back(dataset.point_ids[i]); }
@@ -93,20 +94,38 @@ int main(int argc, char** argv) {
     std::cerr << "Building problem" << std::endl;
     ceres::Problem problem;
 
-    for(SE3::TangentVector xi : dataset.pose_vectors) {
+    dataset.obs_var << 4, 4, 4; // u,v,d variance
 
+    std::cout << dataset.map_points[1] << std::endl;
+
+    for(unsigned int k = 0; k < 2; ++k) {
+        for(unsigned int i : dataset.obs_indices_at_state(k)) {
+            // Map point ID for this observation
+            unsigned int j = dataset.point_ids[i];
+            // Cost function for this observation
+            ceres::CostFunction* stereo_cost =
+                ceres_slam::StereoReprojectionError::Create(dataset.camera,
+                                                            dataset.obs_list[i],
+                                                            dataset.obs_var);
+            // Add the cost function for this observation to the problem
+            problem.AddResidualBlock(stereo_cost, NULL,
+                                     dataset.pose_vectors[k].data(),
+                                     dataset.map_points[j].data());
+        }
     }
+
+    std::cout << dataset.map_points[1] << std::endl;
 
     // Solve the problem
     std::cerr << "Solving" << std::endl;
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = true;
-    solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
+    // solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
 
     ceres::Solver::Summary summary;
     Solve(solver_options, &problem, &summary);
 
-    std::cout << summary.BriefReport() << std::endl;
+    std::cout << summary.FullReport() << std::endl;
 
     // Estimate covariance?
 

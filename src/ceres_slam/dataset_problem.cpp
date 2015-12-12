@@ -108,7 +108,7 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     return true;
 }
 
-const std::vector<unsigned int> DatasetProblem::indices_at_state(int k) const {
+const std::vector<unsigned int> DatasetProblem::obs_indices_at_state(int k) const {
     return state_indices_.at(k);
 }
 

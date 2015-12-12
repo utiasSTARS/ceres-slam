@@ -65,7 +65,7 @@ public:
     const bool write_csv(const std::string filename) const;
 
     //! Return list of indices corresponding to a specified state index
-    const std::vector<unsigned int> indices_at_state(int k) const ;
+    const std::vector<unsigned int> obs_indices_at_state(int k) const ;
 
 private:
     //! Split a delimited string into a vector of tokens

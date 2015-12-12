@@ -33,7 +33,7 @@ bool StereoReprojectionError::Evaluate(double const* const* parameters,
     // Map point in the global frame
     Point r_g_f_g(&parameters[1][0]);
 
-    // Measurement residuals
+    // Map the measurement residuals to an Eigen vector for convenience
     Eigen::Map<Eigen::Vector3d> residuals_eigen(&residuals[0]);
 
     // Transform map point into the camera frame

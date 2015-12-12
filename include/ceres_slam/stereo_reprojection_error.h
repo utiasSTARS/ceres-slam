@@ -9,8 +9,8 @@ namespace ceres_slam {
 
 class StereoReprojectionError : public ceres::SizedCostFunction<
                                             3,  // Residual dimension
-                                            6,  // Current vehicle pose
-                                            3>  // Current map point position
+                                            6,  // Vehicle pose vector
+                                            3>  // Map point position
 {
 public:
     //! Camera type
