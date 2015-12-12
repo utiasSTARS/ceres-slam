@@ -59,6 +59,10 @@ public:
         h(3) = scale();
         return h;
     }
+    //! Return a const pointer to the underlying array for the cartesian part
+    const Scalar* data() const { return cartesian_.data(); }
+    //! Return a pointer to the underlying array for the cartesian part
+    Scalar* data() { return cartesian_.data(); }
     //! Accessor operator, mutable
     Scalar& operator()(int i) { return cartesian_(i); }
     //! Accessor operator, const

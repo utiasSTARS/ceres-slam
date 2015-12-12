@@ -79,5 +79,10 @@ int main() {
     badT << 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1;
     std::cout << SE3::log(SE3(badT)) << std::endl;
 
+    ceres_slam::Point3D<double> pt_mutable(0.,1.,0.);
+    std::cout << pt_mutable << std::endl;
+    pt_mutable.data()[0] = 1.;
+    std::cout << pt_mutable << std::endl;
+
     return EXIT_SUCCESS;
 }
