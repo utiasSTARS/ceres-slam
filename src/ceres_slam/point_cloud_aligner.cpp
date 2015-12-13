@@ -33,6 +33,9 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
     p_1_cart /= double(pts_1.size());
     Point p_1(p_1_cart);
 
+    // std::cout << "p_0: " << p_0 << std::endl;
+    // std::cout << "p_1: " << p_1 << std::endl;
+
     // Compute W_1_0
     Eigen::Matrix3d W_1_0 = Eigen::Matrix3d::Zero();
     for(unsigned int i = 0; i < pts_0.size(); ++i) {
@@ -75,44 +78,54 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
 
     // 3-point RANSAC algorithm
     for(int ransac_iter = 0; ransac_iter < num_iters; ++ransac_iter) {
-       // Get 3 random, unique indices
-       rand_idx[0] = idx_selector(rng);
+        // std::cout << "RANSAC iter = " << ransac_iter << std::endl;
+        // Get 3 random, unique indices
+        rand_idx[0] = idx_selector(rng);
 
-       rand_idx[1] = idx_selector(rng);
-       while(rand_idx[1] == rand_idx[0])
-           rand_idx[1] = idx_selector(rng);
+        rand_idx[1] = idx_selector(rng);
+        while(rand_idx[1] == rand_idx[0])
+            rand_idx[1] = idx_selector(rng);
 
-       rand_idx[2] = idx_selector(rng);
-       while(rand_idx[2] == rand_idx[0] || rand_idx[2] == rand_idx[1])
-           rand_idx[2] = idx_selector(rng);
+        rand_idx[2] = idx_selector(rng);
+        while(rand_idx[2] == rand_idx[0] || rand_idx[2] == rand_idx[1])
+            rand_idx[2] = idx_selector(rng);
 
-       // Bundle test points
-       test_pts_0.clear();
-       test_pts_1.clear();
-       for(unsigned int i = 0; i < 2; ++i) {
-           test_pts_0.push_back(pts_0[ rand_idx[i] ]);
-           test_pts_1.push_back(pts_1[ rand_idx[i] ]);
-       }
+        // Bundle test points
+        test_pts_0.clear();
+        test_pts_1.clear();
+        for(unsigned int i = 0; i < 3; ++i) {
+            test_pts_0.push_back(pts_0[ rand_idx[i] ]);
+            test_pts_1.push_back(pts_1[ rand_idx[i] ]);
+        }
 
-       // Compute minimal transformation estimate
-       PointCloudAligner::SE3 T_1_0 =
-           compute_transformation(test_pts_0, test_pts_1);
+        // Compute minimal transformation estimate
+        // std::cout << "test_pts_0" << std::endl;
+        // for(PointCloudAligner::Point p : test_pts_0)
+        //     std::cout << p << std::endl;
+        // std::cout << "test_pts_1" << std::endl;
+        // for(PointCloudAligner::Point p : test_pts_1)
+        //     std::cout << p << std::endl;
 
-       // Classify points and get inlier and outlier indices
-       double error;
-       inlier_idx.clear();
-       for(unsigned int i = 0; i < pts_0.size(); ++i) {
-           error = (pts_1[i] - T_1_0 * pts_0[i]).squaredNorm();
-           if(error < thresh) {
-               inlier_idx.push_back(i);
-           }
-       }
+        PointCloudAligner::SE3 T_1_0 =
+            compute_transformation(test_pts_0, test_pts_1);
+        //    std::cout << "T_1_0 = " << std::endl << T_1_0 << std::endl;
 
-       // Keep track of the best (largest) inlier set and transformation
-       if(inlier_idx.size() > best_inlier_idx.size()) {
-           best_inlier_idx = inlier_idx;
-           best_T_1_0 = T_1_0;
-       }
+        // Classify points and get inlier and outlier indices
+        double error;
+        inlier_idx.clear();
+        for(unsigned int i = 0; i < pts_0.size(); ++i) {
+            error = (pts_1[i] - T_1_0 * pts_0[i]).squaredNorm();
+            // std::cout << "error = " << error << std::endl;
+            if(error < thresh) {
+                inlier_idx.push_back(i);
+            }
+        }
+
+        // Keep track of the best (largest) inlier set and transformation
+        if(inlier_idx.size() > best_inlier_idx.size()) {
+            best_inlier_idx = inlier_idx;
+            best_T_1_0 = T_1_0;
+        }
     }
 
     // Delete outliers
