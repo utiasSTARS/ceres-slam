@@ -81,7 +81,7 @@ public:
         if(jacobian_ptr != nullptr) {
             ObservationJacobian& jacobian = *jacobian_ptr;
 
-            double one_over_z2 = one_over_z * one_over_z;
+            Scalar one_over_z2 = one_over_z * one_over_z;
 
             // d(u_l) / d(pt_c)
             jacobian(0,0) = fu() * one_over_z;
@@ -107,12 +107,31 @@ public:
     const Point triangulate(
         const Observation& obs, PointJacobian* jacobian_ptr = nullptr) const {
         Point pt_c;
-        pt_c(2) = fu() * b() / obs(2);
-        pt_c(1) = pt_c(2) * (obs(1) - cv()) / fv();
-        pt_c(0) = pt_c(2) * (obs(0) - cu()) / fu();
+        Scalar b_over_d = b() / obs(2);
+        Scalar fu_over_fv = fu() / fv();
+        pt_c(0) = (obs(0) - cu()) * b_over_d;
+        pt_c(1) = (obs(1) - cv()) * b_over_d * fu_over_fv;
+        pt_c(2) = fu() * b_over_d;
 
         if(jacobian_ptr != nullptr) {
-            std::cerr << "StereoCamera::triangulate jacobian not yet implemented." << std::endl;
+            PointJacobian& jacobian = *jacobian_ptr;
+
+            Scalar b_over_d2 = b_over_d / obs(2);
+
+            // d(x) / d(obs)
+            jacobian(0,0) = b_over_d;
+            jacobian(0,1) = 0.;
+            jacobian(0,2) = (cu() - obs(0)) * b_over_d2;
+
+            // d(y) / d(obs)
+            jacobian(1,0) = 0.;
+            jacobian(1,1) = b_over_d * fu_over_fv;
+            jacobian(1,2) = (cv() - obs(1)) * b_over_d2 * fu_over_fv;
+
+            // d(z) / d(obs)
+            jacobian(2,0) = 0.;
+            jacobian(2,1) = 0.;
+            jacobian(2,2) = -fu() * b_over_d2;
         }
 
         return pt_c;
@@ -121,12 +140,12 @@ public:
     //! Ostream operator for StereoCamera
     friend std::ostream& operator<<( std::ostream& os, const
                                      StereoCamera<Scalar>& c ) {
-        os << "StereoCamera" << std::endl
-           << "fu: " << c.fu() << std::endl
-           << "fv: " << c.fv() << std::endl
-           << "cu: " << c.cu() << std::endl
-           << "cv: " << c.cv() << std::endl
-           << "b: "  << c.b();
+        os << "StereoCamera("
+           << "fu: " << c.fu() << ", "
+           << "fv: " << c.fv() << ", "
+           << "cu: " << c.cu() << ", "
+           << "cv: " << c.cv() << ", "
+           << "b: "  << c.b() << ")";
         return os;
     }
 

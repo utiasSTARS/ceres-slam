@@ -10,8 +10,6 @@
 using StereoCamera = ceres_slam::StereoCamera<double>;
 
 int main() {
-    StereoCamera::Point pt(1.0, 1.0, 1.0);
-
     double fu = 100.0;
     double fv = 200.0;
     double cu = 300.0;
@@ -34,17 +32,19 @@ int main() {
     P_right(0,3) = Tu_left;
 
     StereoCamera cam(left_camera_info, right_camera_info);
-
     std::cout << cam << std::endl;
+
+    StereoCamera::Point pt(1.0, 2.0, 3.0);
+    std::cout << pt << std::endl;
 
     StereoCamera::ObservationJacobian obs_jac;
     StereoCamera::Observation obs = cam.project(pt, &obs_jac);
-    std::cout << "project: " << std::endl << obs << std::endl;
+    std::cout << "project: " << obs.transpose() << std::endl;
     std::cout << obs_jac << std::endl;
 
     StereoCamera::PointJacobian pt2_jac;
     StereoCamera::Point pt2 = cam.triangulate(obs, &pt2_jac);
-    std::cout << "triangulate: " << std::endl << pt2 << std::endl;
+    std::cout << "triangulate: " << pt2 << std::endl;
     std::cout << pt2_jac << std::endl;
 
     return EXIT_SUCCESS;
