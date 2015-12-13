@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 
     // Iterate over all poses
     std::cerr << "Computing VO initial guess" << std::endl;
-    for(unsigned int k = 1; k < dataset.num_states; ++k) {
+    for(unsigned int k = 1; k < 2; ++k) {
         pts_km1.clear();
         pts_k.clear();
         j_km1.clear();
@@ -71,8 +71,15 @@ int main(int argc, char** argv) {
         }
 
         // Compute the transform from the first to the second point cloud
-        SE3 T_k_km1 =
-            point_cloud_aligner.compute_transformation(&pts_km1, &pts_k);
+        // std::cout <<"Initial set has " << pts_km1.size()
+        //           << " elements" << std::endl;
+
+        SE3 T_k_km1 = point_cloud_aligner.compute_transformation_and_inliers(
+            pts_km1, pts_k, 400, 5.);
+
+        // std::cout <<"Best inlier set has " << pts_km1.size()
+        //               << " elements" << std::endl;
+        // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
 
         // Compound the transformation estimate onto the previous one
         dataset.pose_vectors[k] =
@@ -93,7 +100,7 @@ int main(int argc, char** argv) {
     std::cerr << "Building problem" << std::endl;
     ceres::Problem problem;
 
-    dataset.obs_var << 4, 4, 4; // u,v,d variance
+    dataset.obs_var << 1, 1, 1; // u,v,d variance
 
     for(unsigned int k = 0; k < 2; ++k) {
         for(unsigned int i : dataset.obs_indices_at_state(k)) {
@@ -120,7 +127,7 @@ int main(int argc, char** argv) {
     ceres::Solver::Summary summary;
     Solve(solver_options, &problem, &summary);
 
-    std::cout << summary.FullReport() << std::endl;
+    std::cout << summary.BriefReport() << std::endl;
 
     // Estimate covariance?
 

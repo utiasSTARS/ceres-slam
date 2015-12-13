@@ -28,7 +28,8 @@ bool StereoReprojectionError::Evaluate(double const* const* parameters,
     bool need_jacobians = jacobians != nullptr && jacobians[0] != nullptr;
 
     // Camera pose in global frame
-    SE3 T_c_g = SE3::exp(&parameters[0][0]);
+    Eigen::Map<const SE3::TangentVector> xi_c_g(&parameters[0][0]);
+    SE3 T_c_g = SE3::exp(xi_c_g);
 
     // Map point in the global frame
     Point r_g_f_g(&parameters[1][0]);
@@ -67,8 +68,7 @@ bool StereoReprojectionError::Evaluate(double const* const* parameters,
         // Jacobian of residuals w.r.t. camera pose
         Eigen::Map<SE3::TransformedPointJacobian>
             pose_jacobian(&jacobians[0][0]);
-        pose_jacobian = factor
-            * SE3::transformed_point_jacobian(r_c_f_c);
+        pose_jacobian = factor * SE3::odot(r_c_f_c);
 
         // Jacobian of residuals w.r.t. map point position
         Eigen::Map<Camera::ObservationJacobian>

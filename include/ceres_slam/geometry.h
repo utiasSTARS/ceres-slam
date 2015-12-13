@@ -7,7 +7,6 @@
 #include <sstream>
 
 #include <Eigen/Core>
-#include <Eigen/Eigenvalues> // For SO(3) log
 
 namespace ceres_slam {
 
@@ -116,6 +115,8 @@ public:
     Vector3D( const Scalar* s ) :
         Vector3D(s[0], s[1], s[2]) { }
 
+    //! Compute the squared norm of the vector
+    const Scalar squaredNorm() const { return this->cartesian().squaredNorm(); }
     //! Compute the norm of the vector
     const Scalar norm() const { return this->cartesian().norm(); }
     //! Normalize the vector
@@ -270,31 +271,22 @@ public:
         This is the inverse operation to SO3Group::log.
     */
     inline
-    static const SO3Group exp( const TangentVector& a ) {
-        Scalar phi = a.norm();
+    static const SO3Group exp( const TangentVector& phi ) {
+        Scalar angle = phi.norm();
+        TangentVector axis = phi / angle;
 
         // Special case for phi == 0 (identity)
-        if(phi <= std::numeric_limits<Scalar>::epsilon()) {
+        if(angle <= std::numeric_limits<Scalar>::epsilon()) {
             return SO3Group(TransformationMatrix::Identity());
         }
 
-        Scalar cp = cos(phi);
-        Scalar sp = sin(phi);
-
-        TangentVector a_unit = a / phi;
+        Scalar cp = cos(angle);
+        Scalar sp = sin(angle);
 
         TransformationMatrix mat = cp * TransformationMatrix::Identity()
-                                    + (1 - cp) * a_unit * a_unit.transpose()
-                                    + sp * wedge(a_unit);
+                                    + (1 - cp) * axis * axis.transpose()
+                                    + sp * wedge(axis);
         return SO3Group(mat);
-    }
-    //! Exponential map for SO(3) from a 3-element POD array
-    /*!
-        \see SO3Group::exp
-    */
-    inline
-    static const SO3Group exp( const Scalar* a ) {
-        return exp( TangentVector(a[0], a[1], a[2]) );
     }
 
     //! Logarithmic map for SO(3)
@@ -304,31 +296,22 @@ public:
     */
     inline
     static const TangentVector log( const SO3Group& C ) {
-        // Special case if C is identity
-        if(C.matrix().isIdentity()) {
+        // Get the rotation angle from the trace of C
+        Scalar angle = acos(0.5 * C.matrix().trace() - 0.5);
+
+        // Special case if angle is zero
+        if(angle <= std::numeric_limits<Scalar>::epsilon()) {
             return TangentVector(0.,0.,0.);
         }
 
-        // Get the rotation angle from the trace of C
-        Scalar phi = acos(0.5 * C.matrix().trace() - 0.5);
+        // Compute the normalized axis
+        TangentVector axis;
+        axis(0) = C.matrix()(2,1) - C.matrix()(1,2);
+        axis(1) = C.matrix()(0,2) - C.matrix()(2,0);
+        axis(2) = C.matrix()(1,0) - C.matrix()(0,1);
+        axis /= (2 * sin(angle));
 
-        // Get the rotation axis by finding an eigenvector of C
-        // that corresponds to an eigenvalue of 1 (since Ca = a)
-        Eigen::EigenSolver<TransformationMatrix> es(C.matrix());
-        for(int i = 0; i < es.eigenvalues().size(); ++i) {
-            if(abs(es.eigenvalues().real()[i] - 1.)
-                <= std::numeric_limits<Scalar>::epsilon()) {
-                return phi *
-                    TangentVector(es.eigenvectors().real().col(i));
-            }
-        }
-
-        // Return identity by Default
-        std::cerr << "In SO3Group::log" << std::endl
-                  << C.matrix() << std::endl
-                  << "is not a valid rotation matrix "
-                  << "(no eigenvalue == 1)" << std::endl;
-        return TangentVector(0.,0.,0.);
+        return angle * axis;
     }
 
     //! Return the transformation matrix
@@ -397,10 +380,14 @@ public:
         return 0.5 * phi;
     }
 
-    //! SO(3) transformed point Jacobian
+    //! SO(3) component of the SE(3) odot operator as defined by Barfoot
+    /*!
+        This can be used as the Jacobian of a rotated cartesian
+        quantity with respect to the rotation parameters.
+    */
     inline
-    static const TransformedPointJacobian transformed_point_jacobian(
-                                            const HomogeneousBase3D<Scalar>& h) {
+    static const TransformedPointJacobian odot(
+        const HomogeneousBase3D<Scalar>& h) {
         TransformedPointJacobian result = -wedge(h.cartesian());
         return result;
     }
@@ -474,16 +461,6 @@ public:
     inline
     static const SE3Group exp( const TangentVector& xi ) {
         return SE3Group( SO3::exp(xi.tail(3)), Vector(xi.head(3)) );
-    }
-    //! Exponential map for SE(3) from a 6-element POD array
-    /*!
-        \see SE3Group::exp
-    */
-    inline
-    static const SE3Group exp( const Scalar* a ) {
-        TangentVector xi;
-        xi << a[0], a[1], a[2], a[3], a[4], a[5];
-        return exp(xi);
     }
 
     //! Logarithmic map for SE(3)
@@ -586,16 +563,19 @@ public:
     }
 
     //! SE(3) odot operator as defined by Barfoot
-    //! (for a homogeneous point/vector p = [cartesian^T scale]^T)
-    //! NOTE: omits the bottom row so the scale isn't in the state
+    /*!
+        This can be used as the Jacobian of a transformed homogeneous
+        quantity with respect to the transformation parameters.
+
+        NOTE: This function omits the bottom row so the scale isn't in the state
+    */
     inline
-    static const TransformedPointJacobian transformed_point_jacobian(
-                                            const HomogeneousBase3D<Scalar>& h ) {
+    static const TransformedPointJacobian odot(
+        const HomogeneousBase3D<Scalar>& h ) {
         TransformedPointJacobian result;
         result.block(0,0,3,3) =
             h.scale() * SO3::TransformationMatrix::Identity();
-        result.block(0,3,3,3) =
-            SO3::transformed_point_jacobian(h);
+        result.block(0,3,3,3) = SO3::odot(h);
         return result;
     }
 

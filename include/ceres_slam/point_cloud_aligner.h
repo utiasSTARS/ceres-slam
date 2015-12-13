@@ -16,14 +16,24 @@ public:
     typedef SE3Group<double> SE3;
     //! Point type
     typedef Point3D<double> Point;
+    //! Vector type
+    typedef Vector3D<double> Vector;
 
     //! Default constructor
     PointCloudAligner() { }
 
     //! Compute the transformation that aligns
     //! the origin cloud (pts_0) onto the destination cloud (pts_1).
-    SE3 compute_transformation(std::vector<Point>* const pts_0,
-                               std::vector<Point>* const pts_1);
+    SE3 compute_transformation(const std::vector<Point>& pts_0,
+                               const std::vector<Point>& pts_1);
+
+    //! Compute the transformation that aligns
+    //! the origin cloud (pts_0) onto the destination cloud (pts_1)
+    //! and remove outliers from the two clouds.
+    SE3 compute_transformation_and_inliers(std::vector<Point>& pts_0,
+                                           std::vector<Point>& pts_1,
+                                           int num_iters = 400,
+                                           double thresh = 1);
 };
 
 } // namespace ceres_slam

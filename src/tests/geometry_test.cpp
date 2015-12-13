@@ -29,7 +29,7 @@ int main() {
 
     std::cout << SO3::wedge(phi) << std::endl;
     std::cout << SO3::vee(SO3::wedge(phi)) << std::endl;
-    std::cout << SO3::transformed_point_jacobian(rot2*pt) << std::endl;
+    std::cout << SO3::odot(rot2*pt) << std::endl;
 
     SE3 T1;
     SE3::TangentVector xi;
@@ -45,11 +45,8 @@ int main() {
 
     std::cout << SE3::wedge(xi) << std::endl;
     std::cout << SE3::vee(SE3::wedge(xi)) << std::endl;
-    std::cout << SE3::transformed_point_jacobian(T2*pt) << std::endl;
+    std::cout << SE3::odot(T2*pt) << std::endl;
 
-    double xi2[6] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
-    SE3 T5 = SE3::exp(xi2);
-    std::cout << T5 << std::endl;
 
     ceres_slam::Vector3D<double> vec2(1.,2.,3.);
     std::cout << vec2 << std::endl << vec2.norm() << std::endl;
@@ -64,25 +61,28 @@ int main() {
     std::cout << rot2 * rot2.inverse() << std::endl;
     std::cout << T2 * T2.inverse() << std::endl;
 
-    std::cout << SO3::log(rot2) << std::endl << phi << std::endl;
-    std::cout << SO3::log(SO3::exp(SO3::TangentVector(0.,0.,0.))) << std::endl;
-    SO3::TransformationMatrix badC;
-    badC << 1,1,1, 1,1,1, 1,1,1;
-    std::cout << SO3::log(SO3(badC)) << std::endl;
+    SO3::TangentVector phi1, phi2;
+    phi1 << 1.,2.,3.;
+    SO3 C1 = SO3::exp(phi1);
+    phi2 = SO3::log(C1);
+    SO3 C2 = SO3::exp(phi2);
+    std::cout << "phi1 = " << phi1.transpose() << std::endl;
+    std::cout << "C1 = " << std::endl<< C1 << std::endl;
+    std::cout << "phi2 = " << phi2.transpose() << std::endl;
+    std::cout << "C2 = " << std::endl<< C2 << std::endl;
+    std::cout << "C1.inverse() * C2 = " << std::endl<< C1.inverse() * C2 << std::endl;
 
-    std::cout << SE3::log(T5) << std::endl << SE3::TangentVector(xi2) << std::endl;
-    std::cout << SE3::exp(SE3::log(T5)) << std::endl << T5 << std::endl;
-    SE3::TangentVector xi0;
-    xi0 << 0.,0.,0.,0.,0.,0.;
-    std::cout << SE3::log(SE3::exp(xi0)) << std::endl;
-    SE3::TransformationMatrix badT;
-    badT << 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1;
-    std::cout << SE3::log(SE3(badT)) << std::endl;
+    SE3::TangentVector xia, xib;
+    xia << 1.,2.,3.,4.,5.,6.;
+    SE3 Ta = SE3::exp(xia);
+    xib = SE3::log(Ta);
+    SE3 Tb = SE3::exp(xib);
+    std::cout << "xia = " << xia.transpose() << std::endl;
+    std::cout << "Ta = " << std::endl<< Ta << std::endl;
+    std::cout << "xib = " << xib.transpose() << std::endl;
+    std::cout << "Tb = " << std::endl<< Tb << std::endl;
+    std::cout << "Ta.inverse() * Tb = " << std::endl<< Ta.inverse() * Tb << std::endl;
 
-    ceres_slam::Point3D<double> pt_mutable(0.,1.,0.);
-    std::cout << pt_mutable << std::endl;
-    pt_mutable.data()[0] = 1.;
-    std::cout << pt_mutable << std::endl;
 
     return EXIT_SUCCESS;
 }
