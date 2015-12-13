@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <ceres_slam/geometry.h>
+#include <ceres_slam/stereo_camera.h>
 
 namespace ceres_slam {
 
@@ -18,6 +19,8 @@ public:
     typedef Point3D<double> Point;
     //! Vector type
     typedef Vector3D<double> Vector;
+    //! Camera type
+    typedef StereoCamera<double> Camera;
 
     //! Default constructor
     PointCloudAligner() { }
@@ -32,8 +35,9 @@ public:
     //! and remove outliers from the two clouds.
     SE3 compute_transformation_and_inliers(std::vector<Point>& pts_0,
                                            std::vector<Point>& pts_1,
+                                           Camera::ConstPtr camera,
                                            int num_iters = 400,
-                                           double thresh = 1);
+                                           double thresh = 25);
 };
 
 } // namespace ceres_slam

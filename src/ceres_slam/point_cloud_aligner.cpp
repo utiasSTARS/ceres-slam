@@ -63,6 +63,7 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
 PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
     std::vector<PointCloudAligner::Point>& pts_0,
     std::vector<PointCloudAligner::Point>& pts_1,
+    PointCloudAligner::Camera::ConstPtr camera,
     int num_iters, double thresh) {
 
     // Uniformly distributed integers in [a,b], NOT [a,b)
@@ -114,7 +115,8 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
         double error;
         inlier_idx.clear();
         for(unsigned int i = 0; i < pts_0.size(); ++i) {
-            error = (pts_1[i] - T_1_0 * pts_0[i]).squaredNorm();
+            error = (camera->project(pts_1[i])
+                     - camera->project(T_1_0 * pts_0[i])).squaredNorm();
             // std::cout << "error = " << error << std::endl;
             if(error < thresh) {
                 inlier_idx.push_back(i);
