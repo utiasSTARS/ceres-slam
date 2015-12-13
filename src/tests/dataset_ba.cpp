@@ -29,9 +29,8 @@ int main(int argc, char** argv) {
     std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
 
-    // First pose defines the base frame,
-    // so set it to the identity transformation
-    dataset.pose_vectors[0] = SE3::TangentVector::Zero();
+    // First pose is either identity, or the first ground truth pose
+    dataset.pose_vectors[0] = SE3::log(dataset.first_pose);
 
     // Iterate over all poses
     std::cerr << "Computing VO initial guess" << std::endl;
@@ -96,8 +95,6 @@ int main(int argc, char** argv) {
 
     dataset.obs_var << 4, 4, 4; // u,v,d variance
 
-    std::cout << dataset.map_points[1] << std::endl;
-
     for(unsigned int k = 0; k < 2; ++k) {
         for(unsigned int i : dataset.obs_indices_at_state(k)) {
             // Map point ID for this observation
@@ -113,8 +110,6 @@ int main(int argc, char** argv) {
                                      dataset.map_points[j].data());
         }
     }
-
-    std::cout << dataset.map_points[1] << std::endl;
 
     // Solve the problem
     std::cerr << "Solving" << std::endl;

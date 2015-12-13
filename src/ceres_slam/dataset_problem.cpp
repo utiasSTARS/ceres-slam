@@ -51,6 +51,19 @@ const bool DatasetProblem::read_csv(std::string filename) {
     camera = std::make_shared<Camera>(fu, fv, cu, cv, b);
     std::cerr << *camera << std::endl;
 
+    // Read first ground truth pose
+    std::cerr << "Reading first ground truth pose" << std::endl;
+    std::getline(file, line);
+    tokens = split(line, ',');
+    SE3::TransformationMatrix T_0_g;
+    for(int i = 0; i < 4; ++i) {
+        for(int j = 0; j < 4; ++j) {
+            T_0_g(i,j) = std::stod(tokens.at(4*i + j));
+        }
+    }
+    first_pose = SE3(T_0_g);
+    std::cout << first_pose << std::endl;
+
     // Read in the observations
     std::cerr << "Reading observation data... ";
     while(std::getline(file, line)) {

@@ -37,6 +37,8 @@ public:
     unsigned int num_points;
     //! Camera poses in base frame (to be estimated)
     std::vector<SE3::TangentVector> pose_vectors;
+    //! First pose, either identity or given by ground truth
+    SE3 first_pose;
     //! Map points in base frame (to be estimated)
     std::vector<Point> map_points;
     //! Map point IDs in obs_list
