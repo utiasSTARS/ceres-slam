@@ -13,17 +13,19 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
     if(pts_0 != nullptr && pts_1 != nullptr) {
         unsigned int n_pts = pts_0->size();
 
-        // Compute the centroids of each cloud
+        // Compute the centroids p_0 and p_1 of each cloud
         Point::Cartesian p_0_cart = Point::Cartesian::Zero();
-        Point::Cartesian p_1_cart = Point::Cartesian::Zero();
-        for(unsigned int i = 0; i < n_pts; ++i) {
-            p_0_cart += (*pts_0)[i].cartesian(); // Ugly syntax :(
-            p_1_cart += (*pts_1)[i].cartesian();
+        for(Point p : *pts_0) {
+            p_0_cart += p.cartesian();
         }
         p_0_cart /= double(n_pts);
-        p_1_cart /= double(n_pts);
-
         Point p_0(p_0_cart);
+
+        Point::Cartesian p_1_cart = Point::Cartesian::Zero();
+        for(Point p : *pts_1) {
+            p_1_cart += p.cartesian();
+        }
+        p_1_cart /= double(n_pts);
         Point p_1(p_1_cart);
 
         // Compute W_1_0
@@ -39,7 +41,7 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
             svd(W_1_0, Eigen::ComputeThinU | Eigen::ComputeThinV);
         SO3::TransformationMatrix
             middle = SO3::TransformationMatrix::Identity();
-        middle(2,2) = svd.matrixU().determinant() * svd.matrixV().determinant();
+        middle(2,2) = svd.matrixV().determinant() * svd.matrixU().determinant();
 
         SO3 C_1_0(svd.matrixU() * middle * svd.matrixV().transpose());
 
