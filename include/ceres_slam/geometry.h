@@ -75,12 +75,13 @@ public:
     }
 
     //! Ostream operator for homogeneous quantities
-    friend std::ostream& operator<<( std::ostream& os, const
-                                     HomogeneousBase3D<Scalar>& h ) {
-        os << "Homogeneous quantity" << std::endl
-           << h.homogeneous() << std::endl;
+    friend std::ostream& operator<<( std::ostream& os,
+                                     const HomogeneousBase3D<Scalar>& h ) {
+        os << "HomogeneousBase3D("
+           << h.homogeneous().format(CommaInitFmt) << ")";
         return os;
     }
+
 protected:
     //! Cartesian part
     Cartesian cartesian_;
@@ -139,11 +140,10 @@ public:
         return Vector3D( -this->cartesian() );
     }
 
-    //! Ostream operator for homogeneous quantities
+    //! Ostream operator for Vector3D
     friend std::ostream& operator<<( std::ostream& os,
                                      const Vector3D<Scalar>& v ) {
-        os << "Homogeneous vector" << std::endl
-           << v.homogeneous() << std::endl;
+        os << "Vector3D(" << v.str() << ")";
         return os;
     }
 };
@@ -188,11 +188,10 @@ public:
         return Vector3D<Scalar>( this->cartesian() - other.cartesian() );
     }
 
-    //! Ostream operator for homogeneous quantities
+    //! Ostream operator for Point3D
     friend std::ostream& operator<<( std::ostream& os,
                                      const Point3D<Scalar>& p ) {
-        os << "Homogeneous point" << std::endl
-           << p.homogeneous() << std::endl;
+        os << "Point3D(" << p.str() << ")";
         return os;
     }
 };

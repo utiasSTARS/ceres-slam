@@ -70,16 +70,23 @@ int main(int argc, char** argv) {
             pts_k.push_back(dataset.camera->triangulate(dataset.obs_list[i]));
         }
 
+        // for(unsigned int i = 0; i < j_km1.size(); ++i) {
+        //     std::cout << "j_km1: " << j_km1[i] << " | j_k: " << j_k[i]
+        //               << " | idx_km1: " << idx_km1[i] << " | idx_k: " << idx_k[i]
+        //               << " | pts_k - pts_km1: " << pts_k[i] - pts_km1[i]
+        //               << std::endl;
+        // }
+
         // Compute the transform from the first to the second point cloud
-        // std::cout <<"Initial set has " << pts_km1.size()
-        //           << " elements" << std::endl;
+        std::cout <<"Initial set has " << pts_km1.size()
+                  << " elements" << std::endl;
 
         SE3 T_k_km1 = point_cloud_aligner.compute_transformation_and_inliers(
-            pts_km1, pts_k, 400, 5.);
+            pts_km1, pts_k, dataset.camera, 400, 9);
 
-        // std::cout <<"Best inlier set has " << pts_km1.size()
-        //               << " elements" << std::endl;
-        // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
+        std::cout <<"Best inlier set has " << pts_km1.size()
+                      << " elements" << std::endl;
+        std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
 
         // Compound the transformation estimate onto the previous one
         dataset.pose_vectors[k] =
