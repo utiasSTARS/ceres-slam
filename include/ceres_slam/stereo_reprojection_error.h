@@ -39,9 +39,9 @@ public:
         parameters[0][3-5] is the vehicle rotation in the global frame
         parametsrs[1][0-2] is the map point in the global frame
     */
-    virtual bool Evaluate(double const* const* parameters,
-                          double* residuals,
-                          double** jacobians) const;
+    virtual bool Evaluate(double const* const* parameters_ceres,
+                          double* residuals_ceres,
+                          double** jacobians_ceres) const;
 
     //! Factory to hide the construction of the CostFunction object from
     //! the client code.
@@ -82,9 +82,9 @@ public:
 
     //! Templated evaluator operator for use with ceres::Jet
     template <typename T>
-    bool operator()(const T* const xi_c_g,
-                    const T* const pt_g,
-                    T* residuals) const {
+    bool operator()(const T* const xi_c_g_ceres,
+                    const T* const pt_g_ceres,
+                    T* residuals_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
         typedef typename SE3T::TangentVector TangentVector;
@@ -94,17 +94,17 @@ public:
         typedef typename CameraT::Observation Observation;
 
         // Camera pose in global frame
-        Eigen::Map<const TangentVector> xi_c_g_eigen(xi_c_g);
-        SE3T T_c_g = SE3T::exp(xi_c_g_eigen);
+        Eigen::Map<const TangentVector> xi_c_g(xi_c_g_ceres);
+        SE3T T_c_g = SE3T::exp(xi_c_g);
 
         // Map point in the global frame
-        PointT pt_g_eigen(pt_g);
+        PointT pt_g(pt_g_ceres);
 
         // Map the measurement residuals to an Eigen vector for convenience
-        Eigen::Map<ResidualVectorT> residuals_eigen(residuals);
+        Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
 
         // Transform map point into the camera frame
-        PointT pt_c_eigen = T_c_g * pt_g_eigen;
+        PointT pt_c = T_c_g * pt_g;
 
         // Project into stereo camera, computing jacobian if needed
         CameraT cameraT(T(camera_->fu()), T(camera_->fv()),
@@ -112,11 +112,11 @@ public:
                         T(camera_->b()));
         Observation predicted_observation;
 
-        predicted_observation = cameraT.project(pt_c_eigen);
+        predicted_observation = cameraT.project(pt_c);
 
         // Compute the residuals
         // NOTE: Updating residuals_eigen will also update residuals
-        residuals_eigen = stiffness_.cast<T>()
+        residuals = stiffness_.cast<T>()
             * (observation_.cast<T>() - predicted_observation);
 
         return true;
