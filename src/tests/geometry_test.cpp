@@ -29,7 +29,6 @@ int main() {
 
     std::cout << SO3::wedge(phi) << std::endl;
     std::cout << SO3::vee(SO3::wedge(phi)) << std::endl;
-    std::cout << SO3::odot(rot2*pt) << std::endl;
 
     SE3 T1;
     SE3::TangentVector xi;
@@ -45,6 +44,7 @@ int main() {
 
     std::cout << SE3::wedge(xi) << std::endl;
     std::cout << SE3::vee(SE3::wedge(xi)) << std::endl;
+    std::cout << T2*pt << std::endl;
     std::cout << SE3::odot(T2*pt) << std::endl;
 
 

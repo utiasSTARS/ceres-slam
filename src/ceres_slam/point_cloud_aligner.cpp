@@ -111,16 +111,14 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
             compute_transformation(test_pts_0, test_pts_1);
         //    std::cout << "T_1_0 = " << std::endl << T_1_0 << std::endl;
 
-        // Classify points and get inlier and outlier indices
+        // Classify points based on reprojection error, and get inlier indices
         double error;
         inlier_idx.clear();
         for(unsigned int i = 0; i < pts_0.size(); ++i) {
             error = (camera->project(pts_1[i])
                      - camera->project(T_1_0 * pts_0[i])).squaredNorm();
             // std::cout << "error = " << error << std::endl;
-            if(error < thresh) {
-                inlier_idx.push_back(i);
-            }
+            if(error < thresh) { inlier_idx.push_back(i); }
         }
 
         // Keep track of the best (largest) inlier set and transformation

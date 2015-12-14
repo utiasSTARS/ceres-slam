@@ -6,24 +6,23 @@
 #include <ceres/rotation.h>
 
 #include <Eigen/Core>
-#include <Eigen/Eigenvalues>
 
 namespace ceres_slam {
 
-StereoReprojectionError::StereoReprojectionError(
-                                Camera::ConstPtr& camera,
-                                Camera::Observation observation,
-                                Camera::ObservationVariance variance) :
+StereoReprojectionErrorAnalytic::StereoReprojectionErrorAnalytic(
+                            Camera::ConstPtr camera,
+                            const Camera::Observation& observation,
+                            const Camera::ObservationCovariance& stiffness) :
     camera_(camera),
     observation_(observation),
-    variance_(variance) { }
+    stiffness_(stiffness) { }
 
-StereoReprojectionError::~StereoReprojectionError() { }
+StereoReprojectionErrorAnalytic::~StereoReprojectionErrorAnalytic() { }
 
 
-bool StereoReprojectionError::Evaluate(double const* const* parameters,
-                                       double* residuals,
-                                       double** jacobians) const {
+bool StereoReprojectionErrorAnalytic::Evaluate(double const* const* parameters,
+                                               double* residuals,
+                                               double** jacobians) const {
     // Check if we need to compute jacobians
     bool need_jacobians = jacobians != nullptr && jacobians[0] != nullptr;
 
@@ -52,38 +51,72 @@ bool StereoReprojectionError::Evaluate(double const* const* parameters,
         predicted_observation = camera_->project(r_c_f_c);
     }
 
-    // Compute the stiffness matrix to apply to the residuals
-    Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
-        es(variance_.asDiagonal());
-    Camera::ObservationCovariance stiffness = es.operatorInverseSqrt();
-
     // Compute the residuals
     // NOTE: Updating residuals_eigen will also update residuals
-    residuals_eigen = stiffness * (observation_ - predicted_observation);
+    residuals_eigen = stiffness_ * (observation_ - predicted_observation);
 
     // Compute jacobians if needed
     if(need_jacobians) {
-        Camera::ObservationJacobian factor = stiffness * camera_jacobian;
+        // Common factor to both Jacobians
+        // (3x3)(3x3) ==> (3x3)
+        Camera::ObservationJacobian factor = stiffness_ * camera_jacobian;
 
         // Jacobian of residuals w.r.t. camera pose
+        // (3x3)(3x6) ==> (3x6)
         Eigen::Map<SE3::TransformedPointJacobian>
             pose_jacobian(&jacobians[0][0]);
         pose_jacobian = factor * SE3::odot(r_c_f_c);
 
         // Jacobian of residuals w.r.t. map point position
+        // (3x3)(3x3) ==> (3x3)
         Eigen::Map<Camera::ObservationJacobian>
             point_jacobian(&jacobians[1][0]);
         point_jacobian = factor * T_c_g.rotation().matrix();
+
+        // std::cout << "stiffness" << std::endl
+        //           << stiffness_ << std::endl;
+        // std::cout << "camera_jacobian" << std::endl
+        //           << camera_jacobian << std::endl;
+        // std::cout << "residuals" << std::endl
+        //           << residuals_eigen << std::endl;
+        // std::cout << "pose_jacobian" << std::endl
+        //           << pose_jacobian << std::endl;
+        // std::cout << "point_jacobian" << std::endl
+        //           << point_jacobian << std::endl;
     }
 
     return true;
 }
 
-ceres::CostFunction* StereoReprojectionError::Create(
-                        const Camera::ConstPtr& camera,
-                        const Camera::Observation observation,
-                        const Camera::ObservationVariance variance) {
-    return (new StereoReprojectionError(camera, observation, variance));
+ceres::CostFunction* StereoReprojectionErrorAnalytic::Create(
+                        const Camera::ConstPtr camera,
+                        const Camera::Observation& observation,
+                        const Camera::ObservationCovariance& stiffness) {
+    return ( new StereoReprojectionErrorAnalytic(
+                    camera, observation, stiffness) );
+}
+
+
+StereoReprojectionErrorAutomatic::StereoReprojectionErrorAutomatic(
+                            Camera::ConstPtr camera,
+                            const Camera::Observation& observation,
+                            const Camera::ObservationCovariance& stiffness) :
+    camera_(camera),
+    observation_(observation),
+    stiffness_(stiffness) { }
+
+
+ceres::CostFunction* StereoReprojectionErrorAutomatic::Create(
+                        const Camera::ConstPtr camera,
+                        const Camera::Observation& observation,
+                        const Camera::ObservationCovariance& stiffness) {
+    return ( new ceres::AutoDiffCostFunction
+                <StereoReprojectionErrorAutomatic,
+                    3,  // Residual dimension
+                    6,  // Vehicle pose vector
+                    3>  // Map point position
+                (new StereoReprojectionErrorAutomatic(
+                    camera, observation, stiffness)) );
 }
 
 } // namespace ceres_slam

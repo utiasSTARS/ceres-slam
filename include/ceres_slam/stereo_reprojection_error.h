@@ -7,7 +7,8 @@
 
 namespace ceres_slam {
 
-class StereoReprojectionError : public ceres::SizedCostFunction<
+//! Stereo reprojection error cost function for Ceres with analytic Jacobians
+class StereoReprojectionErrorAnalytic : public ceres::SizedCostFunction<
                                             3,  // Residual dimension
                                             6,  // Vehicle pose vector
                                             3>  // Map point position
@@ -25,12 +26,13 @@ public:
     typedef Vector3D<double> Vector;
 
     //! Constructor with fixed model parameters
-    StereoReprojectionError(Camera::ConstPtr& camera,
-                            Camera::Observation observation,
-                            Camera::ObservationVariance variance);
+    StereoReprojectionErrorAnalytic(
+        Camera::ConstPtr camera,
+        const Camera::Observation& observation,
+        const Camera::ObservationCovariance& stiffness);
 
     //! Destructor
-    virtual ~StereoReprojectionError();
+    virtual ~StereoReprojectionErrorAnalytic();
 
     //! Evaluates the reprojection error and jacobians for Ceres.
     /*! parameters[0][0-2] is the vehicle translation in the global frame
@@ -44,16 +46,98 @@ public:
     //! Factory to hide the construction of the CostFunction object from
     //! the client code.
     static ceres::CostFunction* Create(
-                            const Camera::ConstPtr& camera,
-                            const Camera::Observation observation,
-                            const Camera::ObservationVariance variance);
+                            const Camera::ConstPtr camera,
+                            const Camera::Observation& observation,
+                            const Camera::ObservationCovariance& stiffness);
 
 private:
-    Camera::ConstPtr camera_;                 //!< Camera model
-    Camera::Observation observation_;         //!< Stereo observation
-    Camera::ObservationVariance variance_;    //!< Observation variance
+    //! Camera model
+    Camera::ConstPtr camera_;
+    //! Stereo observation
+    Camera::Observation observation_;
+    //! Observation stiffness matrix (inverse sqrt of covariance matrix)
+    Camera::ObservationCovariance stiffness_;
 
-}; // class StereoReprojectionError
+}; // class StereoReprojectionErrorAnalytic
+
+//! Stereo reprojection error cost function for Ceres with automatic Jacobians
+class StereoReprojectionErrorAutomatic {
+public:
+    //! Camera type
+    typedef StereoCamera<double> Camera;
+    //! SO(3) type
+    typedef SO3Group<double> SO3;
+    //! SE(3) type
+    typedef SE3Group<double> SE3;
+    //! Point type
+    typedef Point3D<double> Point;
+    //! Vector type
+    typedef Vector3D<double> Vector;
+
+    //! Constructor with fixed model parameters
+    StereoReprojectionErrorAutomatic(
+        Camera::ConstPtr camera,
+        const Camera::Observation& observation,
+        const Camera::ObservationCovariance& stiffness);
+
+    //! Templated evaluator operator for use with ceres::Jet
+    template <typename T>
+    bool operator()(const T* const xi_c_g,
+                    const T* const pt_g,
+                    T* residuals) const {
+        // Local typedefs for convenience
+        typedef SE3Group<T> SE3T;
+        typedef typename SE3T::TangentVector TangentVector;
+        typedef Point3D<T> PointT;
+        typedef Eigen::Matrix<T, 3, 1> ResidualVectorT;
+        typedef StereoCamera<T> CameraT;
+        typedef typename CameraT::Observation Observation;
+
+        // Camera pose in global frame
+        Eigen::Map<const TangentVector> xi_c_g_eigen(xi_c_g);
+        SE3T T_c_g = SE3T::exp(xi_c_g_eigen);
+
+        // Map point in the global frame
+        PointT pt_g_eigen(pt_g);
+
+        // Map the measurement residuals to an Eigen vector for convenience
+        Eigen::Map<ResidualVectorT> residuals_eigen(residuals);
+
+        // Transform map point into the camera frame
+        PointT pt_c_eigen = T_c_g * pt_g_eigen;
+
+        // Project into stereo camera, computing jacobian if needed
+        CameraT cameraT(T(camera_->fu()), T(camera_->fv()),
+                        T(camera_->cu()), T(camera_->cv()),
+                        T(camera_->b()));
+        Observation predicted_observation;
+
+        predicted_observation = cameraT.project(pt_c_eigen);
+
+        // Compute the residuals
+        // NOTE: Updating residuals_eigen will also update residuals
+        residuals_eigen = stiffness_.cast<T>()
+            * (observation_.cast<T>() - predicted_observation);
+
+        return true;
+    }
+
+    //! Factory to hide the construction of the CostFunction object from
+    //! the client code.
+    static ceres::CostFunction* Create(
+                            const Camera::ConstPtr camera,
+                            const Camera::Observation& observation,
+                            const Camera::ObservationCovariance& stiffness);
+
+private:
+    //! Camera model
+    Camera::ConstPtr camera_;
+    //! Stereo observation
+    Camera::Observation observation_;
+    //! Observation stiffness matrix (inverse sqrt of covariance matrix)
+    Camera::ObservationCovariance stiffness_;
+
+}; // class StereoReprojectionErrorAutomatic
 
 } // namespace ceres_slam
 

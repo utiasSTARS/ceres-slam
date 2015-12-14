@@ -3,12 +3,16 @@
 #include <string>
 
 #include <ceres/ceres.h>
+
 #include <ceres_slam/dataset_problem.h>
 #include <ceres_slam/point_cloud_aligner.h>
 #include <ceres_slam/stereo_reprojection_error.h>
 
+#include <Eigen/Eigenvalues>
+
 using SE3 = ceres_slam::DatasetProblem::SE3;
 using Point = ceres_slam::DatasetProblem::Point;
+using Camera = ceres_slam::DatasetProblem::Camera;
 
 int main(int argc, char** argv) {
     if (argc < 2) {
@@ -34,7 +38,7 @@ int main(int argc, char** argv) {
 
     // Iterate over all poses
     std::cerr << "Computing VO initial guess" << std::endl;
-    for(unsigned int k = 1; k < 2; ++k) {
+    for(unsigned int k = 1; k < dataset.num_states; ++k) {
         pts_km1.clear();
         pts_k.clear();
         j_km1.clear();
@@ -78,15 +82,15 @@ int main(int argc, char** argv) {
         // }
 
         // Compute the transform from the first to the second point cloud
-        std::cout <<"Initial set has " << pts_km1.size()
-                  << " elements" << std::endl;
+        // std::cout <<"Initial set has " << pts_km1.size()
+        //           << " elements" << std::endl;
 
         SE3 T_k_km1 = point_cloud_aligner.compute_transformation_and_inliers(
             pts_km1, pts_k, dataset.camera, 400, 9);
 
-        std::cout <<"Best inlier set has " << pts_km1.size()
-                      << " elements" << std::endl;
-        std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
+        // std::cout <<"Best inlier set has " << pts_km1.size()
+        //               << " elements" << std::endl;
+        // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
 
         // Compound the transformation estimate onto the previous one
         dataset.pose_vectors[k] =
@@ -108,20 +112,29 @@ int main(int argc, char** argv) {
     ceres::Problem problem;
 
     dataset.obs_var << 1, 1, 1; // u,v,d variance
+    // Compute the stiffness matrix to apply to the residuals
+    Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
+        es(dataset.obs_var.asDiagonal());
+    Camera::ObservationCovariance obs_stiffness = es.operatorInverseSqrt();
 
-    for(unsigned int k = 0; k < 2; ++k) {
+    for(unsigned int k = 0; k < dataset.num_states; ++k) {
         for(unsigned int i : dataset.obs_indices_at_state(k)) {
             // Map point ID for this observation
             unsigned int j = dataset.point_ids[i];
-            // Cost function for this observation
-            ceres::CostFunction* stereo_cost =
-                ceres_slam::StereoReprojectionError::Create(dataset.camera,
-                                                            dataset.obs_list[i],
-                                                            dataset.obs_var);
-            // Add the cost function for this observation to the problem
-            problem.AddResidualBlock(stereo_cost, NULL,
-                                     dataset.pose_vectors[k].data(),
-                                     dataset.map_points[j].data());
+            // Only optimize map points that have been initialized
+            if(dataset.initialized_point[j]) {
+                // Cost function for this observation
+                // ceres::CostFunction* stereo_cost =
+                //     ceres_slam::StereoReprojectionErrorAnalytic::Create(
+                //         dataset.camera, dataset.obs_list[i], obs_stiffness);
+                ceres::CostFunction* stereo_cost =
+                    ceres_slam::StereoReprojectionErrorAutomatic::Create(
+                        dataset.camera, dataset.obs_list[i], obs_stiffness);
+                // Add the cost function for this observation to the problem
+                problem.AddResidualBlock(stereo_cost, NULL,
+                                         dataset.pose_vectors[k].data(),
+                                         dataset.map_points[j].data());
+            }
         }
     }
 

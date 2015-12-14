@@ -57,21 +57,21 @@ public:
         b_(-right_camera_info->P[3] / right_camera_info->P[0]) { }
 
     //! Return horizontal focal length
-    const Scalar fu() const { return fu_; }
+    Scalar fu() const { return fu_; }
     //! Return vertical focal length
-    const Scalar fv() const { return fv_; }
+    Scalar fv() const { return fv_; }
     //! Return horizontal principal point coordinate
-    const Scalar cu() const { return cu_; }
+    Scalar cu() const { return cu_; }
     //! Return vertical horizontal principal point coordinate
-    const Scalar cv() const { return cv_; }
+    Scalar cv() const { return cv_; }
     //! Return baseline
-    const Scalar b() const { return b_; }
+    Scalar b() const { return b_; }
 
     //! Projects a 3D point in the camera frame into the camera
     //! to get a uvd stereo observation.
     const Observation project(
         const Point& pt_c, ObservationJacobian* jacobian_ptr = nullptr) const {
-        double one_over_z = 1. / pt_c(2);
+        Scalar one_over_z = Scalar(1) / pt_c(2);
 
         Observation obs; // [u_l, v_l, d]
         obs(0) = fu() * pt_c(0) * one_over_z + cu();
@@ -85,17 +85,17 @@ public:
 
             // d(u_l) / d(pt_c)
             jacobian(0,0) = fu() * one_over_z;
-            jacobian(0,1) = 0.0;
+            jacobian(0,1) = Scalar(0);
             jacobian(0,2) = -fu() * pt_c(0) * one_over_z2;
 
             // d(v_l) / d(pt_c)
-            jacobian(1,0) = 0.0;
+            jacobian(1,0) = Scalar(0);
             jacobian(1,1) = fv() * one_over_z;
             jacobian(1,2) = -fv() * pt_c(1) * one_over_z2;
 
             // d(d) / d(pt_c)
-            jacobian(2,0) = fu() * one_over_z;
-            jacobian(2,1) = 0.0;
+            jacobian(2,0) = Scalar(0);
+            jacobian(2,1) = Scalar(0);
             jacobian(2,2) = -fu() * b() * one_over_z2;
         }
 
@@ -120,17 +120,17 @@ public:
 
             // d(x) / d(obs)
             jacobian(0,0) = b_over_d;
-            jacobian(0,1) = 0.;
+            jacobian(0,1) = Scalar(0);
             jacobian(0,2) = (cu() - obs(0)) * b_over_d2;
 
             // d(y) / d(obs)
-            jacobian(1,0) = 0.;
+            jacobian(1,0) = Scalar(0);
             jacobian(1,1) = b_over_d * fu_over_fv;
             jacobian(1,2) = (cv() - obs(1)) * b_over_d2 * fu_over_fv;
 
             // d(z) / d(obs)
-            jacobian(2,0) = 0.;
-            jacobian(2,1) = 0.;
+            jacobian(2,0) = Scalar(0);
+            jacobian(2,1) = Scalar(0);
             jacobian(2,2) = -fu() * b_over_d2;
         }
 

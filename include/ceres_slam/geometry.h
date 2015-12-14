@@ -108,10 +108,10 @@ public:
     Vector3D( const Vector3D& other ) : Vector3D(other.cartesian()) { }
     //! Construct from a 3-vector
     Vector3D( const Cartesian& cartesian ) :
-        HomogeneousBase3D<Scalar>(cartesian, 0.) { }
+        HomogeneousBase3D<Scalar>(cartesian, Scalar(0)) { }
     //! Construct from 3 scalars
     Vector3D( const Scalar i, const Scalar j, const Scalar k ) :
-        HomogeneousBase3D<Scalar>(i, j, k, 0.) { }
+        HomogeneousBase3D<Scalar>(i, j, k, Scalar(0)) { }
     //! Construct from a 3-element POD array
     Vector3D( const Scalar* s ) :
         Vector3D(s[0], s[1], s[2]) { }
@@ -167,10 +167,10 @@ public:
     Point3D( const Point3D& other ) : Point3D(other.cartesian()) { }
     //! Construct from a 3-vector
     Point3D( const Cartesian& cartesian ) :
-        HomogeneousBase3D<Scalar>(cartesian, 1.) { }
+        HomogeneousBase3D<Scalar>(cartesian, Scalar(1)) { }
     //! Construct from 3 scalars
     Point3D( const Scalar x, const Scalar y, const Scalar z ) :
-        HomogeneousBase3D<Scalar>(x, y, z, 1.) { }
+        HomogeneousBase3D<Scalar>(x, y, z, Scalar(1)) { }
     //! Construct from a 3-element POD array
     Point3D( const Scalar* s ) :
         Point3D(s[0], s[1], s[2]) { }
@@ -283,7 +283,7 @@ public:
         Scalar sp = sin(angle);
 
         TransformationMatrix mat = cp * TransformationMatrix::Identity()
-                                    + (1 - cp) * axis * axis.transpose()
+                                    + (Scalar(1) - cp) * axis * axis.transpose()
                                     + sp * wedge(axis);
         return SO3Group(mat);
     }
@@ -296,11 +296,11 @@ public:
     inline
     static const TangentVector log( const SO3Group& C ) {
         // Get the rotation angle from the trace of C
-        Scalar angle = acos(0.5 * C.matrix().trace() - 0.5);
+        Scalar angle = acos(Scalar(0.5) * C.matrix().trace() - Scalar(0.5));
 
         // Special case if angle is zero
         if(angle <= std::numeric_limits<Scalar>::epsilon()) {
-            return TangentVector(0.,0.,0.);
+            return TangentVector(Scalar(0),Scalar(0),Scalar(0));
         }
 
         // Compute the normalized axis
@@ -308,7 +308,7 @@ public:
         axis(0) = C.matrix()(2,1) - C.matrix()(1,2);
         axis(1) = C.matrix()(0,2) - C.matrix()(2,0);
         axis(2) = C.matrix()(1,0) - C.matrix()(0,1);
-        axis /= (2 * sin(angle));
+        axis /= (Scalar(2) * sin(angle));
 
         return angle * axis;
     }
@@ -360,9 +360,9 @@ public:
     inline
     static const TransformationMatrix wedge( const TangentVector& phi ) {
         TransformationMatrix Phi;
-        Phi <<  0.,    -phi(2), phi(1),
-                phi(2), 0.,    -phi(0),
-               -phi(1), phi(0), 0.;
+        Phi <<  Scalar(0), -phi(2),     phi(1),
+                phi(2),     Scalar(0), -phi(0),
+               -phi(1),     phi(0),     Scalar(0);
         return Phi;
     }
 
@@ -377,18 +377,6 @@ public:
                Phi(0,2) - Phi(2,0),
                Phi(1,0) - Phi(0,1);
         return 0.5 * phi;
-    }
-
-    //! SO(3) component of the SE(3) odot operator as defined by Barfoot
-    /*!
-        This can be used as the Jacobian of a rotated cartesian
-        quantity with respect to the rotation parameters.
-    */
-    inline
-    static const TransformedPointJacobian odot(
-        const HomogeneousBase3D<Scalar>& h) {
-        TransformedPointJacobian result = -wedge(h.cartesian());
-        return result;
     }
 
     //! Convert to a string
@@ -492,7 +480,7 @@ public:
         TransformationMatrix mat;
         mat.block(0,0,3,3) = rotation().matrix();
         mat.block(0,3,3,1) = translation().cartesian();
-        mat.bottomRows(1) << 0., 0., 0., 1.;
+        mat.bottomRows(1) << Scalar(0), Scalar(0), Scalar(0), Scalar(1);
         return mat;
     }
 
@@ -503,7 +491,7 @@ public:
         inv.block(0,0,3,3) = rotation().inverse().matrix();
         inv.block(0,3,3,1) =
             -(rotation().inverse() * translation()).cartesian();
-        inv.bottomRows(1) << 0., 0., 0., 1.;
+        inv.bottomRows(1) << Scalar(0), Scalar(0), Scalar(0), Scalar(1);
         return SE3Group(inv);
     }
 
@@ -545,7 +533,7 @@ public:
         TransformationMatrix Xi;
         Xi.block(0,0,3,3) = SO3::wedge(xi.tail(3));
         Xi.block(0,3,3,1) = xi.head(3);
-        Xi.bottomRows(1) << 0., 0., 0., 0.;
+        Xi.bottomRows(1) << Scalar(0), Scalar(0), Scalar(0), Scalar(0);
         return Xi;
     }
 
@@ -563,8 +551,9 @@ public:
 
     //! SE(3) odot operator as defined by Barfoot
     /*!
-        This can be used as the Jacobian of a transformed homogeneous
-        quantity with respect to the transformation parameters.
+        This is the Jacobian of the transformed point with respect to a
+        perturbation in the transformation parameters
+        (i.e., the left Lie derivative)
 
         NOTE: This function omits the bottom row so the scale isn't in the state
     */
@@ -574,7 +563,7 @@ public:
         TransformedPointJacobian result;
         result.block(0,0,3,3) =
             h.scale() * SO3::TransformationMatrix::Identity();
-        result.block(0,3,3,3) = SO3::odot(h);
+        result.block(0,3,3,3) = -SO3::wedge(h.cartesian());
         return result;
     }
 
