@@ -5,7 +5,6 @@
 #include <ceres/ceres.h>
 
 #include <ceres_slam/dataset_problem.h>
-#include <ceres_slam/point_cloud_aligner.h>
 #include <ceres_slam/stereo_reprojection_error.h>
 
 #include <Eigen/Eigenvalues>
@@ -27,85 +26,9 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    // Generate initial guess for poses and map points
-    // using scalar-weighted point cloud alignment for stereo VO
-    std::vector<Point> pts_km1, pts_k;
-    std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
-    ceres_slam::PointCloudAligner point_cloud_aligner;
-
-    // First pose is either identity, or the first ground truth pose
-    dataset.pose_vectors[0] = SE3::log(dataset.first_pose);
-
-    // Iterate over all poses
+    // Compute initial guess
     std::cerr << "Computing VO initial guess" << std::endl;
-    for(unsigned int k = 1; k < dataset.num_states; ++k) {
-        pts_km1.clear();
-        pts_k.clear();
-        j_km1.clear();
-        j_k.clear();
-        idx_km1 = dataset.obs_indices_at_state(k-1);
-        idx_k = dataset.obs_indices_at_state(k);
-
-        // Find point IDs for both poses
-        for(unsigned int i : idx_km1) { j_km1.push_back(dataset.point_ids[i]); }
-        for(unsigned int i : idx_k) { j_k.push_back(dataset.point_ids[i]); }
-
-        // Find reciprocal point matches and delete unmatched indices
-        for(unsigned int i = 0; i < j_km1.size(); ++i) {
-            if(std::find(j_k.begin(), j_k.end(), j_km1[i]) == j_k.end()) {
-                j_km1.erase(j_km1.begin() + i);
-                idx_km1.erase(idx_km1.begin() + i);
-                --i;
-            }
-        }
-        for(unsigned int i = 0; i < j_k.size(); ++i) {
-            if(std::find(j_km1.begin(), j_km1.end(), j_k[i]) == j_km1.end()) {
-                j_k.erase(j_k.begin() + i);
-                idx_k.erase(idx_k.begin() + i);
-                --i;
-            }
-        }
-
-        // Triangulate map points from each pose
-        for(unsigned int i : idx_km1) {
-            pts_km1.push_back(dataset.camera->triangulate(dataset.obs_list[i]));
-        }
-        for(unsigned int i : idx_k) {
-            pts_k.push_back(dataset.camera->triangulate(dataset.obs_list[i]));
-        }
-
-        // for(unsigned int i = 0; i < j_km1.size(); ++i) {
-        //     std::cout << "j_km1: " << j_km1[i] << " | j_k: " << j_k[i]
-        //               << " | idx_km1: " << idx_km1[i] << " | idx_k: " << idx_k[i]
-        //               << " | pts_k - pts_km1: " << pts_k[i] - pts_km1[i]
-        //               << std::endl;
-        // }
-
-        // Compute the transform from the first to the second point cloud
-        // std::cout <<"Initial set has " << pts_km1.size()
-        //           << " elements" << std::endl;
-
-        SE3 T_k_km1 = point_cloud_aligner.compute_transformation_and_inliers(
-            pts_km1, pts_k, dataset.camera, 400, 9);
-
-        // std::cout <<"Best inlier set has " << pts_km1.size()
-        //               << " elements" << std::endl;
-        // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
-
-        // Compound the transformation estimate onto the previous one
-        dataset.pose_vectors[k] =
-            SE3::log(T_k_km1 * SE3::exp(dataset.pose_vectors[k-1]));
-
-        // If the map point does not have an initial guess already, use the
-        // guess from the first point cloud, transformed into the base frame
-        for(unsigned int i = 0; i < j_km1.size(); ++i) {
-            if(!dataset.initialized_point[ j_km1[i] ]) {
-                dataset.map_points[ j_km1[i] ] =
-                    SE3::exp(dataset.pose_vectors[k-1]).inverse() * pts_km1[i];
-                dataset.initialized_point[ j_km1[i] ] = true;
-            }
-        }
-    }
+    dataset.compute_initial_guess();
 
     // Build the problem
     std::cerr << "Building problem" << std::endl;

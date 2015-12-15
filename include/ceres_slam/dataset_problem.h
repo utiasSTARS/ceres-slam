@@ -67,7 +67,11 @@ public:
     const bool write_csv(const std::string filename) const;
 
     //! Return list of indices corresponding to a specified state index
-    const std::vector<unsigned int> obs_indices_at_state(int k) const ;
+    const std::vector<unsigned int> obs_indices_at_state(int k) const;
+
+    //! Generate initial guess for poses and map points
+    //! using scalar-weighted point cloud alignment for stereo VO
+    void compute_initial_guess();
 
 private:
     //! Split a delimited string into a vector of tokens
