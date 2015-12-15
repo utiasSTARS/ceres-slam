@@ -98,27 +98,47 @@ const bool DatasetProblem::read_csv(std::string filename) {
 }
 
 const bool DatasetProblem::write_csv(std::string filename) const {
-    std::ofstream file(filename);
+    std::vector<std::string> tokens = split(filename, '.');
+    std::string filename_poses = tokens.at(0) + "_poses.csv";
+    std::string filename_map = tokens.at(0) + "_map.csv";
 
-    // Quit if you can't open the file
-    if(!file.is_open()) {
-        std::cerr << "Error: Couldn't open file " << filename << std::endl;
+    // Open files
+    std::ofstream pose_file(filename_poses);
+    std::ofstream map_file(filename_map);
+
+    // Quit if you can't open the files
+    if(!pose_file.is_open()) {
+        std::cerr << "Error: Couldn't open file "
+                  << filename_poses << std::endl;
+        return false;
+    }
+    if(!map_file.is_open()) {
+        std::cerr << "Error: Couldn't open file "
+                  << filename_map << std::endl;
         return false;
     }
 
     // Convert poses to CSV entries
+    pose_file << "T_00, T_01, T_02, T_03,"
+              << "T_10, T_11, T_12, T_13,"
+              << "T_20, T_21, T_22, T_23,"
+              << "T_30, T_31, T_32, T_33" << std::endl;
     for(SE3::TangentVector xi : pose_vectors) {
-        file << SE3::exp(xi).str() << std::endl;
+        pose_file << SE3::exp(xi).str() << std::endl;
     }
 
     // Convert initialized map points to CSV entries
+    map_file << "point_id, x, y, z" << std::endl;
     for(unsigned int j = 0; j < map_points.size(); ++j) {
         if(initialized_point[j]) {
-            file << j << "," << map_points[j].str() << std::endl;
+            map_file << j << "," << map_points[j].str() << std::endl;
         }
     }
 
-    file.close();
+    // Close files
+    pose_file.close();
+    map_file.close();
+
     return true;
 }
 
@@ -204,7 +224,8 @@ void DatasetProblem::compute_initial_guess() {
     }
 }
 
-std::vector<std::string> DatasetProblem::split(std::string str, char del) {
+std::vector<std::string>
+DatasetProblem::split(std::string str, char del) const {
     std::stringstream ss(str); // Copy the string into a stream
     std::vector<std::string> tokens;
     std::string tok;

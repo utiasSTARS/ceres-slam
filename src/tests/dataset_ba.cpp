@@ -15,14 +15,15 @@ using Camera = ceres_slam::DatasetProblem::Camera;
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-      std::cerr << "usage: dataset_ba <input_file> <optional: output_file>"
+      std::cerr << "usage: dataset_ba <input_file>"
                 << std::endl;
       return EXIT_FAILURE;
     }
 
     // Read dataset from file
+    std::string filename(argv[1]);
     ceres_slam::DatasetProblem dataset;
-    if( !dataset.read_csv(std::string(argv[1])) ) {
+    if( !dataset.read_csv(filename) ) {
         return EXIT_FAILURE;
     }
 
@@ -78,12 +79,8 @@ int main(int argc, char** argv) {
     // Estimate covariance?
 
     // Output optimized state to file
-    std::string out_file("optimized.csv");
-    if (argc > 2) {
-        out_file = std::string(argv[2]);
-    }
-    std::cerr << "Outputting to file " << out_file << std::endl;
-    dataset.write_csv(out_file);
+    std::cerr << "Outputting to file " << std::endl;
+    dataset.write_csv(filename);
 
     return EXIT_SUCCESS;
 }
