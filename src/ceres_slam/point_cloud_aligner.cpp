@@ -57,7 +57,7 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
     PointCloudAligner::SE3::Vector r_1_0_1 = p_1 - C_1_0 * p_0;
 
     // Return final transformation
-    return SE3(C_1_0, r_1_0_1);
+    return SE3(r_1_0_1, C_1_0);
 }
 
 PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(

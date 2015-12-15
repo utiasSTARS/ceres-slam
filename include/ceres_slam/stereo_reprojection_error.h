@@ -35,8 +35,9 @@ public:
     virtual ~StereoReprojectionErrorAnalytic();
 
     //! Evaluates the reprojection error and jacobians for Ceres.
-    /*! parameters[0][0-2] is the vehicle translation in the global frame
-        parameters[0][3-5] is the vehicle rotation in the global frame
+    /*! parameters[0] is the SE(3) pose vector
+        parameters[0][0-2] is the translation component
+        parameters[0][3-5] is the rotation component
         parametsrs[1][0-2] is the map point in the global frame
     */
     virtual bool Evaluate(double const* const* parameters_ceres,
@@ -115,9 +116,9 @@ public:
         predicted_observation = cameraT.project(pt_c);
 
         // Compute the residuals
-        // NOTE: Updating residuals_eigen will also update residuals
+        // NOTE: This also updates residuals_ceres
         residuals = stiffness_.cast<T>()
-            * (observation_.cast<T>() - predicted_observation);
+            * (predicted_observation - observation_.cast<T>());
 
         return true;
     }

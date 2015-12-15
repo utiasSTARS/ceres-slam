@@ -142,7 +142,8 @@ int main(int argc, char** argv) {
     std::cerr << "Solving" << std::endl;
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = true;
-    // solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
+    // solver_options.linear_solver_type = ceres::DENSE_SCHUR;
+    // solver_options.check_gradients = true;
 
     ceres::Solver::Summary summary;
     Solve(solver_options, &problem, &summary);

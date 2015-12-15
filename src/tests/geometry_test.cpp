@@ -8,6 +8,9 @@ const double PI = 3.14159265;
 
 using SO3 = ceres_slam::SO3Group<double>;
 using SE3 = ceres_slam::SE3Group<double>;
+using Point = ceres_slam::Point3D<double>;
+using Vector = ceres_slam::Vector3D<double>;
+using Homogeneous = ceres_slam::Homogeneous3D<double>;
 
 int main() {
     SO3 rot1;
@@ -18,14 +21,20 @@ int main() {
     std::cout << rot1 << std::endl << rot2 << std::endl
               << rot3 << std::endl << rot4 << std::endl;
 
-    ceres_slam::Point3D<double> pt(0.,1.,0.);
-    ceres_slam::Vector3D<double> vec(1.,0.,0.);
-    ceres_slam::HomogeneousBase3D<double> h(0.,0.,1.,2.);
+    Point pt(0.,1.,0.);
+    Vector vec(1.,0.,0.);
+    Homogeneous h(0.,0.,1.,2.);
 
     std::cout << pt << std::endl << vec << std::endl << h << std::endl;
 
     std::cout << rot1 * pt << std::endl << rot2 * vec << std::endl
               << rot2 * rot2 << std::endl;
+
+    SO3::TransformedPointJacobian rot2pt_jacobian;
+    Point rot2pt = rot2.transform(pt, &rot2pt_jacobian);
+    std::cout << "rot2pt = " << rot2pt << std::endl;
+    std::cout << "rot2pt_jacobian = " << std::endl
+              << rot2pt_jacobian << std::endl;
 
     std::cout << SO3::wedge(phi) << std::endl;
     std::cout << SO3::vee(SO3::wedge(phi)) << std::endl;
@@ -33,7 +42,7 @@ int main() {
     SE3 T1;
     SE3::TangentVector xi;
     xi << 0.1,0.2,0.3,1.,0.5,PI/2;
-    SE3 T2(rot2, vec);
+    SE3 T2(vec, rot2);
     SE3 T3(T2);
     SE3 T4(T2.matrix());
     std::cout << T1 << std::endl << T2 << std::endl
@@ -45,10 +54,14 @@ int main() {
     std::cout << SE3::wedge(xi) << std::endl;
     std::cout << SE3::vee(SE3::wedge(xi)) << std::endl;
     std::cout << T2*pt << std::endl;
-    std::cout << SE3::odot(T2*pt) << std::endl;
+
+    SE3::TransformedPointJacobian T2pt_jacobian;
+    Point T2pt = T2.transform(pt, &T2pt_jacobian);
+    std::cout << "T2pt = " << T2pt << std::endl;
+    std::cout << "T2pt_jacobian = " << std::endl << T2pt_jacobian << std::endl;
 
 
-    ceres_slam::Vector3D<double> vec2(1.,2.,3.);
+    Vector vec2(1.,2.,3.);
     std::cout << vec2 << std::endl << vec2.norm() << std::endl;
     vec2.normalize();
     std::cout << vec2 << std::endl << vec2.norm() << std::endl;
