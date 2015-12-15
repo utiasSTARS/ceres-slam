@@ -142,13 +142,15 @@ int main(int argc, char** argv) {
     std::cerr << "Solving" << std::endl;
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = true;
+    solver_options.trust_region_strategy_type = ceres::DOGLEG;
+    solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
     // solver_options.linear_solver_type = ceres::DENSE_SCHUR;
     // solver_options.check_gradients = true;
 
     ceres::Solver::Summary summary;
     Solve(solver_options, &problem, &summary);
 
-    std::cout << summary.BriefReport() << std::endl;
+    std::cout << summary.FullReport() << std::endl;
 
     // Estimate covariance?
 

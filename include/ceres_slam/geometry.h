@@ -540,22 +540,13 @@ public:
         const Homogeneous& h,
         TransformedPointJacobian* jacobian_ptr = nullptr ) const {
 
-        Homogeneous h_transformed;
+        Homogeneous h_transformed = rotation() * h + h.scale() * translation();
 
         if(jacobian_ptr != nullptr) {
-            typename SO3::TransformedPointJacobian rot_jacobian;
-            Homogeneous h_rotated =
-                rotation().transform(h, &rot_jacobian);
-
-            h_transformed = h_rotated + h.scale() * translation();
-
             TransformedPointJacobian& jacobian = *jacobian_ptr;
             jacobian.block(0,0,3,3) =
                 h.scale() * SO3::TransformationMatrix::Identity();
-            jacobian.block(0,3,3,3) = rot_jacobian;
-        }
-        else {
-            h_transformed = rotation() * h + h.scale() * translation();
+            jacobian.block(0,3,3,3) = -SO3::wedge(h_transformed.cartesian());
         }
 
         return h_transformed;
