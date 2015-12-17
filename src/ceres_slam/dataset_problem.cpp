@@ -31,14 +31,14 @@ const bool DatasetProblem::read_csv(std::string filename) {
     std::getline(file, line);
     tokens = split(line, ',');
     num_states = std::stoi(tokens.at(0));
-    num_points = std::stoi(tokens.at(1));
+    num_vertices = std::stoi(tokens.at(1));
     pose_vectors.resize(num_states);
-    map_points.resize(num_points);
-    for(unsigned int i = 0; i < num_points; ++i) {
-        initialized_point.push_back(false);
+    map_vertices.resize(num_vertices);
+    for(unsigned int i = 0; i < num_vertices; ++i) {
+        initialized_vertex.push_back(false);
     }
     std::cerr << "expecting " << num_states << " states"
-              << " and " << num_points << " points" << std::endl;
+              << " and " << num_vertices << " points" << std::endl;
 
     // Read camera intrinsics
     std::cerr << "Reading camera intrinsics" << std::endl;
@@ -51,6 +51,16 @@ const bool DatasetProblem::read_csv(std::string filename) {
     double b  = std::stod(tokens.at(4));
     camera = std::make_shared<Camera>(fu, fv, cu, cv, b);
     std::cerr << *camera << std::endl;
+
+    // Read the initial light position
+    // Need to find a better way of initializing this in the future
+    std::cerr << "Reading initial light position" << std::endl;
+    std::getline(file, line);
+    tokens = split(line, ',');
+    initial_light_pos = Point( std::stod(tokens.at(0)),
+                               std::stod(tokens.at(1)),
+                               std::stod(tokens.at(2)) );
+    std::cerr << initial_light_pos << std::endl;
 
     // Read first ground truth pose
     std::cerr << "Reading first ground truth pose" << std::endl;
@@ -70,11 +80,16 @@ const bool DatasetProblem::read_csv(std::string filename) {
     while(std::getline(file, line)) {
         tokens = split(line, ',');
         t.push_back( std::stod(tokens.at(0)) );
-        point_ids.push_back( std::stoi(tokens.at(1)) );
+        vertex_ids.push_back( std::stoi(tokens.at(1)) );
         double u = std::stod(tokens.at(2));
         double v = std::stod(tokens.at(3));
         double d = std::stod(tokens.at(4));
         obs_list.push_back( Camera::Observation(u,v,d) );
+        int_list.push_back( std::stod(tokens.at(5)) );
+        Vector noisy_normal( std::stod(tokens.at(6)),
+                             std::stod(tokens.at(7)),
+                             std::stod(tokens.at(8)) );
+        initial_vertex_normals.push_back(noisy_normal);
     }
     std::cerr << "read " << obs_list.size() << " observations" << std::endl;
 
@@ -128,10 +143,10 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     }
 
     // Convert initialized map points to CSV entries
-    map_file << "point_id, x, y, z" << std::endl;
-    for(unsigned int j = 0; j < map_points.size(); ++j) {
-        if(initialized_point[j]) {
-            map_file << j << "," << map_points[j].str() << std::endl;
+    map_file << "point_id, x, y, z, nx, ny, nz, ka, kd" << std::endl;
+    for(unsigned int j = 0; j < map_vertices.size(); ++j) {
+        if(initialized_vertex[j]) {
+            map_file << j << "," << map_vertices[j].str() << std::endl;
         }
     }
 
@@ -151,6 +166,10 @@ void DatasetProblem::compute_initial_guess() {
     std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
 
+    // Initialize the light source to something close to ground truth.
+    // Need to figure out a way to do this in general.
+    light_pos = initial_light_pos;
+
     // First pose is either identity, or the first ground truth pose
     pose_vectors[0] = SE3::log(first_pose);
 
@@ -164,8 +183,8 @@ void DatasetProblem::compute_initial_guess() {
         idx_k = obs_indices_at_state(k);
 
         // Find point IDs for both poses
-        for(unsigned int i : idx_km1) { j_km1.push_back(point_ids[i]); }
-        for(unsigned int i : idx_k) { j_k.push_back(point_ids[i]); }
+        for(unsigned int i : idx_km1) { j_km1.push_back(vertex_ids[i]); }
+        for(unsigned int i : idx_k) { j_k.push_back(vertex_ids[i]); }
 
         // Find reciprocal point matches and delete unmatched indices
         for(unsigned int i = 0; i < j_km1.size(); ++i) {
@@ -212,13 +231,31 @@ void DatasetProblem::compute_initial_guess() {
         // Compound the transformation estimate onto the previous one
         pose_vectors[k] = SE3::log(T_k_km1 * SE3::exp(pose_vectors[k-1]));
 
-        // If the map point does not have an initial guess already, use the
-        // guess from the first point cloud, transformed into the base frame
+        // If the map point does not have an initial guess already,
+        // initialize it
         for(unsigned int i = 0; i < j_km1.size(); ++i) {
-            if(!initialized_point[ j_km1[i] ]) {
-                map_points[ j_km1[i] ] =
+            if(!initialized_vertex[ j_km1[i] ]) {
+                // Initialize the position with the guess from the
+                // first point cloud, transformed into the base frame
+                Point vertex_position =
                     SE3::exp(pose_vectors[k-1]).inverse() * pts_km1[i];
-                initialized_point[ j_km1[i] ] = true;
+
+                // Initialize the vertex normals to something close to
+                // ground truth. In general, we probably should do this with PCL
+                Vector vertex_normal =
+                    initial_vertex_normals[ j_km1[i] ];
+
+                // Initialize the vertex Phong parameters to zero?
+                Vertex::PhongParams vertex_phong_params =
+                    Vertex::PhongParams::Zero();
+
+                // Create the vertex object
+                map_vertices[ j_km1[i] ].position() = vertex_position;
+                map_vertices[ j_km1[i] ].normal() = vertex_normal;
+                map_vertices[ j_km1[i] ].phong_params() = vertex_phong_params;
+
+                // Set the initialization flag to true for this vertex
+                initialized_vertex[ j_km1[i] ] = true;
             }
         }
     }

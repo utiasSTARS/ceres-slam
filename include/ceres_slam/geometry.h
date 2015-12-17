@@ -48,7 +48,7 @@ public:
         Homogeneous3D(s[0], s[1], s[2], s[3]) { }
 
     //! Return the cartesian form of the point/vector
-    const Cartesian cartesian() const {
+    inline const Cartesian cartesian() const {
         // Special case for homogeneous vectors (scale = 0)
         if(abs(scale_) <= std::numeric_limits<Scalar>::epsilon()){
             return cartesian_;
@@ -58,36 +58,38 @@ public:
         }
     }
     //! Return the homogeneous scale part of the point/vector
-    const Scalar scale() const { return scale_; }
+    inline const Scalar scale() const { return scale_; }
     //! Return the homogeneous form of the point
-    const Homogeneous homogeneous() const {
+    inline const Homogeneous homogeneous() const {
         Homogeneous h;
         h.head(3) = cartesian();
         h(3) = scale();
         return h;
     }
     //! Return a const pointer to the underlying array for the cartesian part
-    const Scalar* data() const { return cartesian_.data(); }
+    inline const Scalar* data() const { return cartesian_.data(); }
     //! Return a pointer to the underlying array for the cartesian part
-    Scalar* data() { return cartesian_.data(); }
+    inline Scalar* data() { return cartesian_.data(); }
 
     //! Accessor operator, mutable
-    Scalar& operator()(int i) { return cartesian_(i); }
+    inline Scalar& operator()(int i) { return cartesian_(i); }
     //! Accessor operator, const
-    const Scalar& operator()(int i) const { return cartesian_(i); }
+    inline const Scalar& operator()(int i) const { return cartesian_(i); }
 
     //! Addition operator for homogeneous coordinates
+    inline
     const Homogeneous3D operator+( const Homogeneous3D<Scalar>& other ) const {
         return Homogeneous3D( this->cartesian() + other.cartesian(),
                               this->scale() + other.scale() );
     }
     //! Subtraction operator for homogeneous coordinates
+    inline
     const Homogeneous3D operator-( const Homogeneous3D<Scalar>& other ) const {
         return Homogeneous3D( this->cartesian() - other.cartesian(),
                               this->scale() - other.scale() );
     }
     //! Right-multiplication of homogeneous coordinate by scalar
-    const Homogeneous3D operator*( const Scalar s ) const {
+    inline const Homogeneous3D operator*( const Scalar s ) const {
         return Homogeneous3D( s * this->cartesian(), s * this->scale() );
     }
     //! Left-multiplication of homogeneous coordinate by scalar
@@ -95,12 +97,12 @@ public:
         Needs to be a friend inside the class to keep the templating
         and avoid passing 'this' as the first argument.
     */
-    friend const Homogeneous3D<Scalar> operator*(
+    inline friend const Homogeneous3D<Scalar> operator*(
         const Scalar s, const Homogeneous3D<Scalar>& h ) {
         return h * s;
     }
     //! Unary minus operator for homogeneous coordinates
-    const Homogeneous3D operator-() const {
+    inline const Homogeneous3D operator-() const {
         return (*this) * Scalar(-1);
     }
 
@@ -162,13 +164,15 @@ public:
     }
 
     //! Compute the squared norm of the vector
-    const Scalar squaredNorm() const { return this->cartesian().squaredNorm(); }
+    inline const Scalar squaredNorm() const {
+        return this->cartesian().squaredNorm();
+    }
     //! Compute the norm of the vector
-    const Scalar norm() const { return this->cartesian().norm(); }
+    inline const Scalar norm() const { return this->cartesian().norm(); }
     //! Normalize the vector
-    void normalize() { this->cartesian_.normalize(); }
+    inline void normalize() { this->cartesian_.normalize(); }
     //! Compute the dot product of two vectors
-    const Scalar dot( const Vector3D& other ) const {
+    inline const Scalar dot( const Vector3D& other ) const {
         return this->cartesian().dot(other.cartesian());
     }
 
@@ -225,37 +229,82 @@ public:
 
 //! Vertex object for use with shading
 template <typename Scalar>
-struct Vertex3D {
+class Vertex3D {
+public:
     //! Point type
     typedef Point3D<Scalar> Point;
     //! Vector type
     typedef Vector3D<Scalar> Vector;
-    //! Observation type
+    //! Colour type
     typedef Scalar Colour;
+    //! Phong illumination parameters
+    typedef Eigen::Matrix<Scalar, 1, 2, Eigen::RowMajor> PhongParams;
     //! Vertex dimension
     static const int dim = Point::dim + Vector::dim + 2;
 
-    //! Convenience constructor
-    Vertex3D(Point p, Vector n, Scalar a, Scalar d) :
-        position(p), normal(n), ambient(a), diffuse(d) { }
+    //! Default constructor
+    Vertex3D() : Vertex3D( Point(), Vector(), PhongParams::Zero() ) { }
+    //! Construct from position, normal, and phong parameters
+    Vertex3D(Point position, Vector normal, PhongParams phong_params) :
+        position_(position),
+        normal_(normal),
+        phong_params_(phong_params) { }
 
-    Point position; //!< Vertex position
-    Vector normal;  //!< Vertex surface normal
-    Colour ambient; //!< Ambient reflectance
-    Colour diffuse; //!< Diffuse reflectance
+    //! Return the position of the vertex (mutable)
+    inline Point& position() { return position_; }
+    //! Return the position of the vertex (const)
+    inline const Point& position() const { return position_; }
+
+    //! Return the normal vector at the vertex (mutable)
+    inline Vector& normal() { return normal_; }
+    //! Return the normal vector at the vertex (const)
+    inline const Vector& normal() const { return normal_; }
+
+    //! Return the Phong parameter matrix (mutable)
+    inline PhongParams& phong_params() { return phong_params_; }
+    //! Return the Phong parameter matrix (const)
+    inline const PhongParams& phong_params() const { return phong_params_; }
+
+    //! Return the ambient component of the vertex reflectance (mutable)
+    inline Colour& ambient() { return phong_params_(0); }
+    //! Return the ambient component of the vertex reflectance (mutable)
+    inline const Colour& ambient() const { return phong_params_(0); }
+
+    //! Return the diffuse component of the vertex reflectance (mutable)
+    inline Colour& diffuse() { return phong_params_(1); }
+    //! Return the diffuse component of the vertex reflectance (const)
+    inline const Colour& diffuse() const { return phong_params_(1); }
+
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << this->position().str() << ","
+           << this->normal().str() << ","
+           << this->phong_params().format(CommaInitFmt);
+        return ss.str();
+    }
 
     //! Ostream operator for vertices
     friend std::ostream& operator<<( std::ostream& os,
                                      const Vertex3D<Scalar>& v ) {
         os << "Vertex" << std::endl
-           << "Position: " << std::endl
-           << v.position << std::endl
-           << "Normal: " << std::endl
-           << v.normal << std::endl
-           << "Ambient reflectance: " << v.ambient << std::endl
-           << "Diffuse reflectance: " << v.diffuse << std::endl;
+           << "Position: " << v.position() << std::endl
+           << "Normal: " << v.normal() << std::endl
+           << "Phong parameters: " << std::endl
+           << v.phong_params() << std::endl;
         return os;
     }
+private:
+    //! Vertex position
+    Point position_;
+    //! Vertex surface normal
+    Vector normal_;
+    //! Phong illumination parameters stored column-wise in a matrix.
+    /*!
+        col(0) is ambient, col(1) is diffuse,
+        col(2) will be specular, col(3) will be shininess.
+    */
+    PhongParams phong_params_;
 };
 
 //! SO(3) Lie group (3D rotations)
@@ -295,20 +344,17 @@ public:
     SO3Group( const TransformationMatrix& mat ) : mat_(mat) { }
 
     //! Assignment operator
-    inline
-    SO3Group operator=( const SO3Group& other ) {
-        mat_ = other.matrix();
+    inline SO3Group operator=( const SO3Group& other ) {
+        this->mat_ = other.matrix();
         return *this;
     }
 
     //! Return the transformation matrix
-    inline
-    const TransformationMatrix matrix() const { return mat_; }
+    inline const TransformationMatrix matrix() const { return this->mat_; }
 
     //! Return the inverse transformation
-    inline
-    const SO3Group inverse() const {
-        return SO3Group(matrix().transpose());
+    inline const SO3Group inverse() const {
+        return SO3Group(this->matrix().transpose());
     }
 
     //! Transform a 3D homogeneous quantity.
@@ -317,49 +363,43 @@ public:
         Jacobian of the transformed point w.r.t. a perturbation in the
         transformation parameters
     */
-    inline
-    const Homogeneous transform(
+    inline const Homogeneous transform(
         const Homogeneous& h,
         TransformedPointJacobian* jacobian_ptr = nullptr ) const {
 
-        Homogeneous h_transformed(matrix() * h.cartesian(), h.scale());
+        Homogeneous h_transformed(this->matrix() * h.cartesian(), h.scale());
 
         if(jacobian_ptr != nullptr) {
             TransformedPointJacobian& jacobian = *jacobian_ptr;
-            jacobian = wedge(-(matrix() * h.cartesian()));
+            jacobian = wedge(-(this->matrix() * h.cartesian()));
         }
 
         return h_transformed;
     }
 
     //! Multiplication operator for two group elements
-    inline
-    const SO3Group operator*( const SO3Group& other ) const {
-        SO3Group result(matrix() * other.matrix());
+    inline const SO3Group operator*( const SO3Group& other ) const {
+        SO3Group result(this->matrix() * other.matrix());
         return result;
     }
     //! Multiplication operator for group element and homogeneous coordinate
-    inline
-    const Homogeneous operator*( const Homogeneous& h ) const {
-        return transform(h);
+    inline const Homogeneous operator*( const Homogeneous& h ) const {
+        return this->transform(h);
     }
     //! Multiplication operator for group element and vector (preserves type)
-    inline
-    const Vector operator*( const Vector& v ) const {
-        return static_cast<Vector>(transform(v));
+    inline const Vector operator*( const Vector& v ) const {
+        return static_cast<Vector>(this->transform(v));
     }
     //! Multiplication operator for group element and point (preserves type)
-    inline
-    const Point operator*( const Point& p ) const {
-        return static_cast<Point>(transform(p));
+    inline const Point operator*( const Point& p ) const {
+        return static_cast<Point>(this->transform(p));
     }
 
     //! SO(3) wedge operator as defined by Barfoot
     /*!
         This is the inverse operator to SO3::vee.
     */
-    inline
-    static const TransformationMatrix wedge( const TangentVector& phi ) {
+    inline static const TransformationMatrix wedge( const TangentVector& phi ) {
         TransformationMatrix Phi;
         Phi <<  Scalar(0), -phi(2),     phi(1),
                 phi(2),     Scalar(0), -phi(0),
@@ -371,8 +411,7 @@ public:
     /*!
         This is the inverse operator to SO3::wedge.
     */
-    inline
-    static const TangentVector vee( const TransformationMatrix& Phi ) {
+    inline static const TangentVector vee( const TransformationMatrix& Phi ) {
         TangentVector phi;
         phi << Phi(2,1) - Phi(1,2),
                Phi(0,2) - Phi(2,0),
@@ -386,8 +425,7 @@ public:
 
         This is the inverse operation to SO3Group::log.
     */
-    inline
-    static const SO3Group exp( const TangentVector& phi ) {
+    inline static const SO3Group exp( const TangentVector& phi ) {
         Scalar angle = phi.norm();
         TangentVector axis = phi / angle;
 
@@ -411,8 +449,7 @@ public:
 
         This is the inverse operation to SO3Group::exp.
     */
-    inline
-    static const TangentVector log( const SO3Group& C ) {
+    inline static const TangentVector log( const SO3Group& C ) {
         // Get the rotation angle from the trace of C
         Scalar angle = acos(Scalar(0.5) * C.matrix().trace() - Scalar(0.5));
 
@@ -434,7 +471,7 @@ public:
     //! Convert to a string
     inline const std::string str() const {
         std::stringstream ss;
-        ss << matrix().format(CommaInitFmt);
+        ss << this->matrix().format(CommaInitFmt);
         return ss.str();
     }
 
@@ -493,37 +530,32 @@ public:
     }
 
     //! Return the SO(3) rotation
-    inline
-    const SO3 rotation() const { return rotation_; }
+    inline const SO3 rotation() const { return this->rotation_; }
 
     //! Return the translation vector
-    inline
-    const Vector translation() const { return translation_; }
+    inline const Vector translation() const { return this->translation_; }
 
     //! Return the transformation matrix
-    inline
-    const TransformationMatrix matrix() const {
+    inline const TransformationMatrix matrix() const {
         TransformationMatrix mat;
-        mat.block(0,0,3,3) = rotation().matrix();
-        mat.block(0,3,3,1) = translation().cartesian();
+        mat.block(0,0,3,3) = this->rotation().matrix();
+        mat.block(0,3,3,1) = this->translation().cartesian();
         mat.bottomRows(1) << Scalar(0), Scalar(0), Scalar(0), Scalar(1);
         return mat;
     }
 
     //! Return the inverse transformation
-    inline
-    const SE3Group inverse() const {
+    inline const SE3Group inverse() const {
         TransformationMatrix inv;
-        inv.block(0,0,3,3) = rotation().inverse().matrix();
+        inv.block(0,0,3,3) = this->rotation().inverse().matrix();
         inv.block(0,3,3,1) =
-            -(rotation().inverse() * translation()).cartesian();
+            -(this->rotation().inverse() * this->translation()).cartesian();
         inv.bottomRows(1) << Scalar(0), Scalar(0), Scalar(0), Scalar(1);
         return SE3Group(inv);
     }
 
     //! Assignment operator
-    inline
-    SE3Group operator=( const SE3Group& other ) {
+    inline SE3Group operator=( const SE3Group& other ) {
         translation_ = other.translation();
         rotation_ = other.rotation();
         return *this;
@@ -535,8 +567,7 @@ public:
         Jacobian of the transformed point w.r.t. a perturbation in the
         transformation parameters
     */
-    inline
-    const Homogeneous transform(
+    inline const Homogeneous transform(
         const Homogeneous& h,
         TransformedPointJacobian* jacobian_ptr = nullptr ) const {
 
@@ -545,9 +576,9 @@ public:
         if(jacobian_ptr != nullptr) {
             typename SO3::TransformedPointJacobian rot_jacobian;
             Homogeneous h_rotated =
-                rotation().transform(h, &rot_jacobian);
+                this->rotation().transform(h, &rot_jacobian);
 
-            h_transformed = h_rotated + h.scale() * translation();
+            h_transformed = h_rotated + h.scale() * this->translation();
 
             TransformedPointJacobian& jacobian = *jacobian_ptr;
             jacobian.block(0,0,3,3) =
@@ -555,41 +586,38 @@ public:
             jacobian.block(0,3,3,3) = rot_jacobian;
         }
         else {
-            h_transformed = rotation() * h + h.scale() * translation();
+            h_transformed = this->rotation() * h
+                            + h.scale() * this->translation();
         }
 
         return h_transformed;
     }
 
     //! Multiplication operator for two group elements
-    inline
-    const SE3Group operator*( const SE3Group& other ) const {
-        return SE3Group( rotation() * other.translation() + translation(),
-                         rotation() * other.rotation() );
+    inline const SE3Group operator*( const SE3Group& other ) const {
+        return SE3Group( this->rotation() * other.translation()
+                            + this->translation(),
+                         this->rotation() * other.rotation() );
     }
 
     //! Multiplication operator for group element and homogeneous coordinate
-    inline
-    const Homogeneous operator*( const Homogeneous& h ) const {
-        return transform(h);
+    inline const Homogeneous operator*( const Homogeneous& h ) const {
+        return this->transform(h);
     }
     //! Multiplication operator for group element and vector (preserves type)
-    inline
-    const Vector operator*( const Vector& v ) const {
-        return static_cast<Vector>(transform(v));
+    inline const Vector operator*( const Vector& v ) const {
+        return static_cast<Vector>(this->transform(v));
     }
     //! Multiplication operator for group element and point (preserves type)
-    inline
-    const Point operator*( const Point& p ) const {
-        return static_cast<Point>(transform(p));
+    inline const Point operator*( const Point& p ) const {
+        return static_cast<Point>(this->transform(p));
     }
 
     //! SE(3) vee operator as defined by Barfoot
     /*!
         This is the inverse operator to SE3::vee.
     */
-    inline
-    static const TransformationMatrix wedge( const TangentVector& xi ) {
+    inline static const TransformationMatrix wedge( const TangentVector& xi ) {
         TransformationMatrix Xi;
         Xi.block(0,0,3,3) = SO3::wedge(xi.tail(3));
         Xi.block(0,3,3,1) = xi.head(3);
@@ -601,8 +629,7 @@ public:
     /*!
         This is the inverse operator to SE3::wedge.
     */
-    inline
-    static const TangentVector vee( const TransformationMatrix& Xi ) {
+    inline static const TangentVector vee( const TransformationMatrix& Xi ) {
         TangentVector xi;
         xi.head(3) = Xi.block(0,3,3,1);
         xi.tail(3) = SO3::vee(Xi.block(0,0,3,3));
@@ -619,8 +646,7 @@ public:
 
         This is the inverse operator to SE3Group::log.
     */
-    inline
-    static const SE3Group exp( const TangentVector& xi ) {
+    inline static const SE3Group exp( const TangentVector& xi ) {
         return SE3Group( Vector(xi.head(3)), SO3::exp(xi.tail(3)) );
     }
 
@@ -634,8 +660,7 @@ public:
 
         This is the inverse operator to SE3Group::exp.
     */
-    inline
-    static const TangentVector log( const SE3Group& T ) {
+    inline static const TangentVector log( const SE3Group& T ) {
         TangentVector xi;
         xi.head(3) = T.translation().cartesian();
         xi.tail(3) = SO3::log(T.rotation());

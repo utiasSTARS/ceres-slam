@@ -72,15 +72,15 @@ public:
     }
 
     //! Return horizontal focal length
-    Scalar fu() const { return fu_; }
+    inline Scalar fu() const { return fu_; }
     //! Return vertical focal length
-    Scalar fv() const { return fv_; }
+    inline Scalar fv() const { return fv_; }
     //! Return horizontal principal point coordinate
-    Scalar cu() const { return cu_; }
+    inline Scalar cu() const { return cu_; }
     //! Return vertical horizontal principal point coordinate
-    Scalar cv() const { return cv_; }
+    inline Scalar cv() const { return cv_; }
     //! Return baseline
-    Scalar b() const { return b_; }
+    inline Scalar b() const { return b_; }
 
     //! Projects a 3D point in the camera frame into the camera
     //! to get a uvd stereo observation.

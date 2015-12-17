@@ -7,6 +7,7 @@
 
 #include <ceres_slam/geometry.h>
 #include <ceres_slam/stereo_camera.h>
+#include <ceres_slam/point_light.h>
 
 namespace ceres_slam {
 
@@ -15,6 +16,8 @@ class DatasetProblem {
 public:
     //! Camera type
     typedef StereoCamera<double> Camera;
+    //! Light type
+    typedef PointLight<double> Light;
     //! SO(3) type
     typedef SO3Group<double> SO3;
     //! SE(3) type
@@ -23,38 +26,53 @@ public:
     typedef Point3D<double> Point;
     //! Vector type
     typedef Vector3D<double> Vector;
+    //! Vertex type
+    typedef Vertex3D<double> Vertex;
 
     //! Default constructor
     DatasetProblem() { }
 
     //! Camera model
     Camera::Ptr camera;
+
     //! Timestamps (measured)
     std::vector<double> t;
     //! Number of states to optimize
     unsigned int num_states;
     //! Number of map points to optimize
-    unsigned int num_points;
+    unsigned int num_vertices;
+
     //! Camera poses in base frame (to be estimated)
     std::vector<SE3::TangentVector> pose_vectors;
     //! First pose, either identity or given by ground truth
     SE3 first_pose;
-    //! Map points in base frame (to be estimated)
-    std::vector<Point> map_points;
-    //! Map point IDs in obs_list
-    std::vector<unsigned int> point_ids;
-    //! True if map point j has been initialized
-    std::vector<bool> initialized_point;
+
+    //! Map vertices in base frame (to be estimated)
+    std::vector<Vertex> map_vertices;
+    //! Map vertex IDs in obs_list
+    std::vector<unsigned int> vertex_ids;
+    //! True if map vertex j has been initialized
+    std::vector<bool> initialized_vertex;
+    //! Noisy initial guesses for vertex normals (temporary)
+    std::vector<Vector> initial_vertex_normals;
+
+    //! Light source position in base frame (to be estimated)
+    Point light_pos;
+    //! Noise initial guess for light source position (temporary)
+    Point initial_light_pos;
+
     //! List of stereo observations
     std::vector<Camera::Observation> obs_list;
-    //! List of observation intensities
-    std::vector<double> int_list;
     //! Variance of stereo observations
     Camera::ObservationVariance obs_var;
+    //! List of observation intensities
+    std::vector<double> int_list;
+    //! Variance of ovservation intensities
+    Light::ColourVariance int_var;
 
     //! Read dataset from a CSV file
     /*!
-        Assuming first row is num_states, num_points,
+        Assuming first row is num_states, num_vertices,
         second row is intrinsics,
         and remaining rows are observations of the form [t,j,u,v,d,I]
         where t: timestemp

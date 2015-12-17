@@ -37,15 +37,16 @@ public:
                     T* residuals_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
-        typedef typename SE3T::TangentVector TangentVector;
+        typedef typename SE3T::TangentVector TangentVectorT;
         typedef Point3D<T> PointT;
         typedef Vector3D<T> VectorT;
         typedef Vertex3D<T> VertexT;
         typedef PointLight<T> LightT;
+        typedef typename LightT::PhongParams PhongParamsT;
         typedef typename LightT::Colour ColourT;
 
         // Camera pose in the global frame
-        Eigen::Map<const TangentVector> xi_c_g(xi_c_g_ceres);
+        Eigen::Map<const TangentVectorT> xi_c_g(xi_c_g_ceres);
         SE3T T_c_g = SE3T::exp(xi_c_g);
 
         // Map point
@@ -57,18 +58,17 @@ public:
         VectorT normal_c = T_c_g * normal_g;    // In the camera frame
 
         // Phong reflectance coefficients (ambient and diffuse only for now)
-        ColourT ambient(phong_params_ceres[0]);
-        ColoutT diffuse(phong_params_ceres[1]);
+        Eigen::Map<const PhongParamsT> phong_params(phong_params_ceres);
 
         // Vertex in the camera frame for shading
-        VertexT vertex_c(pt_c, normal_c, ambient, diffuse);
+        VertexT vertex_c(pt_c, normal_c, phong_params);
 
         // Light source position
         PointT lightpos_g(lightpos_g_ceres);    // In the global frame
         PointT lightpos_c = T_c_g * lightpos_g; // In the camera frame
 
         // Light source model
-        LightT light(lightpos_c);
+        LightT light(lightpos_c, PhongParamsT::Constant(T(1)) );
 
         // Compute the predicted intensity at the vertex
         ColourT predicted_colour = light.shade(vertex_c);
@@ -101,9 +101,9 @@ private:
     //! Intensity observation
     Light::Colour colour_;
     //! Intensity stiffness matrix (inverse sqrt of covariance matrix)
-    Light::ObservationCovariance stiffness_;
+    Light::ColourCovariance stiffness_;
 
-} // class IntensityErrorAutomatic
+}; // class IntensityErrorAutomatic
 
 } // namespace ceres_slam
 
