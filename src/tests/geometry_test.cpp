@@ -21,7 +21,7 @@ int main() {
     std::cout << rot1 << std::endl << rot2 << std::endl
               << rot3 << std::endl << rot4 << std::endl;
 
-    Point pt(0.,1.,0.);
+    Point pt(3.,2.,1.);
     Vector vec(1.,0.,0.);
     Homogeneous h(0.,0.,1.,2.);
 
@@ -29,12 +29,6 @@ int main() {
 
     std::cout << rot1 * pt << std::endl << rot2 * vec << std::endl
               << rot2 * rot2 << std::endl;
-
-    SO3::TransformedPointJacobian rot2pt_jacobian;
-    Point rot2pt = rot2.transform(pt, &rot2pt_jacobian);
-    std::cout << "rot2pt = " << rot2pt << std::endl;
-    std::cout << "rot2pt_jacobian = " << std::endl
-              << rot2pt_jacobian << std::endl;
 
     std::cout << SO3::wedge(phi) << std::endl;
     std::cout << SO3::vee(SO3::wedge(phi)) << std::endl;
@@ -54,12 +48,6 @@ int main() {
     std::cout << SE3::wedge(xi) << std::endl;
     std::cout << SE3::vee(SE3::wedge(xi)) << std::endl;
     std::cout << T2*pt << std::endl;
-
-    SE3::TransformedPointJacobian T2pt_jacobian;
-    Point T2pt = T2.transform(pt, &T2pt_jacobian);
-    std::cout << "T2pt = " << T2pt << std::endl;
-    std::cout << "T2pt_jacobian = " << std::endl << T2pt_jacobian << std::endl;
-
 
     Vector vec2(1.,2.,3.);
     std::cout << vec2 << std::endl << vec2.norm() << std::endl;
@@ -95,6 +83,17 @@ int main() {
     std::cout << "xib = " << xib.transpose() << std::endl;
     std::cout << "Tb = " << std::endl<< Tb << std::endl;
     std::cout << "Ta.inverse() * Tb = " << std::endl<< Ta.inverse() * Tb << std::endl;
+
+    SO3::TransformedPointJacobian C1pt_jacobian;
+    Point C1pt = C1.transform(pt, &C1pt_jacobian);
+    std::cout << "C1pt = " << C1pt << std::endl;
+    std::cout << "C1pt_jacobian = " << std::endl
+              << C1pt_jacobian << std::endl;
+
+    SE3::TransformedPointJacobian Tapt_jacobian;
+    Point Tapt = Ta.transform(pt, &Tapt_jacobian);
+    std::cout << "Tapt = " << Tapt << std::endl;
+    std::cout << "Tapt_jacobian = " << std::endl << Tapt_jacobian << std::endl;
 
 
     return EXIT_SUCCESS;

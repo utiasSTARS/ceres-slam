@@ -37,12 +37,12 @@ int main() {
     StereoCamera::Point pt(1.0, 2.0, 3.0);
     std::cout << pt << std::endl;
 
-    StereoCamera::ObservationJacobian obs_jac;
+    StereoCamera::ProjectionJacobian obs_jac;
     StereoCamera::Observation obs = cam.project(pt, &obs_jac);
     std::cout << "project: " << obs.transpose() << std::endl;
     std::cout << obs_jac << std::endl;
 
-    StereoCamera::PointJacobian pt2_jac;
+    StereoCamera::TriangulationJacobian pt2_jac;
     StereoCamera::Point pt2 = cam.triangulate(obs, &pt2_jac);
     std::cout << "triangulate: " << pt2 << std::endl;
     std::cout << pt2_jac << std::endl;

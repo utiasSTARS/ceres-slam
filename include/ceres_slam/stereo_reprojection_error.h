@@ -27,7 +27,7 @@ public:
 
     //! Constructor with fixed model parameters
     StereoReprojectionErrorAnalytic(
-        Camera::ConstPtr camera,
+        const Camera::ConstPtr camera,
         const Camera::Observation& observation,
         const Camera::ObservationCovariance& stiffness);
 
@@ -77,9 +77,12 @@ public:
 
     //! Constructor with fixed model parameters
     StereoReprojectionErrorAutomatic(
-        Camera::ConstPtr camera,
-        const Camera::Observation& observation,
-        const Camera::ObservationCovariance& stiffness);
+                            const Camera::ConstPtr camera,
+                            const Camera::Observation& observation,
+                            const Camera::ObservationCovariance& stiffness) :
+        camera_(camera),
+        observation_(observation),
+        stiffness_(stiffness) { }
 
     //! Templated evaluator operator for use with ceres::Jet
     template <typename T>
@@ -92,31 +95,23 @@ public:
         typedef Point3D<T> PointT;
         typedef Eigen::Matrix<T, 3, 1> ResidualVectorT;
         typedef StereoCamera<T> CameraT;
-        typedef typename CameraT::Observation Observation;
+        typedef typename CameraT::Observation ObservationT;
 
-        // Camera pose in global frame
+        // Camera pose in the global frame
         Eigen::Map<const TangentVector> xi_c_g(xi_c_g_ceres);
         SE3T T_c_g = SE3T::exp(xi_c_g);
 
         // Map point in the global frame
         PointT pt_g(pt_g_ceres);
 
-        // Map the measurement residuals to an Eigen vector for convenience
-        Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
-
         // Transform map point into the camera frame
         PointT pt_c = T_c_g * pt_g;
 
         // Project into stereo camera, computing jacobian if needed
-        CameraT cameraT(T(camera_->fu()), T(camera_->fv()),
-                        T(camera_->cu()), T(camera_->cv()),
-                        T(camera_->b()));
-        Observation predicted_observation;
-
-        predicted_observation = cameraT.project(pt_c);
+        ObservationT predicted_observation = camera_->cast<T>().project(pt_c);
 
         // Compute the residuals
-        // NOTE: This also updates residuals_ceres
+        Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
         residuals = stiffness_.cast<T>()
             * (predicted_observation - observation_.cast<T>());
 
@@ -128,7 +123,16 @@ public:
     static ceres::CostFunction* Create(
                             const Camera::ConstPtr camera,
                             const Camera::Observation& observation,
-                            const Camera::ObservationCovariance& stiffness);
+                            const Camera::ObservationCovariance& stiffness) {
+        return( new ceres::AutoDiffCostFunction
+                    <StereoReprojectionErrorAutomatic,
+                                                    3,  // Residual dimension
+                                                    6,  // Vehicle pose vector
+                                                    3>  // Map point position
+                        (new StereoReprojectionErrorAutomatic(
+                                camera, observation, stiffness))
+              );
+    }
 
 private:
     //! Camera model

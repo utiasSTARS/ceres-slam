@@ -47,6 +47,8 @@ public:
     std::vector<bool> initialized_point;
     //! List of stereo observations
     std::vector<Camera::Observation> obs_list;
+    //! List of observation intensities
+    std::vector<double> int_list;
     //! Variance of stereo observations
     Camera::ObservationVariance obs_var;
 

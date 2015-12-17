@@ -28,8 +28,10 @@ bool StereoReprojectionErrorAnalytic::Evaluate(
     typedef Eigen::Matrix<double, 3, 1> ResidualVector;
 
     // Check if we need to compute jacobians
-    bool need_jacobians = jacobians_ceres != nullptr
-                          && jacobians_ceres[0] != nullptr;
+    bool need_pose_jacobian = jacobians_ceres != nullptr
+                            && jacobians_ceres[0] != nullptr;
+    bool need_point_jacobian = jacobians_ceres != nullptr
+                            && jacobians_ceres[1] != nullptr;
 
     // Camera pose in global frame
     Eigen::Map<const SE3::TangentVector> xi_c_g(parameters_ceres[0]);
@@ -38,13 +40,11 @@ bool StereoReprojectionErrorAnalytic::Evaluate(
     // Map point in the global frame
     Point pt_g(parameters_ceres[1]);
 
-    // Map the measurement residuals to an Eigen vector for convenience
-    Eigen::Map<ResidualVector> residuals(residuals_ceres);
-
-    // Transform map point into the camera frame
+    // Transform map point into the camera frame, computing jacobian if needed
     Point pt_c;
     SE3::TransformedPointJacobian transformed_point_jacobian;
-    if(need_jacobians) {
+
+    if(need_pose_jacobian) {
         pt_c = T_c_g.transform(pt_g, &transformed_point_jacobian);
     }
     else {
@@ -53,36 +53,38 @@ bool StereoReprojectionErrorAnalytic::Evaluate(
 
     // Project into stereo camera, computing jacobian if needed
     Camera::Observation predicted_observation;
-    Camera::ObservationJacobian camera_jacobian;
-    if(need_jacobians) {
+    Camera::ProjectionJacobian camera_jacobian;
+
+    if(need_pose_jacobian || need_point_jacobian) {
         predicted_observation =
             camera_->project(pt_c, &camera_jacobian);
+        // d(residual) / d(pt_c)
+        // (3x3)(3x3) ==> (3x3)
+        camera_jacobian = stiffness_ * camera_jacobian;
     }
     else {
         predicted_observation = camera_->project(pt_c);
     }
 
     // Compute the residuals
-    // NOTE: This also updates residuals_ceres
+    Eigen::Map<ResidualVector> residuals(residuals_ceres);
     residuals = stiffness_ * (predicted_observation - observation_);
 
     // Compute jacobians if needed
-    if(need_jacobians) {
-        // d(residual) / d(pt_c)
-        // (3x3)(3x3) ==> (3x3)
-        Camera::ObservationJacobian factor = stiffness_ * camera_jacobian;
-
+    if(need_pose_jacobian) {
         // d(pt_c) / d(T_c_g)
         // (3x3)(3x6) ==> (3x6)
         Eigen::Map<SE3::TransformedPointJacobian>
             pose_jacobian(jacobians_ceres[0]);
-        pose_jacobian = factor * transformed_point_jacobian;
+        pose_jacobian = camera_jacobian * transformed_point_jacobian;
+    }
 
+    if(need_point_jacobian) {
         // d(pt_c) / d(pt_g)
         // (3x3)(3x3) ==> (3x3)
-        Eigen::Map<Camera::ObservationJacobian>
+        Eigen::Map<Camera::ProjectionJacobian>
             point_jacobian(jacobians_ceres[1]);
-        point_jacobian = factor * T_c_g.rotation().matrix();
+        point_jacobian = camera_jacobian * T_c_g.rotation().matrix();
     }
 
     return true;
@@ -94,29 +96,6 @@ ceres::CostFunction* StereoReprojectionErrorAnalytic::Create(
                         const Camera::ObservationCovariance& stiffness) {
     return ( new StereoReprojectionErrorAnalytic(
                     camera, observation, stiffness) );
-}
-
-
-StereoReprojectionErrorAutomatic::StereoReprojectionErrorAutomatic(
-                            Camera::ConstPtr camera,
-                            const Camera::Observation& observation,
-                            const Camera::ObservationCovariance& stiffness) :
-    camera_(camera),
-    observation_(observation),
-    stiffness_(stiffness) { }
-
-
-ceres::CostFunction* StereoReprojectionErrorAutomatic::Create(
-                        const Camera::ConstPtr camera,
-                        const Camera::Observation& observation,
-                        const Camera::ObservationCovariance& stiffness) {
-    return ( new ceres::AutoDiffCostFunction <StereoReprojectionErrorAutomatic,
-                                                3,  // Residual dimension
-                                                6,  // Vehicle pose vector
-                                                3>  // Map point position
-                    (new StereoReprojectionErrorAutomatic(
-                            camera, observation, stiffness))
-            );
 }
 
 } // namespace ceres_slam

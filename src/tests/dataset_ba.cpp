@@ -48,12 +48,12 @@ int main(int argc, char** argv) {
             // Only optimize map points that have been initialized
             if(dataset.initialized_point[j]) {
                 // Cost function for this observation
-                ceres::CostFunction* stereo_cost =
-                    ceres_slam::StereoReprojectionErrorAnalytic::Create(
-                        dataset.camera, dataset.obs_list[i], obs_stiffness);
                 // ceres::CostFunction* stereo_cost =
-                //     ceres_slam::StereoReprojectionErrorAutomatic::Create(
+                //     ceres_slam::StereoReprojectionErrorAnalytic::Create(
                 //         dataset.camera, dataset.obs_list[i], obs_stiffness);
+                ceres::CostFunction* stereo_cost =
+                    ceres_slam::StereoReprojectionErrorAutomatic::Create(
+                        dataset.camera, dataset.obs_list[i], obs_stiffness);
                 // Add the cost function for this observation to the problem
                 problem.AddResidualBlock(stereo_cost, NULL,
                                          dataset.pose_vectors[k].data(),
@@ -61,6 +61,9 @@ int main(int argc, char** argv) {
             }
         }
     }
+
+    // Hold the first pose constant
+    problem.SetParameterBlockConstant(dataset.pose_vectors[0].data());
 
     // Solve the problem
     std::cerr << "Solving" << std::endl;

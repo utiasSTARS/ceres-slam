@@ -17,14 +17,14 @@ public:
     //! Pointer type
     typedef std::shared_ptr<StereoCamera> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<StereoCamera> ConstPtr;
+    typedef std::shared_ptr<const StereoCamera> ConstPtr;
     //! Dimension of the observation (u, v, d)
     static const int obs_dim = 3;
     //! Point type
     typedef Point3D<Scalar> Point;
     //! Point Jacobian type
     typedef Eigen::Matrix<Scalar, Point::dim, obs_dim, Eigen::RowMajor>
-        PointJacobian;
+        TriangulationJacobian;
     //! Observation type
     typedef Eigen::Matrix<Scalar, obs_dim, 1> Observation;
     //! Observation variance type
@@ -35,7 +35,7 @@ public:
         ObservationCovariance;
     //! Observation Jacobian type
     typedef Eigen::Matrix<Scalar, obs_dim, Point::dim, Eigen::RowMajor>
-        ObservationJacobian;
+        ProjectionJacobian;
 
     //! Copy constructor
     StereoCamera( const StereoCamera& other ) :
@@ -56,6 +56,21 @@ public:
         cu_(left_camera_info->P[2]), cv_(left_camera_info->P[6]),
         b_(-right_camera_info->P[3] / right_camera_info->P[0]) { }
 
+    //! Cast to another scalar type (mutable)
+    template <typename OtherScalar>
+    StereoCamera<OtherScalar> cast() {
+        return StereoCamera<OtherScalar>( OtherScalar(fu()), OtherScalar(fv()),
+                                          OtherScalar(cu()), OtherScalar(cv()),
+                                          OtherScalar(b()) );
+    }
+    //! Cast to another scalar type (const)
+    template <typename OtherScalar>
+    const StereoCamera<OtherScalar> cast() const {
+        return StereoCamera<OtherScalar>( OtherScalar(fu()), OtherScalar(fv()),
+                                          OtherScalar(cu()), OtherScalar(cv()),
+                                          OtherScalar(b()) );
+    }
+
     //! Return horizontal focal length
     Scalar fu() const { return fu_; }
     //! Return vertical focal length
@@ -70,7 +85,7 @@ public:
     //! Projects a 3D point in the camera frame into the camera
     //! to get a uvd stereo observation.
     const Observation project(
-        const Point& pt_c, ObservationJacobian* jacobian_ptr = nullptr) const {
+        const Point& pt_c, ProjectionJacobian* jacobian_ptr = nullptr) const {
         Scalar one_over_z = Scalar(1) / pt_c(2);
 
         Observation obs; // [u_l, v_l, d]
@@ -79,7 +94,7 @@ public:
         obs(2) = fu() * b() * one_over_z;
 
         if(jacobian_ptr != nullptr) {
-            ObservationJacobian& jacobian = *jacobian_ptr;
+            ProjectionJacobian& jacobian = *jacobian_ptr;
 
             Scalar one_over_z2 = one_over_z * one_over_z;
 
@@ -105,7 +120,7 @@ public:
     //! Triangulates a 3D point in the camera frame
     //! from a uvd stereo observation.
     const Point triangulate(
-        const Observation& obs, PointJacobian* jacobian_ptr = nullptr) const {
+        const Observation& obs, TriangulationJacobian* jacobian_ptr = nullptr) const {
         Point pt_c;
         Scalar b_over_d = b() / obs(2);
         Scalar fu_over_fv = fu() / fv();
@@ -114,7 +129,7 @@ public:
         pt_c(2) = fu() * b_over_d;
 
         if(jacobian_ptr != nullptr) {
-            PointJacobian& jacobian = *jacobian_ptr;
+            TriangulationJacobian& jacobian = *jacobian_ptr;
 
             Scalar b_over_d2 = b_over_d / obs(2);
 

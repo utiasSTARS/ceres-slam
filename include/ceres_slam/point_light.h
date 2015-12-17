@@ -15,7 +15,7 @@ public:
     //! Pointer type
     typedef std::shared_ptr<PointLight> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<PointLight> ConstPtr;
+    typedef std::shared_ptr<const PointLight> ConstPtr;
     //! Dimension of the observation (greyscale intensity only for now)
     static const int obs_dim = 1;
     //! Point type

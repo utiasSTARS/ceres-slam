@@ -20,7 +20,7 @@ public:
     //! Pointer type
     typedef std::shared_ptr<Homogeneous3D> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<Homogeneous3D> ConstPtr;
+    typedef std::shared_ptr<const Homogeneous3D> ConstPtr;
     //! Dimension of the space
     static const int dim = 3;
     //! Cartesian type
@@ -133,7 +133,7 @@ public:
     //! Pointer type
     typedef std::shared_ptr<Vector3D> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<Vector3D> ConstPtr;
+    typedef std::shared_ptr<const Vector3D> ConstPtr;
     //! Cartesian type
     typedef typename Homogeneous3D<Scalar>::Cartesian Cartesian;
     //! Homogeneous type
@@ -187,7 +187,7 @@ public:
     //! Pointer type
     typedef std::shared_ptr<Point3D> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<Point3D> ConstPtr;
+    typedef std::shared_ptr<const Point3D> ConstPtr;
     //! Cartesian type
     typedef typename Homogeneous3D<Scalar>::Cartesian Cartesian;
     //! Homogeneous type
@@ -241,8 +241,8 @@ struct Vertex3D {
 
     Point position; //!< Vertex position
     Vector normal;  //!< Vertex surface normal
-    Scalar ambient; //!< Ambient reflectance
-    Scalar diffuse; //!< Diffuse reflectance
+    Colour ambient; //!< Ambient reflectance
+    Colour diffuse; //!< Diffuse reflectance
 
     //! Ostream operator for vertices
     friend std::ostream& operator<<( std::ostream& os,
@@ -258,14 +258,14 @@ struct Vertex3D {
     }
 };
 
-//! SO3Group Lie group (3D rotations)
+//! SO(3) Lie group (3D rotations)
 template <typename Scalar>
 class SO3Group {
 public:
     //! Pointer type
     typedef std::shared_ptr<SO3Group> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<SO3Group> ConstPtr;
+    typedef std::shared_ptr<const SO3Group> ConstPtr;
     //! Degrees of freedom (3 for rotation)
     static const int dof = 3;
     //! Dimension of transformation matrix
@@ -326,7 +326,7 @@ public:
 
         if(jacobian_ptr != nullptr) {
             TransformedPointJacobian& jacobian = *jacobian_ptr;
-            jacobian = -wedge(matrix() * h.cartesian());
+            jacobian = wedge(-(matrix() * h.cartesian()));
         }
 
         return h_transformed;
@@ -450,14 +450,14 @@ private:
     TransformationMatrix mat_;
 };
 
-//! SE3Group Lie group (3D rigid body transformations)
+//! SE(3) Lie group (3D rigid body transformations)
 template <typename Scalar>
 class SE3Group {
 public:
     //! Pointer type
     typedef std::shared_ptr<SE3Group> Ptr;
     //! Const pointer type
-    typedef const std::shared_ptr<SE3Group> ConstPtr;
+    typedef std::shared_ptr<const SE3Group> ConstPtr;
     //! Degrees of freedom (3 for rotation + 3 for translation)
     static const int dof = 6;
     //! Dimension of transformation matrix
@@ -540,13 +540,22 @@ public:
         const Homogeneous& h,
         TransformedPointJacobian* jacobian_ptr = nullptr ) const {
 
-        Homogeneous h_transformed = rotation() * h + h.scale() * translation();
+        Homogeneous h_transformed;
 
         if(jacobian_ptr != nullptr) {
+            typename SO3::TransformedPointJacobian rot_jacobian;
+            Homogeneous h_rotated =
+                rotation().transform(h, &rot_jacobian);
+
+            h_transformed = h_rotated + h.scale() * translation();
+
             TransformedPointJacobian& jacobian = *jacobian_ptr;
             jacobian.block(0,0,3,3) =
                 h.scale() * SO3::TransformationMatrix::Identity();
-            jacobian.block(0,3,3,3) = -SO3::wedge(h_transformed.cartesian());
+            jacobian.block(0,3,3,3) = rot_jacobian;
+        }
+        else {
+            h_transformed = rotation() * h + h.scale() * translation();
         }
 
         return h_transformed;
