@@ -57,7 +57,6 @@ include_directories(
   ${CERES_INCLUDE_DIRS}
 )
 
-file(GLOB ${PROJECT_NAME}_HEADERS "include/ceres_slam/*.h")
 file(GLOB ${PROJECT_NAME}_SOURCES "src/ceres_slam/*.cpp")
 
 add_library(${PROJECT_NAME}
