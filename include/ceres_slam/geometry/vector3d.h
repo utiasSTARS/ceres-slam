@@ -42,11 +42,11 @@ public:
     //! Conversion constructor from a general homogeneous quantity
     Vector3D( const Homogeneous3D<Scalar>& h ) :
         Vector3D(h.cartesian()) {
-        if( abs<Scalar>(h.scale())
-            >= Scalar(std::numeric_limits<Scalar>::epsilon()) ) {
-            std::cerr << "Warning: implicit cast from Homogeneous3D to Vector3D"
-                      << " with scale = " << h.scale() << " != 0" << std::endl;
-        }
+        // if( abs<Scalar>(h.scale())
+        //     >= Scalar(std::numeric_limits<Scalar>::epsilon()) ) {
+        //     std::cerr << "Warning: implicit cast from Homogeneous3D to Vector3D"
+        //               << " with scale = " << h.scale() << " != 0" << std::endl;
+        // }
     }
 
     //! Compute the squared norm of the vector

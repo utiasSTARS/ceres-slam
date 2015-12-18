@@ -42,10 +42,10 @@ public:
     //! Conversion constructor from a general homogeneous quantity
     Point3D( const Homogeneous3D<Scalar>& h ) :
         Point3D(h.cartesian()) {
-        if( abs<Scalar>(h.scale()) <= std::numeric_limits<Scalar>::epsilon() ) {
-            std::cerr << "Warning: implicit cast from Homogeneous3D to Point3D"
-                      << " with scale = " << h.scale() << " == 0" << std::endl;
-        }
+        // if( abs<Scalar>(h.scale()) <= std::numeric_limits<Scalar>::epsilon() ) {
+        //     std::cerr << "Warning: implicit cast from Homogeneous3D to Point3D"
+        //               << " with scale = " << h.scale() << " == 0" << std::endl;
+        // }
     }
 
     //! Ostream operator for Point3D

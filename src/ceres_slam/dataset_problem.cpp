@@ -116,10 +116,12 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     std::vector<std::string> tokens = split(filename, '.');
     std::string filename_poses = tokens.at(0) + "_poses.csv";
     std::string filename_map = tokens.at(0) + "_map.csv";
+    std::string filename_lights = tokens.at(0) + "_lights.csv";
 
     // Open files
     std::ofstream pose_file(filename_poses);
     std::ofstream map_file(filename_map);
+    std::ofstream light_file(filename_lights);
 
     // Quit if you can't open the files
     if(!pose_file.is_open()) {
@@ -132,6 +134,11 @@ const bool DatasetProblem::write_csv(std::string filename) const {
                   << filename_map << std::endl;
         return false;
     }
+    if(!light_file.is_open()) {
+        std::cerr << "Error: Couldn't open file "
+                  << filename_lights << std::endl;
+        return false;
+    }
 
     // Convert poses to CSV entries
     pose_file << "T_00, T_01, T_02, T_03,"
@@ -142,7 +149,7 @@ const bool DatasetProblem::write_csv(std::string filename) const {
         pose_file << SE3::exp(xi).str() << std::endl;
     }
 
-    // Convert initialized map points to CSV entries
+    // Convert initialized vertices to CSV entries
     map_file << "point_id, x, y, z, nx, ny, nz, ka, kd" << std::endl;
     for(unsigned int j = 0; j < map_vertices.size(); ++j) {
         if(initialized_vertex[j]) {
@@ -150,9 +157,14 @@ const bool DatasetProblem::write_csv(std::string filename) const {
         }
     }
 
+    // Convert light positions to CSV entries
+    light_file << "x, y, z, ka, kd" << std::endl;
+    light_file << light_pos.str() << std::endl;
+
     // Close files
     pose_file.close();
     map_file.close();
+    light_file.close();
 
     return true;
 }

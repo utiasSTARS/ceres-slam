@@ -134,6 +134,14 @@ public:
         return col;
     }
 
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << this->position().format(CommaInitFmt) << ","
+           << this->phong_params().format(CommaInitFmt);
+        return ss.str();
+    }
+
     //! Ostream operator for PointLight
     friend std::ostream& operator<<( std::ostream& os,
                                      const PointLight<Scalar>& p ) {
