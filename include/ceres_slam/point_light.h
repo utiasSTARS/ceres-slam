@@ -87,10 +87,14 @@ public:
         // Dot product of light direction and surface normal
         Scalar light_dir_dot_normal = light_dir.dot(vertex.normal());
 
-        Colour col = this->ambient() * vertex.ambient()
-                   + this->diffuse() * vertex.diffuse() *
+        Colour col = this->ambient() * vertex.material()->ambient()
+                   + this->diffuse() * vertex.material()->diffuse() *
                         fmax<Scalar>(Scalar(0), light_dir_dot_normal);
 
+        // Enforce intensities in [0,1]
+        clamp(col);
+
+        // Compute jacobian if needed
         if(jacobian_ptr != nullptr) {
             ColourJacobian& jacobian = *jacobian_ptr;
             jacobian = ColourJacobian::Zero();
@@ -104,7 +108,7 @@ public:
             if(light_dir_dot_normal >= 0.) {
                 jacobian.block(0,0,1,3) =
                     // d(I)/d(l) (1 x 3)
-                    this->diffuse() * vertex.diffuse() *
+                    this->diffuse() * vertex.material()->diffuse() *
                         vertex.normal().cartesian().transpose()
                     // d(l)/d(pj) (3 x 3)
                     * (-one_over_two_light_norm3)
@@ -117,7 +121,7 @@ public:
 
             // d(I)/d(nj)
             if(light_dir_dot_normal >= Scalar(0)) {
-                jacobian.block(0,3,1,3) = this->diffuse() * vertex.diffuse()
+                jacobian.block(0,3,1,3) = this->diffuse() * vertex.material()->diffuse()
                                         * light_dir.cartesian().transpose();
             } // else zeros
 
@@ -137,7 +141,7 @@ public:
     //! Convert to a string
     inline const std::string str() const {
         std::stringstream ss;
-        ss << this->position().format(CommaInitFmt) << ","
+        ss << this->position().str() << ","
            << this->phong_params().format(CommaInitFmt);
         return ss.str();
     }
@@ -148,7 +152,7 @@ public:
         os << "Point light source" << std::endl
            << "Position: " << p.position() << std::endl
            << "Phong parameters: " << std::endl
-           << p.phong_params() << std::endl;
+           << p.phong_params();
         return os;
      }
 
@@ -161,6 +165,12 @@ private:
         col(2) will be specular, col(3) will be shininess.
     */
     PhongParams phong_params_;
+
+    //! Clamp intensity values to lie in [0,1]
+    void clamp(Colour& col) const {
+        col = fmax<Colour>(Colour(0), col);
+        col = fmin<Colour>(Colour(1), col);
+    }
 };
 
 

@@ -34,6 +34,7 @@ const bool DatasetProblem::read_csv(std::string filename) {
     num_vertices = std::stoi(tokens.at(1));
     pose_vectors.resize(num_states);
     map_vertices.resize(num_vertices);
+    initial_vertex_normals.resize(num_vertices);
     for(unsigned int i = 0; i < num_vertices; ++i) {
         initialized_vertex.push_back(false);
     }
@@ -78,9 +79,11 @@ const bool DatasetProblem::read_csv(std::string filename) {
     // Read in the observations
     std::cerr << "Reading observation data... ";
     while(std::getline(file, line)) {
+        // std::cerr << line << std::endl;
         tokens = split(line, ',');
         t.push_back( std::stod(tokens.at(0)) );
-        vertex_ids.push_back( std::stoi(tokens.at(1)) );
+        unsigned int j = std::stoi(tokens.at(1));
+        vertex_ids.push_back(j);
         double u = std::stod(tokens.at(2));
         double v = std::stod(tokens.at(3));
         double d = std::stod(tokens.at(4));
@@ -89,7 +92,7 @@ const bool DatasetProblem::read_csv(std::string filename) {
         Vector noisy_normal( std::stod(tokens.at(6)),
                              std::stod(tokens.at(7)),
                              std::stod(tokens.at(8)) );
-        initial_vertex_normals.push_back(noisy_normal);
+        initial_vertex_normals.at(j) = noisy_normal;
     }
     std::cerr << "read " << obs_list.size() << " observations" << std::endl;
 
@@ -158,7 +161,7 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     }
 
     // Convert light positions to CSV entries
-    light_file << "x, y, z, ka, kd" << std::endl;
+    light_file << "x, y, z" << std::endl;
     light_file << light_pos.str() << std::endl;
 
     // Close files
@@ -181,6 +184,10 @@ void DatasetProblem::compute_initial_guess() {
     // Initialize the light source to something close to ground truth.
     // Need to figure out a way to do this in general.
     light_pos = initial_light_pos;
+
+    // Initialize the material (assuming everything is the same material)
+    material = std::make_shared< Material<double> >(
+        Material<double>::PhongParams::Constant(0.5) );
 
     // First pose is either identity, or the first ground truth pose
     pose_vectors[0] = SE3::log(first_pose);
@@ -230,6 +237,7 @@ void DatasetProblem::compute_initial_guess() {
         // }
 
         // Compute the transform from the first to the second point cloud
+        // std::cout << "k = " << k << ", k-1 = " << k-1 << std::endl;
         // std::cout <<"Initial set has " << pts_km1.size()
         //           << " elements" << std::endl;
 
@@ -257,14 +265,10 @@ void DatasetProblem::compute_initial_guess() {
                 Vector vertex_normal =
                     initial_vertex_normals[ j_km1[i] ];
 
-                // Initialize the vertex Phong parameters to zero?
-                Vertex::PhongParams vertex_phong_params =
-                    Vertex::PhongParams::Zero();
-
                 // Create the vertex object
                 map_vertices[ j_km1[i] ].position() = vertex_position;
                 map_vertices[ j_km1[i] ].normal() = vertex_normal;
-                map_vertices[ j_km1[i] ].phong_params() = vertex_phong_params;
+                map_vertices[ j_km1[i] ].material() = material;
 
                 // Set the initialization flag to true for this vertex
                 initialized_vertex[ j_km1[i] ] = true;

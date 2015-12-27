@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include <Eigen/Core>
+#include <Eigen/Geometry>
 
 #include <ceres_slam/geometry/point3d.h>
 #include <ceres_slam/geometry/vector3d.h>
@@ -63,6 +64,14 @@ public:
         return SO3Group(this->matrix().transpose());
     }
 
+    //! Normalize the transformation matrix to ensure it is a valid element of
+    //! SO(3)
+    inline void normalize() {
+        Eigen::Transform<Scalar, 3, Eigen::Affine> temp;
+        temp.linear() = mat_;
+        mat_ = temp.rotation();
+    }
+
     //! Transform a 3D homogeneous quantity.
     /*!
         Transform a 3D homogeneous quantity and, if requested, compute the
@@ -101,6 +110,11 @@ public:
         return static_cast<Point>(this->transform(p));
     }
 
+    //! SO(3) identity element
+    inline static const SO3Group Identity() {
+        return SO3Group(TransformationMatrix::Identity());
+    }
+
     //! SO(3) wedge operator as defined by Barfoot
     /*!
         This is the inverse operator to SO3::vee.
@@ -133,13 +147,13 @@ public:
     */
     inline static const SO3Group exp( const TangentVector& phi ) {
         Scalar angle = phi.norm();
-        TangentVector axis = phi / angle;
 
-        // Special case for phi == 0 (identity)
+        // If angle is close to zero, use first-order Taylor expansion
         if(angle <= std::numeric_limits<Scalar>::epsilon()) {
-            return SO3Group(TransformationMatrix::Identity());
+            return SO3Group(TransformationMatrix::Identity() + wedge(phi));
         }
 
+        TangentVector axis = phi / angle;
         Scalar cp = cos(angle);
         Scalar sp = sin(angle);
 
@@ -156,19 +170,28 @@ public:
         This is the inverse operation to SO3Group::exp.
     */
     inline static const TangentVector log( const SO3Group& C ) {
-        // Get the rotation angle from the trace of C
-        Scalar angle = acos(Scalar(0.5) * C.matrix().trace() - Scalar(0.5));
+        // Normalize C to ensure it is a valid rotation matrix
+        SO3Group C_normalized = C;
+        C_normalized.normalize();
+        // std::cout << "C" << std::endl << C << std::endl;
+        // std::cout << "C_normalized" << std::endl << C_normalized << std::endl;
 
-        // Special case if angle is zero
+        // Get the rotation angle from the trace of C
+        Scalar angle = acos(Scalar(0.5) * C_normalized.matrix().trace()
+                            - Scalar(0.5));
+        // std::cerr << angle << std::endl;
+
+        // If angle is close to zero, use first-order Taylor expansion
         if(angle <= std::numeric_limits<Scalar>::epsilon()) {
-            return TangentVector(Scalar(0),Scalar(0),Scalar(0));
+            return vee(C_normalized.matrix()
+                        - TransformationMatrix::Identity());
         }
 
         // Compute the normalized axis
         TangentVector axis;
-        axis(0) = C.matrix()(2,1) - C.matrix()(1,2);
-        axis(1) = C.matrix()(0,2) - C.matrix()(2,0);
-        axis(2) = C.matrix()(1,0) - C.matrix()(0,1);
+        axis(0) = C_normalized.matrix()(2,1) - C_normalized.matrix()(1,2);
+        axis(1) = C_normalized.matrix()(0,2) - C_normalized.matrix()(2,0);
+        axis(2) = C_normalized.matrix()(1,0) - C_normalized.matrix()(0,1);
         axis /= (Scalar(2) * sin(angle));
 
         return angle * axis;

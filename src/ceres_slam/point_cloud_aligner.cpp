@@ -69,6 +69,7 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
     // Uniformly distributed integers in [a,b], NOT [a,b)
     std::random_device rd;
     std::mt19937 rng(rd());
+    rng.seed(42); // for reproducibility
     std::uniform_int_distribution<unsigned int>
         idx_selector(0, pts_0.size()-1);
     unsigned int rand_idx[3];

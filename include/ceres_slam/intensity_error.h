@@ -4,6 +4,7 @@
 #include <ceres/ceres.h>
 
 #include <ceres_slam/point_light.h>
+#include <ceres_slam/material.h>
 
 namespace ceres_slam {
 
@@ -42,8 +43,9 @@ public:
         typedef Vector3D<T> VectorT;
         typedef Vertex3D<T> VertexT;
         typedef PointLight<T> LightT;
-        typedef typename LightT::PhongParams PhongParamsT;
         typedef typename LightT::Colour ColourT;
+        typedef Material<T> MaterialT;
+        typedef typename MaterialT::PhongParams PhongParamsT;
 
         // Camera pose in the global frame
         Eigen::Map<const TangentVectorT> xi_c_g(xi_c_g_ceres);
@@ -55,20 +57,22 @@ public:
 
         // Normal vector at the map point
         VectorT normal_g(normal_g_ceres);       // In the global frame
+        normal_g.normalize();
         VectorT normal_c = T_c_g * normal_g;    // In the camera frame
 
         // Phong reflectance coefficients (ambient and diffuse only for now)
         Eigen::Map<const PhongParamsT> phong_params(phong_params_ceres);
+        typename MaterialT::Ptr material = std::make_shared<MaterialT>(phong_params);
 
         // Vertex in the camera frame for shading
-        VertexT vertex_c(pt_c, normal_c, phong_params);
+        VertexT vertex_c(pt_c, normal_c, material);
 
         // Light source position
         PointT lightpos_g(lightpos_g_ceres);    // In the global frame
         PointT lightpos_c = T_c_g * lightpos_g; // In the camera frame
 
         // Light source model
-        LightT light(lightpos_c, PhongParamsT::Constant(T(1)) );
+        LightT light(lightpos_c, PhongParamsT::Constant(T(1)));
 
         // Compute the predicted intensity at the vertex
         ColourT predicted_colour = light.shade(vertex_c);
@@ -76,6 +80,7 @@ public:
         // Compute the residuals
         // (no need to map to an eigen matrix yet since it's only 1D)
         residuals_ceres[0] = T(stiffness_) * (predicted_colour - T(colour_));
+        // std::cout << residuals_ceres[0] << std::endl;
 
         return true;
     }

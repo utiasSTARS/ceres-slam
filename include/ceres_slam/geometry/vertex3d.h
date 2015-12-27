@@ -11,6 +11,7 @@
 #include <ceres_slam/utils.h>
 #include <ceres_slam/geometry/point3d.h>
 #include <ceres_slam/geometry/vector3d.h>
+#include <ceres_slam/material.h>
 
 namespace ceres_slam {
 
@@ -24,18 +25,18 @@ public:
     typedef Vector3D<Scalar> Vector;
     //! Colour type
     typedef Scalar Colour;
-    //! Phong illumination parameters
-    typedef Eigen::Matrix<Scalar, 1, 2, Eigen::RowMajor> PhongParams;
+    //! Material pointer type
+    typedef typename Material<Scalar>::Ptr MaterialPtr;
     //! Vertex dimension
     static const int dim = Point::dim + Vector::dim + 2;
 
     //! Default constructor
-    Vertex3D() : Vertex3D( Point(), Vector(), PhongParams::Zero() ) { }
+    Vertex3D() : Vertex3D(Point(), Vector(), nullptr) { }
     //! Construct from position, normal, and phong parameters
-    Vertex3D(Point position, Vector normal, PhongParams phong_params) :
+    Vertex3D(Point position, Vector normal, MaterialPtr material) :
         position_(position),
         normal_(normal),
-        phong_params_(phong_params) { }
+        material_ptr_(material) { }
 
     //! Return the position of the vertex (mutable)
     inline Point& position() { return position_; }
@@ -47,27 +48,17 @@ public:
     //! Return the normal vector at the vertex (const)
     inline const Vector& normal() const { return normal_; }
 
-    //! Return the Phong parameter matrix (mutable)
-    inline PhongParams& phong_params() { return phong_params_; }
-    //! Return the Phong parameter matrix (const)
-    inline const PhongParams& phong_params() const { return phong_params_; }
-
-    //! Return the ambient component of the vertex reflectance (mutable)
-    inline Colour& ambient() { return phong_params_(0); }
-    //! Return the ambient component of the vertex reflectance (mutable)
-    inline const Colour& ambient() const { return phong_params_(0); }
-
-    //! Return the diffuse component of the vertex reflectance (mutable)
-    inline Colour& diffuse() { return phong_params_(1); }
-    //! Return the diffuse component of the vertex reflectance (const)
-    inline const Colour& diffuse() const { return phong_params_(1); }
+    //! Return a pointer to the material at the vertex (mutable)
+    inline MaterialPtr& material() { return material_ptr_; }
+    //! Return a pointer to the material at the vertex (const)
+    inline const MaterialPtr& material() const { return material_ptr_; }
 
     //! Convert to a string
     inline const std::string str() const {
         std::stringstream ss;
         ss << this->position().str() << ","
            << this->normal().str() << ","
-           << this->phong_params().format(CommaInitFmt);
+           << this->material()->phong_params().format(CommaInitFmt);
         return ss.str();
     }
 
@@ -77,8 +68,7 @@ public:
         os << "Vertex" << std::endl
            << "Position: " << v.position() << std::endl
            << "Normal: " << v.normal() << std::endl
-           << "Phong parameters: " << std::endl
-           << v.phong_params() << std::endl;
+           << "Material: " << *(v.material());
         return os;
     }
 private:
@@ -86,12 +76,8 @@ private:
     Point position_;
     //! Vertex surface normal
     Vector normal_;
-    //! Phong illumination parameters stored column-wise in a matrix.
-    /*!
-        col(0) is ambient, col(1) is diffuse,
-        col(2) will be specular, col(3) will be shininess.
-    */
-    PhongParams phong_params_;
+    //! Vertex material
+    MaterialPtr material_ptr_;
 };
 
 } // namespace ceres_slam

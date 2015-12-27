@@ -8,6 +8,7 @@
 #include <ceres_slam/geometry.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/point_light.h>
+#include <ceres_slam/material.h>
 
 namespace ceres_slam {
 
@@ -60,6 +61,9 @@ public:
     Point light_pos;
     //! Noise initial guess for light source position (temporary)
     Point initial_light_pos;
+
+    //! Material (just one for now, to be estimated)
+    Material<double>::Ptr material;
 
     //! List of stereo observations
     std::vector<Camera::Observation> obs_list;

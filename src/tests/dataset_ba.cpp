@@ -39,8 +39,8 @@ int main(int argc, char** argv) {
     std::cerr << "Building problem" << std::endl;
     ceres::Problem problem;
 
-    dataset.obs_var << 1, 1, 1; // u,v,d variance
-    dataset.int_var = 1.; // I variance
+    dataset.obs_var << 1., 1., 1.; // u,v,d variance
+    dataset.int_var = 0.0001; // I variance
 
     // Compute the stiffness matrix to apply to the residuals
     Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
@@ -78,11 +78,17 @@ int main(int argc, char** argv) {
                     dataset.pose_vectors[k].data(),
                     dataset.map_vertices[j].position().data(),
                     dataset.map_vertices[j].normal().data(),
-                    dataset.map_vertices[j].phong_params().data(),
+                    dataset.map_vertices[j].material()->phong_params().data(),
                     dataset.light_pos.data());
+                // DEBUG: Hold normals constant
+                problem.SetParameterBlockConstant(
+                    dataset.map_vertices[j].normal().data());
             }
         }
     }
+
+    // DEBUG: Hold light position constant
+    // problem.SetParameterBlockConstant(dataset.light_pos.data());
 
     // Hold the first pose constant
     problem.SetParameterBlockConstant(dataset.pose_vectors[0].data());

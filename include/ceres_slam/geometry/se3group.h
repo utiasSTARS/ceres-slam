@@ -99,23 +99,14 @@ public:
         const Homogeneous& h,
         TransformedPointJacobian* jacobian_ptr = nullptr ) const {
 
-        Homogeneous h_transformed;
+        Homogeneous h_transformed = this->rotation() * h
+                                  + h.scale() * this->translation();
 
         if(jacobian_ptr != nullptr) {
-            typename SO3::TransformedPointJacobian rot_jacobian;
-            Homogeneous h_rotated =
-                this->rotation().transform(h, &rot_jacobian);
-
-            h_transformed = h_rotated + h.scale() * this->translation();
-
             TransformedPointJacobian& jacobian = *jacobian_ptr;
             jacobian.block(0,0,3,3) =
                 h.scale() * SO3::TransformationMatrix::Identity();
-            jacobian.block(0,3,3,3) = rot_jacobian;
-        }
-        else {
-            h_transformed = this->rotation() * h
-                            + h.scale() * this->translation();
+            jacobian.block(0,3,3,3) = -SO3::wedge(h.cartesian());
         }
 
         return h_transformed;
@@ -123,9 +114,9 @@ public:
 
     //! Multiplication operator for two group elements
     inline const SE3Group operator*( const SE3Group& other ) const {
-        return SE3Group( this->rotation() * other.translation()
-                            + this->translation(),
-                         this->rotation() * other.rotation() );
+        return SE3Group(
+            this->rotation() * other.translation() + this->translation(),
+            this->rotation() * other.rotation() );
     }
 
     //! Multiplication operator for group element and homogeneous coordinate
@@ -139,6 +130,11 @@ public:
     //! Multiplication operator for group element and point (preserves type)
     inline const Point operator*( const Point& p ) const {
         return static_cast<Point>(this->transform(p));
+    }
+
+    //! SE(3) Identity element
+    inline static const SE3Group Identity() {
+        return SE3Group(TransformationMatrix::Identity());
     }
 
     //! SE(3) vee operator as defined by Barfoot
