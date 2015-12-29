@@ -39,7 +39,6 @@ public:
         // Normal vector at the map point
         VectorT normal_g(normal_g_ceres);       // In the global frame
         VectorT normal_c = T_c_g * normal_g;    // In the camera frame
-        normal_c.normalize();
 
         // Compute the residuals
         Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
