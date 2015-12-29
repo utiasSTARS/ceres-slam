@@ -25,6 +25,10 @@ public:
     typedef typename Homogeneous3D<Scalar>::Cartesian Cartesian;
     //! Homogeneous type
     typedef typename Homogeneous3D<Scalar>::Homogeneous Homogeneous;
+    //! Variance type
+    typedef Eigen::Matrix<Scalar, 3, 1> Variance;
+    //! Covariance matrix type
+    typedef Eigen::Matrix<Scalar, 3, 3, Eigen::RowMajor> Covariance;
 
     //! Default constructor
     Vector3D() : Vector3D(Cartesian::Zero()) { }
@@ -34,7 +38,7 @@ public:
     Vector3D( const Cartesian& cartesian ) :
         Homogeneous3D<Scalar>(cartesian, Scalar(0)) { }
     //! Construct from 3 scalars
-    Vector3D( const Scalar i, const Scalar j, const Scalar k ) :
+    Vector3D( const Scalar& i, const Scalar& j, const Scalar& k ) :
         Homogeneous3D<Scalar>(i, j, k, Scalar(0)) { }
     //! Construct from a 3-element POD array
     Vector3D( const Scalar s[3] ) :

@@ -23,8 +23,6 @@ public:
     typedef Point3D<Scalar> Point;
     //! Vector type
     typedef Vector3D<Scalar> Vector;
-    //! Colour type
-    typedef Scalar Colour;
     //! Material pointer type
     typedef typename Material<Scalar>::Ptr MaterialPtr;
     //! Vertex dimension
@@ -33,7 +31,9 @@ public:
     //! Default constructor
     Vertex3D() : Vertex3D(Point(), Vector(), nullptr) { }
     //! Construct from position, normal, and phong parameters
-    Vertex3D(Point position, Vector normal, MaterialPtr material) :
+    Vertex3D(const Point& position,
+             const Vector& normal,
+             const MaterialPtr material) :
         position_(position),
         normal_(normal),
         material_ptr_(material) { }

@@ -50,12 +50,10 @@ public:
 
     //! Map vertices in base frame (to be estimated)
     std::vector<Vertex> map_vertices;
-    //! Map vertex IDs in obs_list
+    //! Map vertex IDs in stereo_obs_list
     std::vector<unsigned int> vertex_ids;
     //! True if map vertex j has been initialized
     std::vector<bool> initialized_vertex;
-    //! Noisy initial guesses for vertex normals (temporary)
-    std::vector<Vector> initial_vertex_normals;
 
     //! Light source position in base frame (to be estimated)
     Point light_pos;
@@ -66,13 +64,17 @@ public:
     Material<double>::Ptr material;
 
     //! List of stereo observations
-    std::vector<Camera::Observation> obs_list;
+    std::vector<Camera::Observation> stereo_obs_list;
     //! Variance of stereo observations
-    Camera::ObservationVariance obs_var;
+    Camera::ObservationVariance stereo_obs_var;
     //! List of observation intensities
     std::vector<double> int_list;
-    //! Variance of ovservation intensities
+    //! Variance of observation intensities
     Light::ColourVariance int_var;
+    //! List of normal observations
+    std::vector<Vector> normal_obs_list;
+    //! Variance of normal observations
+    Vector::Variance normal_obs_var;
 
     //! Read dataset from a CSV file
     /*!

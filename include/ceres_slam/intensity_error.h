@@ -3,6 +3,7 @@
 
 #include <ceres/ceres.h>
 
+#include <ceres_slam/geometry.h>
 #include <ceres_slam/point_light.h>
 #include <ceres_slam/material.h>
 
@@ -57,8 +58,8 @@ public:
 
         // Normal vector at the map point
         VectorT normal_g(normal_g_ceres);       // In the global frame
-        normal_g.normalize();
         VectorT normal_c = T_c_g * normal_g;    // In the camera frame
+        normal_c.normalize();
 
         // Phong reflectance coefficients (ambient and diffuse only for now)
         Eigen::Map<const PhongParamsT> phong_params(phong_params_ceres);

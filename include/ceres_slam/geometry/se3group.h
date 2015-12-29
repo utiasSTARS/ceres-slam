@@ -106,7 +106,7 @@ public:
             TransformedPointJacobian& jacobian = *jacobian_ptr;
             jacobian.block(0,0,3,3) =
                 h.scale() * SO3::TransformationMatrix::Identity();
-            jacobian.block(0,3,3,3) = -SO3::wedge(h.cartesian());
+            jacobian.block(0,3,3,3) = SO3::wedge(-h_transformed.cartesian());
         }
 
         return h_transformed;

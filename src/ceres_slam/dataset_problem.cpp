@@ -34,7 +34,6 @@ const bool DatasetProblem::read_csv(std::string filename) {
     num_vertices = std::stoi(tokens.at(1));
     pose_vectors.resize(num_states);
     map_vertices.resize(num_vertices);
-    initial_vertex_normals.resize(num_vertices);
     for(unsigned int i = 0; i < num_vertices; ++i) {
         initialized_vertex.push_back(false);
     }
@@ -87,14 +86,14 @@ const bool DatasetProblem::read_csv(std::string filename) {
         double u = std::stod(tokens.at(2));
         double v = std::stod(tokens.at(3));
         double d = std::stod(tokens.at(4));
-        obs_list.push_back( Camera::Observation(u,v,d) );
+        stereo_obs_list.push_back( Camera::Observation(u,v,d) );
         int_list.push_back( std::stod(tokens.at(5)) );
-        Vector noisy_normal( std::stod(tokens.at(6)),
-                             std::stod(tokens.at(7)),
-                             std::stod(tokens.at(8)) );
-        initial_vertex_normals.at(j) = noisy_normal;
+        Vector normal_obs( std::stod(tokens.at(6)),
+                           std::stod(tokens.at(7)),
+                           std::stod(tokens.at(8)) );
+        normal_obs_list.push_back(normal_obs);
     }
-    std::cerr << "read " << obs_list.size() << " observations" << std::endl;
+    std::cerr << "read " << stereo_obs_list.size() << " observations" << std::endl;
 
     // Generate a list of observation indices for each state
     std::cerr << "Generating observation indices from timestamps... ";
@@ -178,6 +177,7 @@ const std::vector<unsigned int> DatasetProblem::obs_indices_at_state(int k) cons
 
 void DatasetProblem::compute_initial_guess() {
     std::vector<Point> pts_km1, pts_k;
+    std::vector<Vector> normals_km1;
     std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
 
@@ -187,7 +187,7 @@ void DatasetProblem::compute_initial_guess() {
 
     // Initialize the material (assuming everything is the same material)
     material = std::make_shared< Material<double> >(
-        Material<double>::PhongParams::Constant(0.5) );
+        Material<double>::PhongParams(0.5, 0.5) );
 
     // First pose is either identity, or the first ground truth pose
     pose_vectors[0] = SE3::log(first_pose);
@@ -196,6 +196,7 @@ void DatasetProblem::compute_initial_guess() {
     for(unsigned int k = 1; k < num_states; ++k) {
         pts_km1.clear();
         pts_k.clear();
+        normals_km1.clear();
         j_km1.clear();
         j_k.clear();
         idx_km1 = obs_indices_at_state(k-1);
@@ -223,10 +224,13 @@ void DatasetProblem::compute_initial_guess() {
 
         // Triangulate map points from each pose
         for(unsigned int i : idx_km1) {
-            pts_km1.push_back(camera->triangulate(obs_list[i]));
+            pts_km1.push_back(camera->triangulate(stereo_obs_list[i]));
+            // Also store the observed normals corresponding to each
+            // point in case we need to use them as an initial guess
+            normals_km1.push_back(normal_obs_list[i]);
         }
         for(unsigned int i : idx_k) {
-            pts_k.push_back(camera->triangulate(obs_list[i]));
+            pts_k.push_back(camera->triangulate(stereo_obs_list[i]));
         }
 
         // for(unsigned int i = 0; i < j_km1.size(); ++i) {
@@ -257,13 +261,13 @@ void DatasetProblem::compute_initial_guess() {
             if(!initialized_vertex[ j_km1[i] ]) {
                 // Initialize the position with the guess from the
                 // first point cloud, transformed into the base frame
-                Point vertex_position =
-                    SE3::exp(pose_vectors[k-1]).inverse() * pts_km1[i];
+                Point vertex_position = SE3::exp(pose_vectors[k-1]).inverse()
+                                        * pts_km1[i];
 
-                // Initialize the vertex normals to something close to
-                // ground truth. In general, we probably should do this with PCL
-                Vector vertex_normal =
-                    initial_vertex_normals[ j_km1[i] ];
+                // Initialize the normal with the guess from the
+                // first point cloud, transformed into the base frame
+                Vector vertex_normal = SE3::exp(pose_vectors[k-1]).inverse()
+                                        * normals_km1[i];
 
                 // Create the vertex object
                 map_vertices[ j_km1[i] ].position() = vertex_position;

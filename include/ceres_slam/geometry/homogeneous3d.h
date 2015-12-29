@@ -36,15 +36,23 @@ public:
     Homogeneous3D( const Homogeneous& vector ) :
         Homogeneous3D(vector.head(3), vector(3)) { }
     //! Construct from a 3-vector and a scalar
-    Homogeneous3D( const Cartesian& cartesian, const Scalar scale ) :
+    Homogeneous3D( const Cartesian& cartesian, const Scalar& scale ) :
         cartesian_(cartesian), scale_(scale) { }
     //! Construct from 4 scalars
-    Homogeneous3D( const Scalar x, const Scalar y,
-                       const Scalar z, const Scalar w ) :
+    Homogeneous3D( const Scalar& x, const Scalar& y,
+                       const Scalar& z, const Scalar& w ) :
         cartesian_(Cartesian(x, y, z)), scale_(w) { }
     //! Construct from a 4-element POD array
     Homogeneous3D( const Scalar s[4] ) :
         Homogeneous3D(s[0], s[1], s[2], s[3]) { }
+
+    //! Cast to another Scalar type
+    template <typename OtherScalar>
+    inline Homogeneous3D<OtherScalar> cast() const {
+        return Homogeneous3D<OtherScalar>(
+            cartesian_.cast<OtherScalar>(),
+            static_cast<OtherScalar>(scale_));
+    }
 
     //! Return the cartesian form of the point/vector
     inline const Cartesian cartesian() const {

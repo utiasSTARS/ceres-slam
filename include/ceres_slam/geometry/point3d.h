@@ -34,7 +34,7 @@ public:
     Point3D( const Cartesian& cartesian ) :
         Homogeneous3D<Scalar>(cartesian, Scalar(1)) { }
     //! Construct from 3 scalars
-    Point3D( const Scalar x, const Scalar y, const Scalar z ) :
+    Point3D( const Scalar& x, const Scalar& y, const Scalar& z ) :
         Homogeneous3D<Scalar>(x, y, z, Scalar(1)) { }
     //! Construct from a 3-element POD array
     Point3D( const Scalar s[3] ) :

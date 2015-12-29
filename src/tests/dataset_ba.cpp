@@ -9,11 +9,13 @@
 #include <ceres_slam/stereo_reprojection_error.h>
 #include <ceres_slam/point_light.h>
 #include <ceres_slam/intensity_error.h>
+#include <ceres_slam/normal_error.h>
 
 #include <Eigen/Eigenvalues>
 
 using SE3 = ceres_slam::DatasetProblem::SE3;
 using Point = ceres_slam::DatasetProblem::Point;
+using Vector = ceres_slam::DatasetProblem::Vector;
 using Camera = ceres_slam::DatasetProblem::Camera;
 using Light = ceres_slam::DatasetProblem::Light;
 
@@ -39,13 +41,20 @@ int main(int argc, char** argv) {
     std::cerr << "Building problem" << std::endl;
     ceres::Problem problem;
 
-    dataset.obs_var << 1., 1., 1.; // u,v,d variance
+    dataset.stereo_obs_var << 1., 1., 1.; // u,v,d variance
+    dataset.normal_obs_var << 0.0001, 0.0001, 0.0001; // i,j,k variance
     dataset.int_var = 0.0001; // I variance
 
     // Compute the stiffness matrix to apply to the residuals
     Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
-        es(dataset.obs_var.asDiagonal());
-    Camera::ObservationCovariance obs_stiffness = es.operatorInverseSqrt();
+        es_stereo(dataset.stereo_obs_var.asDiagonal());
+    Camera::ObservationCovariance stereo_obs_stiffness =
+        es_stereo.operatorInverseSqrt();
+
+    Eigen::SelfAdjointEigenSolver<Vector::Covariance>
+        es_normal(dataset.normal_obs_var.asDiagonal());
+    Camera::ObservationCovariance normal_obs_stiffness =
+        es_normal.operatorInverseSqrt();
 
     Light::ColourCovariance int_stiffness = 1. / sqrt(dataset.int_var);
 
@@ -58,10 +67,12 @@ int main(int argc, char** argv) {
                 // Cost function for the stereo observation
                 // ceres::CostFunction* stereo_cost =
                 //     ceres_slam::StereoReprojectionErrorAnalytic::Create(
-                //         dataset.camera, dataset.obs_list[i], obs_stiffness);
+                //         dataset.camera, dataset.stereo_obs_list[i], obs_stiffness);
                 ceres::CostFunction* stereo_cost =
                     ceres_slam::StereoReprojectionErrorAutomatic::Create(
-                        dataset.camera, dataset.obs_list[i], obs_stiffness);
+                        dataset.camera,
+                        dataset.stereo_obs_list[i],
+                        stereo_obs_stiffness);
                 // Add the stereo cost function to the problem
                 problem.AddResidualBlock(
                     stereo_cost, NULL,
@@ -71,7 +82,8 @@ int main(int argc, char** argv) {
                 // Cost function for the intensity observation
                 ceres::CostFunction* intensity_cost =
                     ceres_slam::IntensityErrorAutomatic::Create(
-                        dataset.int_list[i], int_stiffness);
+                        dataset.int_list[i],
+                        int_stiffness);
                 // Add the intensity cost function to the problem
                 problem.AddResidualBlock(
                     intensity_cost, NULL,
@@ -80,8 +92,16 @@ int main(int argc, char** argv) {
                     dataset.map_vertices[j].normal().data(),
                     dataset.map_vertices[j].material()->phong_params().data(),
                     dataset.light_pos.data());
-                // DEBUG: Hold normals constant
-                problem.SetParameterBlockConstant(
+
+                // Cost function for the normal observation
+                ceres::CostFunction* normal_cost =
+                    ceres_slam::NormalErrorAutomatic::Create(
+                        dataset.normal_obs_list[i],
+                        normal_obs_stiffness);
+                // Add the normal cost function to the problem
+                problem.AddResidualBlock(
+                    normal_cost, NULL,
+                    dataset.pose_vectors[k].data(),
                     dataset.map_vertices[j].normal().data());
             }
         }
