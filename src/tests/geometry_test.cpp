@@ -1,100 +1,75 @@
 #include <cstdlib>
 #include <iostream>
+#include <Eigen/Core>
 #include <ceres_slam/geometry.h>
 
 const double PI = 3.14159265;
 
 // TODO: Rewrite this as a proper unit test
 
-using SO3 = ceres_slam::SO3Group<double>;
-using SE3 = ceres_slam::SE3Group<double>;
 using Point = ceres_slam::Point3D<double>;
 using Vector = ceres_slam::Vector3D<double>;
-using Homogeneous = ceres_slam::Homogeneous3D<double>;
+using SO3 = ceres_slam::SO3Group<double>;
 
 int main() {
-    SO3 rot1;
-    SO3::TangentVector phi(1.,0.5,PI/2);
-    SO3 rot2 = SO3::exp(phi);
-    SO3 rot3(rot2);
-    SO3 rot4(rot2.matrix());
-    std::cout << rot1 << std::endl << rot2 << std::endl
-              << rot3 << std::endl << rot4 << std::endl;
+    ///////////////////////////////////////////////////////////////////////////
+    // Point and vector tests
+    ///////////////////////////////////////////////////////////////////////////
+    Point p1;
+    p1 << 1., 2., 3.;
+    std::cout << "p1: " << p1 << std::endl;
 
-    Point pt(3.,2.,1.);
-    Vector vec(1.,0.,0.);
-    Homogeneous h(0.,0.,1.,2.);
+    double p2_data[3] = {4., 5., 6.};
+    Eigen::Map<Point> p2(&p2_data[0]);
+    std::cout << "p2: " << p2 << std::endl;
+    p2 += p1;
+    std::cout << "p2: " << p2 << std::endl;
+    std::cout << "p2_data: " << p2_data[0] << ", "
+                             << p2_data[1] << ", "
+                             << p2_data[2] << std::endl;
 
-    std::cout << pt << std::endl << vec << std::endl << h << std::endl;
+    Point p3 = p2;
+    std::cout << "p3: " << p3 << std::endl;
 
-    std::cout << rot1 * pt << std::endl << rot2 * vec << std::endl
-              << rot2 * rot2 << std::endl;
+    Vector v1;
+    v1 << 1., 2., 3.;
+    std::cout << "v1: " << v1 << std::endl;
 
-    std::cout << SO3::wedge(phi) << std::endl;
-    std::cout << SO3::vee(SO3::wedge(phi)) << std::endl;
+    double v2_data[3] = {4., 5., 6.};
+    Eigen::Map<Vector> v2(&v2_data[0]);
+    std::cout << "v2: " << v2 << std::endl;
+    v2 += v1;
+    std::cout << "v2: " << v2 << std::endl;
+    std::cout << "v2_data: " << v2_data[0] << ", "
+                             << v2_data[1] << ", "
+                             << v2_data[2] << std::endl;
 
-    SE3 T1;
-    SE3::TangentVector xi;
-    xi << 0.1,0.2,0.3,1.,0.5,PI/2;
-    SE3 T2(vec, rot2);
-    SE3 T3(T2);
-    SE3 T4(T2.matrix());
-    std::cout << T1 << std::endl << T2 << std::endl
-              << T3 << std::endl << T4 << std::endl;
+    Vector v3 = v2;
+    std::cout << "v3: " << v3 << std::endl;
 
-    std::cout << T1 * pt << std::endl << T2 * vec << std::endl
-              << T2 * T2 << std::endl;
+    Point p4 = p2 + v3;
+    std::cout << "p4: " << p4 << std::endl;
 
-    std::cout << SE3::wedge(xi) << std::endl;
-    std::cout << SE3::vee(SE3::wedge(xi)) << std::endl;
-    std::cout << T2*pt << std::endl;
+    Eigen::Map<const Point> p5(p4.data());
+    std::cout << "p5: " << p5 << std::endl;
 
-    Vector vec2(1.,2.,3.);
-    std::cout << vec2 << std::endl << vec2.norm() << std::endl;
-    vec2.normalize();
-    std::cout << vec2 << std::endl << vec2.norm() << std::endl;
+    ///////////////////////////////////////////////////////////////////////////
+    // SO(3) tests
+    ///////////////////////////////////////////////////////////////////////////
+    std::cout << std::endl;
 
-    std::cout << rot1.str() << std::endl;
-    std::cout << pt.str() << std::endl;
-    std::cout << vec2.str() << std::endl;
-    std::cout << T2.str() << std::endl;
+    SO3 C1;
+    std::cout << "C1: " << C1 << std::endl;
 
-    std::cout << rot2 * rot2.inverse() << std::endl;
-    std::cout << T2 * T2.inverse() << std::endl;
+    SO3::TransformationMatrix C2_matrix;
+    C2_matrix << 0, -1, 0, 1, 0, 0, 0, 0, 1;
+    SO3 C2(C2_matrix);
+    std::cout << "C2: " << C2 << std::endl;
 
-    SO3::TangentVector phi1, phi2;
-    phi1 << 1.,2.,3.;
-    SO3 C1 = SO3::exp(phi1);
-    phi2 = SO3::log(C1);
-    SO3 C2 = SO3::exp(phi2);
-    std::cout << "phi1 = " << phi1.transpose() << std::endl;
-    std::cout << "C1 = " << std::endl<< C1 << std::endl;
-    std::cout << "phi2 = " << phi2.transpose() << std::endl;
-    std::cout << "C2 = " << std::endl<< C2 << std::endl;
-    std::cout << "C1.inverse() * C2 = " << std::endl<< C1.inverse() * C2 << std::endl;
-
-    SE3::TangentVector xia, xib;
-    xia << 1.,2.,3.,4.,5.,6.;
-    SE3 Ta = SE3::exp(xia);
-    xib = SE3::log(Ta);
-    SE3 Tb = SE3::exp(xib);
-    std::cout << "xia = " << xia.transpose() << std::endl;
-    std::cout << "Ta = " << std::endl<< Ta << std::endl;
-    std::cout << "xib = " << xib.transpose() << std::endl;
-    std::cout << "Tb = " << std::endl<< Tb << std::endl;
-    std::cout << "Ta.inverse() * Tb = " << std::endl<< Ta.inverse() * Tb << std::endl;
-
-    SO3::TransformedPointJacobian C1pt_jacobian;
-    Point C1pt = C1.transform(pt, &C1pt_jacobian);
-    std::cout << "C1pt = " << C1pt << std::endl;
-    std::cout << "C1pt_jacobian = " << std::endl
-              << C1pt_jacobian << std::endl;
-
-    SE3::TransformedPointJacobian Tapt_jacobian;
-    Point Tapt = Ta.transform(pt, &Tapt_jacobian);
-    std::cout << "Tapt = " << Tapt << std::endl;
-    std::cout << "Tapt_jacobian = " << std::endl << Tapt_jacobian << std::endl;
-
+    SO3 C3(C2);
+    std::cout << "C3: " << C3 << std::endl;
+    std::cout << "C3.str(): " << C3.str() << std::endl;
+    std::cout << "C3.inverse(): " << C3.inverse() << std::endl;
 
     return EXIT_SUCCESS;
 }

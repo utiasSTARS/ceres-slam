@@ -1,7 +1,6 @@
 #ifndef CERES_SLAM_GEOMETRY_POINT3D_H_
 #define CERES_SLAM_GEOMETRY_POINT3D_H_
 
-#include <memory>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -9,55 +8,141 @@
 #include <Eigen/Core>
 
 #include <ceres_slam/utils.h>
-#include <ceres_slam/geometry/homogeneous3d.h>
 
+///////////////////////////////////////////////////////////////////////////////
+// Forward declarations
+///////////////////////////////////////////////////////////////////////////////
+namespace ceres_slam {
+    template<typename _Scalar, int _Options = 0> class Point3D;
+} // namespace ceres_slam
+
+///////////////////////////////////////////////////////////////////////////////
+// Inherit CTRP traits from the base class so we can use Eigen::Map directly
+///////////////////////////////////////////////////////////////////////////////
+namespace Eigen { namespace internal {
+
+template<typename _Scalar, int _Options>
+struct traits<ceres_slam::Point3D<_Scalar,_Options> >
+        : traits<typename ceres_slam::Point3D<_Scalar,_Options>::Base> {
+    typedef _Scalar Scalar;
+};
+
+template<typename _Scalar, int _Options>
+struct traits<Map<ceres_slam::Point3D<_Scalar>,_Options> >
+        : traits<Map<typename ceres_slam::Point3D<_Scalar>::Base,_Options> > {
+    typedef _Scalar Scalar;
+};
+
+template<typename _Scalar, int _Options>
+struct traits<Map<const ceres_slam::Point3D<_Scalar,_Options> > >
+        : traits<Map<const typename
+                     ceres_slam::Point3D<_Scalar>::Base,_Options> > {
+    typedef _Scalar Scalar;
+};
+
+} } // namespace Eigen::internal
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Implementation
+///////////////////////////////////////////////////////////////////////////////
 namespace ceres_slam {
 
 //! Point in 3D space
-template <typename Scalar>
-class Point3D : public Homogeneous3D<Scalar> {
+template<typename _Scalar, int _Options>
+class Point3D : public Eigen::Matrix<_Scalar, 3, 1> {
 public:
-    //! Pointer type
-    typedef std::shared_ptr<Point3D> Ptr;
-    //! Const pointer type
-    typedef std::shared_ptr<const Point3D> ConstPtr;
-    //! Cartesian type
-    typedef typename Homogeneous3D<Scalar>::Cartesian Cartesian;
-    //! Homogeneous type
-    typedef typename Homogeneous3D<Scalar>::Homogeneous Homogeneous;
+    //! Base class definition
+    typedef Eigen::Matrix<_Scalar, 3, 1> Base;
+    //! Scalar type
+    typedef typename Eigen::internal::traits<Point3D>::Scalar Scalar;
 
     //! Default constructor
-    Point3D() : Point3D(Cartesian::Zero()) { }
-    //! Copy constructor
-    Point3D( const Point3D& other ) : Point3D(other.cartesian()) { }
-    //! Construct from a 3-vector
-    Point3D( const Cartesian& cartesian ) :
-        Homogeneous3D<Scalar>(cartesian, Scalar(1)) { }
-    //! Construct from 3 scalars
-    Point3D( const Scalar& x, const Scalar& y, const Scalar& z ) :
-        Homogeneous3D<Scalar>(x, y, z, Scalar(1)) { }
-    //! Construct from a 3-element POD array
-    Point3D( const Scalar s[3] ) :
-        Point3D(s[0], s[1], s[2]) { }
-    //! Conversion constructor from a general homogeneous quantity
-    Point3D( const Homogeneous3D<Scalar>& h ) :
-        Point3D(h.cartesian()) {
-        // if( abs<Scalar>(h.scale()) <= std::numeric_limits<Scalar>::epsilon() ) {
-        //     std::cerr << "Warning: implicit cast from Homogeneous3D to Point3D"
-        //               << " with scale = " << h.scale() << " == 0" << std::endl;
-        // }
+    Point3D() : Base() { }
+
+    //! Constructor to construct Point3D from Eigen expressions
+    template<typename OtherDerived>
+    Point3D(const Eigen::MatrixBase<OtherDerived>& other) : Base(other) { }
+
+    //! Assignment of Eigen expressions to Point3D
+    using Base::operator=;
+
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << this->format(CommaInitFmt);
+        return ss.str();
     }
 
     //! Ostream operator for Point3D
     friend std::ostream& operator<<( std::ostream& os,
                                      const Point3D<Scalar>& p ) {
-        os << "Point3D("
-           << p.homogeneous().format(CommaInitFmt)
-           << ")";
+        os << "Point3D(" << p.str() << ")";
         return os;
     }
 };
 
 } // namespace ceres_slam
+
+
+namespace Eigen {
+//! Specialization of Eigen::Map for Point3D
+template<typename _Scalar, int _Options>
+class Map<ceres_slam::Point3D<_Scalar>,_Options>
+    : public Map<typename ceres_slam::Point3D<_Scalar>::Base,_Options> {
+public:
+    //! Base class definition
+    typedef Map<typename ceres_slam::Point3D<_Scalar>::Base,_Options> BaseMap;
+    //! Scalar type
+    typedef typename internal::traits<Map>::Scalar Scalar;
+
+    //! Pass through to base class map constructor
+    Map(Scalar* data) : BaseMap(data) { };
+
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << this->format(ceres_slam::CommaInitFmt);
+        return ss.str();
+    }
+
+    //! Ostream operator
+    friend std::ostream& operator<<( std::ostream& os,
+                                 const Map<ceres_slam::Point3D<Scalar> >& p ) {
+        os << "Point3D(" << p.str() << ")";
+        return os;
+    }
+};
+
+//! Specialization of Eigen::Map for const Point3D
+template<typename _Scalar, int _Options>
+class Map<const ceres_slam::Point3D<_Scalar>,_Options>
+    : public Map<const typename ceres_slam::Point3D<_Scalar>::Base,_Options> {
+public:
+    //! Base class definition
+    typedef Map<const typename ceres_slam::Point3D<_Scalar>::Base,_Options>
+        BaseMap;
+    //! Scalar type
+    typedef typename internal::traits<Map>::Scalar Scalar;
+
+    //! Pass through to base class map constructor
+    Map(Scalar* data) : BaseMap(data) { };
+
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << this->format(ceres_slam::CommaInitFmt);
+        return ss.str();
+    }
+
+    //! Ostream operator
+    friend std::ostream& operator<<( std::ostream& os,
+                                const Map<const ceres_slam::Point3D<Scalar> >& p ) {
+        os << "Point3D(" << p.str() << ")";
+        return os;
+    }
+};
+
+} // namespace Eigen
 
 #endif // CERES_SLAM_GEOMETRY_POINT3D_H_
