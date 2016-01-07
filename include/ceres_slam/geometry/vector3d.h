@@ -1,7 +1,6 @@
 #ifndef CERES_SLAM_GEOMETRY_VECTOR3D_H_
 #define CERES_SLAM_GEOMETRY_VECTOR3D_H_
 
-#include <memory>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -9,73 +8,141 @@
 #include <Eigen/Core>
 
 #include <ceres_slam/utils.h>
-#include <ceres_slam/geometry/homogeneous3d.h>
 
+///////////////////////////////////////////////////////////////////////////////
+// Forward declarations
+///////////////////////////////////////////////////////////////////////////////
+namespace ceres_slam {
+    template<typename _Scalar, int _Options = 0> class Vector3D;
+} // namespace ceres_slam
+
+///////////////////////////////////////////////////////////////////////////////
+// Inherit CTRP traits from the base class so we can use Eigen::Map directly
+///////////////////////////////////////////////////////////////////////////////
+namespace Eigen { namespace internal {
+
+template<typename _Scalar, int _Options>
+struct traits<ceres_slam::Vector3D<_Scalar,_Options> >
+        : traits<typename ceres_slam::Vector3D<_Scalar,_Options>::Base> {
+    typedef _Scalar Scalar;
+};
+
+template<typename _Scalar, int _Options>
+struct traits<Map<ceres_slam::Vector3D<_Scalar>,_Options> >
+        : traits<Map<typename ceres_slam::Vector3D<_Scalar>::Base,_Options> > {
+    typedef _Scalar Scalar;
+};
+
+template<typename _Scalar, int _Options>
+struct traits<Map<const ceres_slam::Vector3D<_Scalar,_Options> > >
+        : traits<Map<const typename
+                     ceres_slam::Vector3D<_Scalar>::Base,_Options> > {
+    typedef _Scalar Scalar;
+};
+
+} } // namespace Eigen::internal
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Implementation
+///////////////////////////////////////////////////////////////////////////////
 namespace ceres_slam {
 
 //! Vector in 3D space
-template <typename Scalar>
-class Vector3D : public Homogeneous3D<Scalar> {
+template<typename _Scalar, int _Options>
+class Vector3D : public Eigen::Matrix<_Scalar, 3, 1> {
 public:
-    //! Pointer type
-    typedef std::shared_ptr<Vector3D> Ptr;
-    //! Const pointer type
-    typedef std::shared_ptr<const Vector3D> ConstPtr;
-    //! Cartesian type
-    typedef typename Homogeneous3D<Scalar>::Cartesian Cartesian;
-    //! Homogeneous type
-    typedef typename Homogeneous3D<Scalar>::Homogeneous Homogeneous;
-    //! Variance type
-    typedef Eigen::Matrix<Scalar, 3, 1> Variance;
-    //! Covariance matrix type
-    typedef Eigen::Matrix<Scalar, 3, 3, Eigen::RowMajor> Covariance;
+    //! Base class definition
+    typedef Eigen::Matrix<_Scalar, 3, 1> Base;
+    //! Scalar type
+    typedef typename Eigen::internal::traits<Vector3D>::Scalar Scalar;
 
     //! Default constructor
-    Vector3D() : Vector3D(Cartesian::Zero()) { }
-    //! Copy constructor
-    Vector3D( const Vector3D& other ) : Vector3D(other.cartesian()) { }
-    //! Construct from a 3-vector
-    Vector3D( const Cartesian& cartesian ) :
-        Homogeneous3D<Scalar>(cartesian, Scalar(0)) { }
-    //! Construct from 3 scalars
-    Vector3D( const Scalar& i, const Scalar& j, const Scalar& k ) :
-        Homogeneous3D<Scalar>(i, j, k, Scalar(0)) { }
-    //! Construct from a 3-element POD array
-    Vector3D( const Scalar s[3] ) :
-        Vector3D(s[0], s[1], s[2]) { }
-    //! Conversion constructor from a general homogeneous quantity
-    Vector3D( const Homogeneous3D<Scalar>& h ) :
-        Vector3D(h.cartesian()) {
-        // if( abs<Scalar>(h.scale())
-        //     >= Scalar(std::numeric_limits<Scalar>::epsilon()) ) {
-        //     std::cerr << "Warning: implicit cast from Homogeneous3D to Vector3D"
-        //               << " with scale = " << h.scale() << " != 0" << std::endl;
-        // }
-    }
+    Vector3D() : Base() { }
 
-    //! Compute the squared norm of the vector
-    inline const Scalar squaredNorm() const {
-        return this->cartesian().squaredNorm();
-    }
-    //! Compute the norm of the vector
-    inline const Scalar norm() const { return this->cartesian().norm(); }
-    //! Normalize the vector
-    inline void normalize() { this->cartesian_.normalize(); }
-    //! Compute the dot product of two vectors
-    inline const Scalar dot( const Vector3D& other ) const {
-        return this->cartesian().dot(other.cartesian());
+    //! Constructor to construct Vector3D from Eigen expressions
+    template<typename OtherDerived>
+    Vector3D(const Eigen::MatrixBase<OtherDerived>& other) : Base(other) { }
+
+    //! Assignment of Eigen expressions to Vector3D
+    using Base::operator=;
+
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << this->format(CommaInitFmt);
+        return ss.str();
     }
 
     //! Ostream operator for Vector3D
     friend std::ostream& operator<<( std::ostream& os,
                                      const Vector3D<Scalar>& v ) {
-        os << "Vector3D("
-           << v.homogeneous().format(CommaInitFmt)
-           << ")";
+        os << "Vector3D(" << v.str() << ")";
         return os;
     }
 };
 
 } // namespace ceres_slam
+
+
+namespace Eigen {
+//! Specialization of Eigen::Map for Vector3D
+template<typename _Scalar, int _Options>
+class Map<ceres_slam::Vector3D<_Scalar>,_Options>
+    : public Map<typename ceres_slam::Vector3D<_Scalar>::Base,_Options> {
+public:
+    //! Base class definition
+    typedef Map<typename ceres_slam::Vector3D<_Scalar>::Base,_Options> BaseMap;
+    //! Scalar type
+    typedef typename internal::traits<Map>::Scalar Scalar;
+
+    //! Pass through to base class map constructor
+    Map(Scalar* data) : BaseMap(data) { };
+
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << this->format(ceres_slam::CommaInitFmt);
+        return ss.str();
+    }
+
+    //! Ostream operator
+    friend std::ostream& operator<<( std::ostream& os,
+                                 const Map<ceres_slam::Vector3D<Scalar> >& v ) {
+        os << "Vector3D(" << v.str() << ")";
+        return os;
+    }
+};
+
+//! Specialization of Eigen::Map for const Vector3D
+template<typename _Scalar, int _Options>
+class Map<const ceres_slam::Vector3D<_Scalar>,_Options>
+    : public Map<const typename ceres_slam::Vector3D<_Scalar>::Base,_Options> {
+public:
+    //! Base class definition
+    typedef Map<const typename ceres_slam::Vector3D<_Scalar>::Base,_Options>
+        BaseMap;
+    //! Scalar type
+    typedef typename internal::traits<Map>::Scalar Scalar;
+
+    //! Pass through to base class map constructor
+    Map(Scalar* data) : BaseMap(data) { };
+
+    //! Convert to a string
+    inline const std::string str() const {
+        std::stringstream ss;
+        ss << this->format(ceres_slam::CommaInitFmt);
+        return ss.str();
+    }
+
+    //! Ostream operator
+    friend std::ostream& operator<<( std::ostream& os,
+                                const Map<const ceres_slam::Vector3D<Scalar> >& v ) {
+        os << "Vector3D(" << v.str() << ")";
+        return os;
+    }
+};
+
+} // namespace Eigen
 
 #endif // CERES_SLAM_GEOMETRY_VECTOR3D_H_
