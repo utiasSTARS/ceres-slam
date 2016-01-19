@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 #include <string>
 
 #include <ceres/ceres.h>
@@ -37,13 +38,18 @@ int main(int argc, char** argv) {
     std::cerr << "Computing VO initial guess" << std::endl;
     dataset.compute_initial_guess();
 
+    // Output the initial guess to a CSV file for comparison
+    std::vector<std::string> tokens;
+    tokens = split(filename, '.');
+    dataset.write_csv(tokens.at(0) + "_initial.csv");
+
     // Build the problem
     std::cerr << "Building problem" << std::endl;
     ceres::Problem problem;
 
-    dataset.stereo_obs_var << 1., 1., 1.; // u,v,d variance
-    dataset.normal_obs_var << 0.0001, 0.0001, 0.0001; // i,j,k variance
-    dataset.int_var = 0.0001; // I variance
+    dataset.stereo_obs_var << 4., 4., 16.; // u,v,d variance
+    dataset.normal_obs_var << 0.01, 0.01, 0.01; // i,j,k variance
+    dataset.int_var = 0.001; // I variance
 
     // Compute the stiffness matrix to apply to the residuals
     Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
@@ -117,8 +123,8 @@ int main(int argc, char** argv) {
     std::cerr << "Solving" << std::endl;
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = true;
-    solver_options.trust_region_strategy_type = ceres::DOGLEG;
-    solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
+    // solver_options.trust_region_strategy_type = ceres::DOGLEG;
+    // solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
     // solver_options.linear_solver_type = ceres::DENSE_SCHUR;
     // solver_options.check_gradients = true;
 

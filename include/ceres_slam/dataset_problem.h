@@ -100,9 +100,6 @@ public:
     void compute_initial_guess();
 
 private:
-    //! Split a delimited string into a vector of tokens
-    std::vector<std::string> split(std::string str, char del) const;
-
     //! List of lists of indices corresponding to each state index
     std::vector<std::vector<unsigned int>> state_indices_;
 

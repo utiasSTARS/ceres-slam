@@ -5,8 +5,8 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include <sstream>
 
+#include <ceres_slam/utils.h>
 #include <ceres_slam/geometry.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/point_cloud_aligner.h>
@@ -279,19 +279,6 @@ void DatasetProblem::compute_initial_guess() {
             }
         }
     }
-}
-
-std::vector<std::string>
-DatasetProblem::split(std::string str, char del) const {
-    std::stringstream ss(str); // Copy the string into a stream
-    std::vector<std::string> tokens;
-    std::string tok;
-
-    while(getline(ss, tok, del)) {
-        tokens.push_back(tok);
-    }
-
-    return tokens;
 }
 
 } // namespace ceres_slam
