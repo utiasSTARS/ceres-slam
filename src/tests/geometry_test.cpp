@@ -114,6 +114,9 @@ int main() {
     std::cout << "C5 = C4: " << C5 << std::endl;
     std::cout << "C4 = C2: " << C4 << std::endl;
 
+    C4.normalize();
+    std::cout << "C4.normalize(): " << C4 << std::endl;
+
     const double C6_data[9] = {0, -1, 0, 1, 0, 0, 0, 0, 1};
     Eigen::Map<const SO3> C6(C6_data);
     std::cout << "C6: " << C6 << std::endl;
@@ -171,6 +174,9 @@ int main() {
     std::cout << "T4 * p2: " << T4 * p2 << std::endl;
     std::cout << "T4 * v2: " << T4 * v2 << std::endl;
     std::cout << "T4.inverse(): " << T4.inverse() << std::endl;
+
+    T4.normalize();
+    std::cout << "T4.normalize(): " << T4 << std::endl;
 
     const double T6_data[12] = {1, -1, 1, 0, -1, 0, 1, 0, 0, 0, 0, 1};
     Eigen::Map<const SE3> T6(T6_data);

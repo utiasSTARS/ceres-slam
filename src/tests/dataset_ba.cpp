@@ -12,6 +12,7 @@
 #include <ceres_slam/point_light.h>
 #include <ceres_slam/intensity_error.h>
 #include <ceres_slam/normal_error.h>
+#include <ceres_slam/perturbations.h>
 
 #include <Eigen/Eigenvalues>
 
@@ -65,6 +66,10 @@ int main(int argc, char** argv) {
 
     Light::ColourCovariance int_stiffness = 1. / sqrt(dataset.int_var);
 
+    // Set up local parameterization on SE(3)
+    ceres::LocalParameterization* se3_perturbation
+        = ceres_slam::SE3Perturbation::Create();
+
     for(unsigned int k = 0; k < dataset.num_states; ++k) {
         for(unsigned int i : dataset.obs_indices_at_state(k)) {
             // Map point ID for this observation
@@ -72,9 +77,6 @@ int main(int argc, char** argv) {
             // Only optimize map points that have been initialized
             if(dataset.initialized_vertex[j]) {
                 // Cost function for the stereo observation
-                // ceres::CostFunction* stereo_cost =
-                //     ceres_slam::StereoReprojectionErrorAnalytic::Create(
-                //         dataset.camera, dataset.stereo_obs_list[i], obs_stiffness);
                 ceres::CostFunction* stereo_cost =
                     ceres_slam::StereoReprojectionErrorAutomatic::Create(
                         dataset.camera,
@@ -83,42 +85,45 @@ int main(int argc, char** argv) {
                 // Add the stereo cost function to the problem
                 problem.AddResidualBlock(
                     stereo_cost, NULL,
-                    dataset.pose_vectors[k].data(),
+                    dataset.poses[k].data(),
                     dataset.map_vertices[j].position().data() );
 
-                // // Cost function for the intensity observation
-                // ceres::CostFunction* intensity_cost =
-                //     ceres_slam::IntensityErrorAutomatic::Create(
-                //         dataset.int_list[i],
-                //         int_stiffness);
-                // // Add the intensity cost function to the problem
-                // problem.AddResidualBlock(
-                //     intensity_cost, NULL,
-                //     dataset.pose_vectors[k].data(),
-                //     dataset.map_vertices[j].position().data(),
-                //     dataset.map_vertices[j].normal().data(),
-                //     dataset.map_vertices[j].material()->phong_params().data(),
-                //     dataset.light_pos.data());
-                //
-                // // Cost function for the normal observation
-                // ceres::CostFunction* normal_cost =
-                //     ceres_slam::NormalErrorAutomatic::Create(
-                //         dataset.normal_obs_list[i],
-                //         normal_obs_stiffness);
-                // // Add the normal cost function to the problem
-                // problem.AddResidualBlock(
-                //     normal_cost, NULL,
-                //     dataset.pose_vectors[k].data(),
-                //     dataset.map_vertices[j].normal().data());
+                // Cost function for the intensity observation
+                ceres::CostFunction* intensity_cost =
+                    ceres_slam::IntensityErrorAutomatic::Create(
+                        dataset.int_list[i],
+                        int_stiffness);
+                // Add the intensity cost function to the problem
+                problem.AddResidualBlock(
+                    intensity_cost, NULL,
+                    dataset.poses[k].data(),
+                    dataset.map_vertices[j].position().data(),
+                    dataset.map_vertices[j].normal().data(),
+                    dataset.map_vertices[j].material()->phong_params().data(),
+                    dataset.light_pos.data());
+
+                // Cost function for the normal observation
+                ceres::CostFunction* normal_cost =
+                    ceres_slam::NormalErrorAutomatic::Create(
+                        dataset.normal_obs_list[i],
+                        normal_obs_stiffness);
+                // Add the normal cost function to the problem
+                problem.AddResidualBlock(
+                    normal_cost, NULL,
+                    dataset.poses[k].data(),
+                    dataset.map_vertices[j].normal().data());
             }
         }
+
+        // Use local parameterization on SE(3)
+        problem.SetParameterization(dataset.poses[k].data(), se3_perturbation);
     }
 
     // DEBUG: Hold light position constant
     // problem.SetParameterBlockConstant(dataset.light_pos.data());
 
     // Hold the first pose constant
-    problem.SetParameterBlockConstant(dataset.pose_vectors[0].data());
+    problem.SetParameterBlockConstant(dataset.poses[0].data());
 
     // Solve the problem
     std::cerr << "Solving" << std::endl;

@@ -4,8 +4,9 @@
 #include <memory>
 #include <Eigen/Core>
 
-#include <ceres_slam/geometry.h>
 #include <ceres_slam/utils.h>
+#include <ceres_slam/geometry.h>
+#include <ceres_slam/vertex3d.h>
 
 namespace ceres_slam {
 
@@ -109,20 +110,19 @@ public:
                 jacobian.block(0,0,1,3) =
                     // d(I)/d(l) (1 x 3)
                     this->diffuse() * vertex.material()->diffuse() *
-                        vertex.normal().cartesian().transpose()
+                        vertex.normal().transpose()
                     // d(l)/d(pj) (3 x 3)
                     * (-one_over_two_light_norm3)
                         * ( two_light_norm2
                             * Eigen::Matrix<Scalar, 3, 3,
                                             Eigen::RowMajor>::Identity()
-                            - light_vec.cartesian() *
-                                light_vec.cartesian().transpose() );
+                            - light_vec * light_vec.transpose() );
             } // else zeros
 
             // d(I)/d(nj)
             if(light_dir_dot_normal >= Scalar(0)) {
                 jacobian.block(0,3,1,3) = this->diffuse() * vertex.material()->diffuse()
-                                        * light_dir.cartesian().transpose();
+                                        * light_dir.transpose();
             } // else zeros
 
             // d(I)/d(ka)

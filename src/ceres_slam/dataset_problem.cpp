@@ -32,7 +32,7 @@ const bool DatasetProblem::read_csv(std::string filename) {
     tokens = split(line, ',');
     num_states = std::stoi(tokens.at(0));
     num_vertices = std::stoi(tokens.at(1));
-    pose_vectors.resize(num_states);
+    poses.resize(num_states);
     map_vertices.resize(num_vertices);
     for(unsigned int i = 0; i < num_vertices; ++i) {
         initialized_vertex.push_back(false);
@@ -57,9 +57,9 @@ const bool DatasetProblem::read_csv(std::string filename) {
     std::cerr << "Reading initial light position" << std::endl;
     std::getline(file, line);
     tokens = split(line, ',');
-    initial_light_pos = Point( std::stod(tokens.at(0)),
-                               std::stod(tokens.at(1)),
-                               std::stod(tokens.at(2)) );
+    initial_light_pos << std::stod(tokens.at(0)),
+                         std::stod(tokens.at(1)),
+                         std::stod(tokens.at(2));
     std::cerr << initial_light_pos << std::endl;
 
     // Read first ground truth pose
@@ -77,6 +77,7 @@ const bool DatasetProblem::read_csv(std::string filename) {
 
     // Read in the observations
     std::cerr << "Reading observation data... ";
+    Vector normal_obs;
     while(std::getline(file, line)) {
         // std::cerr << line << std::endl;
         tokens = split(line, ',');
@@ -88,9 +89,9 @@ const bool DatasetProblem::read_csv(std::string filename) {
         double d = std::stod(tokens.at(4));
         stereo_obs_list.push_back( Camera::Observation(u,v,d) );
         int_list.push_back( std::stod(tokens.at(5)) );
-        Vector normal_obs( std::stod(tokens.at(6)),
-                           std::stod(tokens.at(7)),
-                           std::stod(tokens.at(8)) );
+        normal_obs << std::stod(tokens.at(6)),
+                      std::stod(tokens.at(7)),
+                      std::stod(tokens.at(8));
         normal_obs_list.push_back(normal_obs);
     }
     std::cerr << "read " << stereo_obs_list.size() << " observations" << std::endl;
@@ -147,8 +148,8 @@ const bool DatasetProblem::write_csv(std::string filename) const {
               << "T_10, T_11, T_12, T_13,"
               << "T_20, T_21, T_22, T_23,"
               << "T_30, T_31, T_32, T_33" << std::endl;
-    for(SE3::TangentVector xi : pose_vectors) {
-        pose_file << SE3::exp(xi).str() << std::endl;
+    for(SE3 T : poses) {
+        pose_file << T.str() << std::endl;
     }
 
     // Convert initialized vertices to CSV entries
@@ -190,7 +191,7 @@ void DatasetProblem::compute_initial_guess() {
         Material<double>::PhongParams(0.5, 0.5) );
 
     // First pose is either identity, or the first ground truth pose
-    pose_vectors[0] = SE3::log(first_pose);
+    poses[0] = first_pose;
 
     // Iterate over all poses
     for(unsigned int k = 1; k < num_states; ++k) {
@@ -253,7 +254,7 @@ void DatasetProblem::compute_initial_guess() {
         // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
 
         // Compound the transformation estimate onto the previous one
-        pose_vectors[k] = SE3::log(T_k_km1 * SE3::exp(pose_vectors[k-1]));
+        poses[k] = T_k_km1 * poses[k-1];
 
         // If the map point does not have an initial guess already,
         // initialize it
@@ -261,13 +262,11 @@ void DatasetProblem::compute_initial_guess() {
             if(!initialized_vertex[ j_km1[i] ]) {
                 // Initialize the position with the guess from the
                 // first point cloud, transformed into the base frame
-                Point vertex_position = SE3::exp(pose_vectors[k-1]).inverse()
-                                        * pts_km1[i];
+                Point vertex_position = poses[k-1].inverse() * pts_km1[i];
 
                 // Initialize the normal with the guess from the
                 // first point cloud, transformed into the base frame
-                Vector vertex_normal = SE3::exp(pose_vectors[k-1]).inverse()
-                                        * normals_km1[i];
+                Vector vertex_normal = poses[k-1].inverse() * normals_km1[i];
 
                 // Create the vertex object
                 map_vertices[ j_km1[i] ].position() = vertex_position;

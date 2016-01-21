@@ -59,23 +59,23 @@ include_directories(
 
 file(GLOB ${PROJECT_NAME}_SOURCES "src/ceres_slam/*.cpp")
 
-# add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
-# target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
+add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
 # add_executable(ceres_odometry_node src/nodes/odometry_node.cpp)
 # target_link_libraries(ceres_odometry_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
-# add_executable(camera_test src/tests/camera_test.cpp)
-# target_link_libraries(camera_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
-#
+add_executable(camera_test src/tests/camera_test.cpp)
+target_link_libraries(camera_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
+
 add_executable(geometry_test src/tests/geometry_test.cpp)
 target_link_libraries(geometry_test ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
-#
-# add_executable(light_test src/tests/light_test.cpp)
-# target_link_libraries(light_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
-#
-# add_executable(dataset_ba src/tests/dataset_ba.cpp)
-# target_link_libraries(dataset_ba ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+
+add_executable(light_test src/tests/light_test.cpp)
+target_link_libraries(light_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
+
+add_executable(dataset_ba src/tests/dataset_ba.cpp)
+target_link_libraries(dataset_ba ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
 # add_custom_target(docs ALL
 # 	COMMAND "doxygen" "doxygen.config"

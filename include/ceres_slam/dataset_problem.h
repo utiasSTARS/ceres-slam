@@ -5,10 +5,10 @@
 #include <string>
 #include <sstream>
 
-#include <ceres_slam/geometry.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/point_light.h>
-#include <ceres_slam/material.h>
+#include <ceres_slam/geometry.h>
+#include <ceres_slam/vertex3d.h>
 
 namespace ceres_slam {
 
@@ -44,7 +44,7 @@ public:
     unsigned int num_vertices;
 
     //! Camera poses in base frame (to be estimated)
-    std::vector<SE3::TangentVector> pose_vectors;
+    std::vector<SE3> poses;
     //! First pose, either identity or given by ground truth
     SE3 first_pose;
 

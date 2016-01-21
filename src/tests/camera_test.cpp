@@ -34,7 +34,8 @@ int main() {
     StereoCamera cam(left_camera_info, right_camera_info);
     std::cout << cam << std::endl;
 
-    StereoCamera::Point pt(1.0, 2.0, 3.0);
+    StereoCamera::Point pt;
+    pt << 1.0, 2.0, 3.0;
     std::cout << pt << std::endl;
 
     StereoCamera::ProjectionJacobian obs_jac;

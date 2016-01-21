@@ -19,19 +19,17 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
     }
 
     // Compute the centroids p_0 and p_1 of each cloud
-    Point::Cartesian p_0_cart = Point::Cartesian::Zero();
+    Point p_0 = Point::Zero();
     for(Point p : pts_0) {
-        p_0_cart += p.cartesian();
+        p_0 += p;
     }
-    p_0_cart /= double(pts_0.size());
-    Point p_0(p_0_cart);
+    p_0 /= double(pts_0.size());
 
-    Point::Cartesian p_1_cart = Point::Cartesian::Zero();
+    Point p_1 = Point::Zero();
     for(Point p : pts_1) {
-        p_1_cart += p.cartesian();
+        p_1 += p;
     }
-    p_1_cart /= double(pts_1.size());
-    Point p_1(p_1_cart);
+    p_1 /= double(pts_1.size());
 
     // std::cout << "p_0: " << p_0 << std::endl;
     // std::cout << "p_1: " << p_1 << std::endl;
@@ -39,8 +37,8 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
     // Compute W_1_0
     Eigen::Matrix3d W_1_0 = Eigen::Matrix3d::Zero();
     for(unsigned int i = 0; i < pts_0.size(); ++i) {
-        W_1_0 += (pts_1[i] - p_1).cartesian()
-                    * (pts_0[i] - p_0).cartesian().transpose();
+        W_1_0 += (pts_1[i] - p_1)
+                    * (pts_0[i] - p_0).transpose();
     }
     W_1_0 /= double(pts_0.size());
 

@@ -10,8 +10,6 @@ namespace ceres_slam {
 //! Normal error cost function for Ceres with automatic Jacobians
 class NormalErrorAutomatic {
 public:
-    //! SE(3) type
-    typedef SE3Group<double> SE3;
     //! Vector type
     typedef Vector3D<double> Vector;
 
@@ -23,28 +21,25 @@ public:
 
     //! Templated evaluator operator for use with ceres::Jet
     template <typename T>
-    bool operator()(const T* const xi_c_g_ceres,
+    bool operator()(const T* const T_c_g_ceres,
                     const T* const normal_g_ceres,
                     T* residuals_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
-        typedef typename SE3T::TangentVector TangentVectorT;
         typedef Vector3D<T> VectorT;
         typedef Eigen::Matrix<T, 3, 1> ResidualVectorT;
 
         // Camera pose in the global frame
-        Eigen::Map<const TangentVectorT> xi_c_g(xi_c_g_ceres);
-        SE3T T_c_g = SE3T::exp(xi_c_g);
+        Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
 
         // Normal vector at the map point
-        VectorT normal_g(normal_g_ceres);       // In the global frame
-        VectorT normal_c = T_c_g * normal_g;    // In the camera frame
+        Eigen::Map<const VectorT> normal_g(normal_g_ceres); // Global frame
+        VectorT normal_c = T_c_g * normal_g;                // Camera frame
 
         // Compute the residuals
         Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
         residuals = stiffness_.cast<T>()
-                    * (normal_c.cartesian()
-                        - obs_normal_c_.cartesian().cast<T>());
+                    * (normal_c - obs_normal_c_.cast<T>());
 
         return true;
     }
@@ -55,9 +50,9 @@ public:
                                        const Vector::Covariance& stiffness) {
         return( new ceres::AutoDiffCostFunction
                     <NormalErrorAutomatic,
-                                           3,  // Residual dimension
-                                           6,  // Vehicle pose vector
-                                           3>  // Map point normal
+                       3,  // Residual dimension
+                       12, // Compact SE(3) vehicle pose (3 trans + 9 rot)
+                       3>  // Map point normal
                        (new NormalErrorAutomatic(obs, stiffness))
               );
     }
@@ -65,7 +60,7 @@ public:
 private:
     //! Observed normal vector in the camera frame
     Vector obs_normal_c_;
-    //! Normal vectorstiffness matrix (inverse sqrt of covariance matrix)
+    //! Normal vector stiffness matrix (inverse sqrt of covariance matrix)
     Vector::Covariance stiffness_;
 };
 

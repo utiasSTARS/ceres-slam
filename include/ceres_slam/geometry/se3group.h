@@ -410,13 +410,11 @@ public:
     SE3Group(const TransformationMatrix& matrix) :
             translation_(matrix.block(0,3,3,1) ),
             rotation_(matrix.block(0,0,3,3) ) {
-        this->normalize();
     }
     //! Construct from a translation and a rotation
     SE3Group(const Vector& translation, const SO3& rotation) :
             translation_(translation),
             rotation_(rotation) {
-        this->normalize();
     }
 
     //! Return a reference to the underlying rotation

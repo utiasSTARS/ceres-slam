@@ -7,7 +7,7 @@
 #include <sstream>
 
 #include <Eigen/Core>
-#include <Eigen/Geometry>
+#include <Eigen/Eigenvalues> // For SVD
 
 #include <ceres_slam/utils.h>
 #include <ceres_slam/geometry.h>
@@ -118,9 +118,13 @@ public:
     //! Normalize the underlying matrix to ensure it is a valid rotation
     inline
     void normalize() {
-        Eigen::Transform<Scalar, dim, Eigen::Affine> temp;
-        temp.linear() = matrix();
-        matrix() = temp.rotation();
+        Eigen::JacobiSVD<TransformationMatrix>
+            svd(this->matrix(), Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+        TransformationMatrix middle = TransformationMatrix::Identity();
+        middle(2,2) = svd.matrixV().determinant() * svd.matrixU().determinant();
+
+        this->matrix() = svd.matrixU() * middle * svd.matrixV().transpose();
     }
 
     //! In place multiplication by another group element

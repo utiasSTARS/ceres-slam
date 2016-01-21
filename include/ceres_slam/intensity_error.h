@@ -14,14 +14,6 @@ class IntensityErrorAutomatic {
 public:
     //! Light source type
     typedef PointLight<double> Light;
-    //! SO(3) type
-    typedef SO3Group<double> SO3;
-    //! SE(3) type
-    typedef SE3Group<double> SE3;
-    //! Point type
-    typedef Point3D<double> Point;
-    //! Vector type
-    typedef Vector3D<double> Vector;
 
     //! Constructor with fixed model parameters
     IntensityErrorAutomatic(const Light::Colour& colour,
@@ -31,7 +23,7 @@ public:
 
     //! Templated evaluator operator for use with ceres::Jet
     template <typename T>
-    bool operator()(const T* const xi_c_g_ceres,
+    bool operator()(const T* const T_c_g_ceres,
                     const T* const pt_g_ceres,
                     const T* const normal_g_ceres,
                     const T* const phong_params_ceres,
@@ -39,7 +31,6 @@ public:
                     T* residuals_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
-        typedef typename SE3T::TangentVector TangentVectorT;
         typedef Point3D<T> PointT;
         typedef Vector3D<T> VectorT;
         typedef Vertex3D<T> VertexT;
@@ -49,16 +40,15 @@ public:
         typedef typename MaterialT::PhongParams PhongParamsT;
 
         // Camera pose in the global frame
-        Eigen::Map<const TangentVectorT> xi_c_g(xi_c_g_ceres);
-        SE3T T_c_g = SE3T::exp(xi_c_g);
+        Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
 
         // Map point
-        PointT pt_g(pt_g_ceres);                // In the global frame
-        PointT pt_c = T_c_g * pt_g;             // In the camera frame
+        Eigen::Map<const PointT> pt_g(pt_g_ceres);  // Global frame
+        PointT pt_c = T_c_g * pt_g;                 // Camera frame
 
         // Normal vector at the map point
-        VectorT normal_g(normal_g_ceres);       // In the global frame
-        VectorT normal_c = T_c_g * normal_g;    // In the camera frame
+        Eigen::Map<const VectorT> normal_g(normal_g_ceres); // Global frame
+        VectorT normal_c = T_c_g * normal_g;                // Camera frame
         normal_c.normalize();
 
         // Phong reflectance coefficients (ambient and diffuse only for now)
@@ -69,18 +59,19 @@ public:
         VertexT vertex_c(pt_c, normal_c, material);
 
         // Light source position
-        PointT lightpos_g(lightpos_g_ceres);    // In the global frame
-        PointT lightpos_c = T_c_g * lightpos_g; // In the camera frame
+        Eigen::Map<const PointT> lightpos_g(lightpos_g_ceres);  // Global frame
+        PointT lightpos_c = T_c_g * lightpos_g;                 // Camera frame
 
         // Light source model
-        LightT light(lightpos_c, PhongParamsT::Constant(T(1)));
+        LightT light(lightpos_c, PhongParamsT::Constant(static_cast<T>(1)));
 
         // Compute the predicted intensity at the vertex
         ColourT predicted_colour = light.shade(vertex_c);
 
         // Compute the residuals
         // (no need to map to an eigen matrix yet since it's only 1D)
-        residuals_ceres[0] = T(stiffness_) * (predicted_colour - T(colour_));
+        residuals_ceres[0] = static_cast<T>(stiffness_)
+                                * (predicted_colour - static_cast<T>(colour_));
         // std::cout << residuals_ceres[0] << std::endl;
 
         return true;
@@ -93,12 +84,12 @@ public:
                                     const Light::ColourCovariance& stiffness) {
         return( new ceres::AutoDiffCostFunction
                     <IntensityErrorAutomatic,
-                                           1,  // Residual dimension
-                                           6,  // Vehicle pose vector
-                                           3,  // Map point position
-                                           3,  // Map point normal
-                                           2,  // Map point Phong parameters
-                                           3>  // Light source position
+                       1,  // Residual dimension
+                       12, // Compact SE(3) vehicle pose (3 trans + 9 rot)
+                       3,  // Map point position
+                       3,  // Map point normal
+                       2,  // Map point Phong parameters
+                       3>  // Light source position
                        (new IntensityErrorAutomatic(colour, stiffness))
               );
     }
