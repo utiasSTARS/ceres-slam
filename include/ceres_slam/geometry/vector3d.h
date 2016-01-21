@@ -8,12 +8,13 @@
 #include <Eigen/Core>
 
 #include <ceres_slam/utils.h>
+#include <ceres_slam/geometry.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declarations
 ///////////////////////////////////////////////////////////////////////////////
 namespace ceres_slam {
-    template<typename _Scalar, int _Options = 0> class Vector3D;
+    template <typename _Scalar, int _Options = 0> class Vector3D;
 } // namespace ceres_slam
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -21,22 +22,21 @@ namespace ceres_slam {
 ///////////////////////////////////////////////////////////////////////////////
 namespace Eigen { namespace internal {
 
-template<typename _Scalar, int _Options>
+template <typename _Scalar, int _Options>
 struct traits<ceres_slam::Vector3D<_Scalar,_Options> >
-        : traits<typename ceres_slam::Vector3D<_Scalar,_Options>::Base> {
+        : traits<Eigen::Matrix<_Scalar, 3, 1>> {
     typedef _Scalar Scalar;
 };
 
-template<typename _Scalar, int _Options>
+template <typename _Scalar, int _Options>
 struct traits<Map<ceres_slam::Vector3D<_Scalar>,_Options> >
-        : traits<Map<typename ceres_slam::Vector3D<_Scalar>::Base,_Options> > {
+        : traits<Map<Eigen::Matrix<_Scalar, 3, 1>,_Options> > {
     typedef _Scalar Scalar;
 };
 
-template<typename _Scalar, int _Options>
+template <typename _Scalar, int _Options>
 struct traits<Map<const ceres_slam::Vector3D<_Scalar,_Options> > >
-        : traits<Map<const typename
-                     ceres_slam::Vector3D<_Scalar>::Base,_Options> > {
+        : traits<Map<const Eigen::Matrix<_Scalar, 3, 1>,_Options> > {
     typedef _Scalar Scalar;
 };
 
@@ -49,11 +49,12 @@ struct traits<Map<const ceres_slam::Vector3D<_Scalar,_Options> > >
 namespace ceres_slam {
 
 //! Vector in 3D space
-template<typename _Scalar, int _Options>
+template <typename _Scalar, int _Options>
 class Vector3D : public Eigen::Matrix<_Scalar, 3, 1> {
-public:
     //! Base class definition
     typedef Eigen::Matrix<_Scalar, 3, 1> Base;
+
+public:
     //! Scalar type
     typedef typename Eigen::internal::traits<Vector3D>::Scalar Scalar;
 
@@ -61,7 +62,7 @@ public:
     Vector3D() : Base() { }
 
     //! Constructor to construct Vector3D from Eigen expressions
-    template<typename OtherDerived>
+    template <typename OtherDerived>
     Vector3D(const Eigen::MatrixBase<OtherDerived>& other) : Base(other) { }
 
     //! Assignment of Eigen expressions to Vector3D
@@ -87,17 +88,21 @@ public:
 
 namespace Eigen {
 //! Specialization of Eigen::Map for Vector3D
-template<typename _Scalar, int _Options>
+template <typename _Scalar, int _Options>
 class Map<ceres_slam::Vector3D<_Scalar>,_Options>
-    : public Map<typename ceres_slam::Vector3D<_Scalar>::Base,_Options> {
-public:
+    : public Map<Eigen::Matrix<_Scalar, 3, 1>,_Options> {
     //! Base class definition
-    typedef Map<typename ceres_slam::Vector3D<_Scalar>::Base,_Options> BaseMap;
+    typedef Map<Eigen::Matrix<_Scalar, 3, 1>,_Options> Base;
+
+public:
     //! Scalar type
     typedef typename internal::traits<Map>::Scalar Scalar;
 
     //! Pass through to base class map constructor
-    Map(Scalar* data) : BaseMap(data) { };
+    Map(Scalar* data) : Base(data) { };
+
+    //! Assignment of Eigen expressions to Point3D
+    using Base::operator=;
 
     //! Convert to a string
     inline const std::string str() const {
@@ -115,18 +120,21 @@ public:
 };
 
 //! Specialization of Eigen::Map for const Vector3D
-template<typename _Scalar, int _Options>
+template <typename _Scalar, int _Options>
 class Map<const ceres_slam::Vector3D<_Scalar>,_Options>
-    : public Map<const typename ceres_slam::Vector3D<_Scalar>::Base,_Options> {
-public:
+    : public Map<const Eigen::Matrix<_Scalar, 3, 1>,_Options> {
     //! Base class definition
-    typedef Map<const typename ceres_slam::Vector3D<_Scalar>::Base,_Options>
-        BaseMap;
+    typedef Map<const Eigen::Matrix<_Scalar, 3, 1>,_Options> Base;
+
+public:
     //! Scalar type
     typedef typename internal::traits<Map>::Scalar Scalar;
 
     //! Pass through to base class map constructor
-    Map(Scalar* data) : BaseMap(data) { };
+    Map(Scalar* data) : Base(data) { };
+
+    //! Assignment of Eigen expressions to Point3D
+    using Base::operator=;
 
     //! Convert to a string
     inline const std::string str() const {
@@ -137,7 +145,7 @@ public:
 
     //! Ostream operator
     friend std::ostream& operator<<( std::ostream& os,
-                                const Map<const ceres_slam::Vector3D<Scalar> >& v ) {
+            const Map<const ceres_slam::Vector3D<Scalar> >& v ) {
         os << "Vector3D(" << v.str() << ")";
         return os;
     }

@@ -10,6 +10,13 @@ const double PI = 3.14159265;
 using Point = ceres_slam::Point3D<double>;
 using Vector = ceres_slam::Vector3D<double>;
 using SO3 = ceres_slam::SO3Group<double>;
+using SE3 = ceres_slam::SE3Group<double>;
+
+void print_array(double* array, int n) {
+    for(int i = 0; i < n; ++i)
+        std::cout << *(array + i) << ", ";
+    std::cout << std::endl;
+}
 
 int main() {
     ///////////////////////////////////////////////////////////////////////////
@@ -24,9 +31,8 @@ int main() {
     std::cout << "p2: " << p2 << std::endl;
     p2 += p1;
     std::cout << "p2: " << p2 << std::endl;
-    std::cout << "p2_data: " << p2_data[0] << ", "
-                             << p2_data[1] << ", "
-                             << p2_data[2] << std::endl;
+    std::cout << "p2_data: ";
+    print_array(p2_data, 3);
 
     Point p3 = p2;
     std::cout << "p3: " << p3 << std::endl;
@@ -40,9 +46,8 @@ int main() {
     std::cout << "v2: " << v2 << std::endl;
     v2 += v1;
     std::cout << "v2: " << v2 << std::endl;
-    std::cout << "v2_data: " << v2_data[0] << ", "
-                             << v2_data[1] << ", "
-                             << v2_data[2] << std::endl;
+    std::cout << "v2_data: ";
+    print_array(v2_data, 3);
 
     Vector v3 = v2;
     std::cout << "v3: " << v3 << std::endl;
@@ -70,6 +75,98 @@ int main() {
     std::cout << "C3: " << C3 << std::endl;
     std::cout << "C3.str(): " << C3.str() << std::endl;
     std::cout << "C3.inverse(): " << C3.inverse() << std::endl;
+
+    std::cout << "C2 * C3: " << C2 * C3 << std::endl;
+    std::cout << "C2 * p1: " << C2 * p1 << std::endl;
+    std::cout << "C2 * v1: " << C2 * v1 << std::endl;
+
+    std::cout << "SO3::Identity(): " << SO3::Identity() << std::endl;
+
+    SO3::TangentVector phi1;
+    phi1 << 1., 2., 3.;
+    std::cout << "SO3::wedge(phi1): " << std::endl
+              << SO3::wedge(phi1) << std::endl;
+    std::cout << "SO3::vee(SO3::wedge(phi1)): " << std::endl
+              << SO3::vee(SO3::wedge(phi1)) << std::endl;
+
+    std::cout << "SO3::exp(phi1): " << SO3::exp(phi1) << std::endl;
+    std::cout << "SO3::log(SO3::exp(phi1)): " << std::endl
+              << SO3::log(SO3::exp(phi1)) << std::endl;
+    std::cout << "SO3::exp(SO3::log(SO3::exp(phi1))): "
+              << SO3::exp(SO3::log(SO3::exp(phi1))) << std::endl;
+
+    double C4_data[9] = {0, -1, 0, 1, 0, 0, 0, 0, 1};
+    Eigen::Map<SO3> C4(C4_data);
+    std::cout << "C4: " << C4 << std::endl;
+    C4 *= C2;
+    std::cout << "C4 *= C2: " << C4 << std::endl;
+    std::cout << "C4_data: ";
+    print_array(C4_data, 9);
+    std::cout << "C4 * p2: " << C4 * p2 << std::endl;
+    std::cout << "C4 * v2: " << C4 * v2 << std::endl;
+
+    SO3 C5;
+    C5 = C4;
+    C4 = C2;
+    std::cout << "C5 = C4: " << C5 << std::endl;
+    std::cout << "C4 = C2: " << C4 << std::endl;
+
+    double C6_data[9] = {0, -1, 0, 1, 0, 0, 0, 0, 1};
+    Eigen::Map<const SO3> C6(C6_data);
+    std::cout << "C6: " << C6 << std::endl;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // SE(3) tests
+    ///////////////////////////////////////////////////////////////////////////
+    std::cout << std::endl;
+
+    SE3 T1;
+    std::cout << "T1: " << T1 << std::endl;
+
+    SE3::TransformationMatrix T2_matrix;
+    T2_matrix << 0, -1, 0,  1,
+                 1,  0, 0, -1,
+                 0,  0, 1,  1,
+                 0,  0, 0,  1;
+    SE3 T2(T2_matrix);
+    std::cout << "T2: " << T2 << std::endl;
+
+    SE3 T3(T2);
+    std::cout << "T3: " << T3 << std::endl;
+    std::cout << "T3.str(): " << T3.str() << std::endl;
+    std::cout << "T3.inverse(): " << T3.inverse() << std::endl;
+    std::cout << "T3.data(): ";
+    print_array(T3.data(), 12);
+
+    std::cout << "T2 * T3: " << T2 * T3 << std::endl;
+    std::cout << "T2 * p1: " << T2 * p1 << std::endl;
+    std::cout << "T2 * v1: " << T2 * v1 << std::endl;
+
+    std::cout << "SE3::Identity(): " << SE3::Identity() << std::endl;
+
+    SE3::TangentVector xi1;
+    xi1 << 1., 2., 3., 4., 5., 6.;
+    std::cout << "SE3::wedge(xi1): " << std::endl
+              << SE3::wedge(xi1) << std::endl;
+    std::cout << "SE3::vee(SE3::wedge(xi1)): " << std::endl
+              << SE3::vee(SE3::wedge(xi1)) << std::endl;
+
+    std::cout << "SE3::exp(xi1): " << SE3::exp(xi1) << std::endl;
+    std::cout << "SE3::log(SE3::exp(xi1)): " << std::endl
+              << SE3::log(SE3::exp(xi1)) << std::endl;
+    std::cout << "SE3::exp(SE3::log(SE3::exp(xi1))): "
+              << SE3::exp(SE3::log(SE3::exp(xi1))) << std::endl;
+
+    double T4_data[12] = {1, -1, 1, 0, -1, 0, 1, 0, 0, 0, 0, 1};
+    Eigen::Map<SE3> T4(T4_data);
+    std::cout << "T4: " << T4 << std::endl;
+    T4 *= T2;
+    std::cout << "T4 *= T2: " << T4 << std::endl;
+    std::cout << "T4_data: ";
+    print_array(T4_data, 12);
+    std::cout << "T4 * p2: " << T4 * p2 << std::endl;
+    std::cout << "T4 * v2: " << T4 * v2 << std::endl;
+    std::cout << "T4.inverse(): " << T4.inverse() << std::endl;
 
     return EXIT_SUCCESS;
 }
