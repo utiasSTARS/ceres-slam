@@ -77,6 +77,6 @@ target_link_libraries(geometry_test ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 # add_executable(dataset_ba src/tests/dataset_ba.cpp)
 # target_link_libraries(dataset_ba ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
-add_custom_target(docs ALL
-	COMMAND "doxygen" "doxygen.config"
-	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+# add_custom_target(docs ALL
+# 	COMMAND "doxygen" "doxygen.config"
+# 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

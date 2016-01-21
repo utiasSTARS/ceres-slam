@@ -9,8 +9,7 @@
 #include <Eigen/Core>
 
 #include <ceres_slam/utils.h>
-#include <ceres_slam/geometry/point3d.h>
-#include <ceres_slam/geometry/vector3d.h>
+#include <ceres_slam/geometry.h>
 #include <ceres_slam/material.h>
 
 namespace ceres_slam {
@@ -26,7 +25,7 @@ public:
     //! Material pointer type
     typedef typename Material<Scalar>::Ptr MaterialPtr;
     //! Vertex dimension
-    static const int dim = Point::dim + Vector::dim + 2;
+    static const int dim = 8;
 
     //! Default constructor
     Vertex3D() : Vertex3D(Point(), Vector(), nullptr) { }
