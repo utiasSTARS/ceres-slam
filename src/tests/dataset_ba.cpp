@@ -5,6 +5,7 @@
 
 #include <ceres/ceres.h>
 
+#include <ceres_slam/utils.h>
 #include <ceres_slam/dataset_problem.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/stereo_reprojection_error.h>
@@ -40,7 +41,7 @@ int main(int argc, char** argv) {
 
     // Output the initial guess to a CSV file for comparison
     std::vector<std::string> tokens;
-    tokens = split(filename, '.');
+    tokens = ceres_slam::split(filename, '.');
     dataset.write_csv(tokens.at(0) + "_initial.csv");
 
     // Build the problem
@@ -85,30 +86,30 @@ int main(int argc, char** argv) {
                     dataset.pose_vectors[k].data(),
                     dataset.map_vertices[j].position().data() );
 
-                // Cost function for the intensity observation
-                ceres::CostFunction* intensity_cost =
-                    ceres_slam::IntensityErrorAutomatic::Create(
-                        dataset.int_list[i],
-                        int_stiffness);
-                // Add the intensity cost function to the problem
-                problem.AddResidualBlock(
-                    intensity_cost, NULL,
-                    dataset.pose_vectors[k].data(),
-                    dataset.map_vertices[j].position().data(),
-                    dataset.map_vertices[j].normal().data(),
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    dataset.light_pos.data());
-
-                // Cost function for the normal observation
-                ceres::CostFunction* normal_cost =
-                    ceres_slam::NormalErrorAutomatic::Create(
-                        dataset.normal_obs_list[i],
-                        normal_obs_stiffness);
-                // Add the normal cost function to the problem
-                problem.AddResidualBlock(
-                    normal_cost, NULL,
-                    dataset.pose_vectors[k].data(),
-                    dataset.map_vertices[j].normal().data());
+                // // Cost function for the intensity observation
+                // ceres::CostFunction* intensity_cost =
+                //     ceres_slam::IntensityErrorAutomatic::Create(
+                //         dataset.int_list[i],
+                //         int_stiffness);
+                // // Add the intensity cost function to the problem
+                // problem.AddResidualBlock(
+                //     intensity_cost, NULL,
+                //     dataset.pose_vectors[k].data(),
+                //     dataset.map_vertices[j].position().data(),
+                //     dataset.map_vertices[j].normal().data(),
+                //     dataset.map_vertices[j].material()->phong_params().data(),
+                //     dataset.light_pos.data());
+                //
+                // // Cost function for the normal observation
+                // ceres::CostFunction* normal_cost =
+                //     ceres_slam::NormalErrorAutomatic::Create(
+                //         dataset.normal_obs_list[i],
+                //         normal_obs_stiffness);
+                // // Add the normal cost function to the problem
+                // problem.AddResidualBlock(
+                //     normal_cost, NULL,
+                //     dataset.pose_vectors[k].data(),
+                //     dataset.map_vertices[j].normal().data());
             }
         }
     }
