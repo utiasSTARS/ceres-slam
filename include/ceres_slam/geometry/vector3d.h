@@ -8,7 +8,6 @@
 #include <Eigen/Core>
 
 #include <ceres_slam/utils.h>
-#include <ceres_slam/geometry.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -58,6 +57,13 @@ public:
     //! Scalar type
     typedef typename Eigen::internal::traits<Vector3D>::Scalar Scalar;
 
+    //! Dimension of vector
+    static const int dim = 3;
+    //! Variance type
+    typedef Eigen::Matrix<Scalar, dim, 1> Variance;
+    //! Covariance matrix type
+    typedef Eigen::Matrix<Scalar, dim, dim, Eigen::RowMajor> Covariance;
+
     //! Default constructor
     Vector3D() : Base() { }
 
@@ -98,6 +104,13 @@ public:
     //! Scalar type
     typedef typename internal::traits<Map>::Scalar Scalar;
 
+    //! Dimension of vector
+    static const int dim = 3;
+    //! Variance type
+    typedef Eigen::Matrix<Scalar, dim, 1> Variance;
+    //! Covariance matrix type
+    typedef Eigen::Matrix<Scalar, dim, dim, Eigen::RowMajor> Covariance;
+
     //! Pass through to base class map constructor
     Map(Scalar* data) : Base(data) { };
 
@@ -130,8 +143,15 @@ public:
     //! Scalar type
     typedef typename internal::traits<Map>::Scalar Scalar;
 
+    //! Dimension of vector
+    static const int dim = 3;
+    //! Variance type
+    typedef Eigen::Matrix<Scalar, dim, 1> Variance;
+    //! Covariance matrix type
+    typedef Eigen::Matrix<Scalar, dim, dim, Eigen::RowMajor> Covariance;
+
     //! Pass through to base class map constructor
-    Map(Scalar* data) : Base(data) { };
+    Map(const Scalar* data) : Base(data) { };
 
     //! Assignment of Eigen expressions to Point3D
     using Base::operator=;

@@ -57,6 +57,14 @@ public:
     //! Scalar type
     typedef typename Eigen::internal::traits<Point3D>::Scalar Scalar;
 
+    //! Dimension of point
+    static const int dim = 3;
+    //! Variance type
+    typedef Eigen::Matrix<Scalar, dim, 1> Variance;
+    //! Covariance matrix type
+    typedef Eigen::Matrix<Scalar, dim, dim, Eigen::RowMajor> Covariance;
+
+
     //! Default constructor
     Point3D() : Base() { }
 
@@ -97,6 +105,13 @@ public:
     //! Scalar type
     typedef typename internal::traits<Map>::Scalar Scalar;
 
+    //! Dimension of point
+    static const int dim = 3;
+    //! Variance type
+    typedef Eigen::Matrix<Scalar, dim, 1> Variance;
+    //! Covariance matrix type
+    typedef Eigen::Matrix<Scalar, dim, dim, Eigen::RowMajor> Covariance;
+
     //! Pass through to base class map constructor
     Map(Scalar* data) : Base(data) { };
 
@@ -126,8 +141,15 @@ public:
     //! Scalar type
     typedef typename internal::traits<Map>::Scalar Scalar;
 
+    //! Dimension of point
+    static const int dim = 3;
+    //! Variance type
+    typedef Eigen::Matrix<Scalar, dim, 1> Variance;
+    //! Covariance matrix type
+    typedef Eigen::Matrix<Scalar, dim, dim, Eigen::RowMajor> Covariance;
+
     //! Pass through to base class map constructor
-    Map(Scalar* data) : Base(data) { };
+    Map(const Scalar* data) : Base(data) { };
 
     //! Convert to a string
     inline const std::string str() const {

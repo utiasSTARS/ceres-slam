@@ -58,6 +58,9 @@ int main() {
     Eigen::Map<const Point> p5(p4.data());
     std::cout << "p5: " << p5 << std::endl;
 
+    const double p6_data[3] = {1., 2., 3.};
+    Eigen::Map<const Point> p6(p6_data);
+
     ///////////////////////////////////////////////////////////////////////////
     // SO(3) tests
     ///////////////////////////////////////////////////////////////////////////
@@ -111,9 +114,10 @@ int main() {
     std::cout << "C5 = C4: " << C5 << std::endl;
     std::cout << "C4 = C2: " << C4 << std::endl;
 
-    double C6_data[9] = {0, -1, 0, 1, 0, 0, 0, 0, 1};
+    const double C6_data[9] = {0, -1, 0, 1, 0, 0, 0, 0, 1};
     Eigen::Map<const SO3> C6(C6_data);
     std::cout << "C6: " << C6 << std::endl;
+    std::cout << "C6 * p6: " << C6 * p6 << std::endl;
 
     ///////////////////////////////////////////////////////////////////////////
     // SE(3) tests
@@ -167,6 +171,11 @@ int main() {
     std::cout << "T4 * p2: " << T4 * p2 << std::endl;
     std::cout << "T4 * v2: " << T4 * v2 << std::endl;
     std::cout << "T4.inverse(): " << T4.inverse() << std::endl;
+
+    const double T6_data[12] = {1, -1, 1, 0, -1, 0, 1, 0, 0, 0, 0, 1};
+    Eigen::Map<const SE3> T6(T6_data);
+    std::cout << "T6: " << T6 << std::endl;
+    std::cout << "T6 * p6: " << T6 * p6 << std::endl;
 
     return EXIT_SUCCESS;
 }

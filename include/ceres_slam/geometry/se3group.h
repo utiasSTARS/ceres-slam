@@ -491,7 +491,7 @@ public:
             translation_(array),
             rotation_(array + 3) { }
 
-    //! Return a reference to the underlying rotation
+    //! Return a reference to the rotation part
     inline
     RotationStorageType& rotation() { return rotation_; }
     //! Return a const reference to the rotation part
@@ -500,6 +500,69 @@ public:
     //! Return a reference to the translation part
     inline
     TranslationStorageType& translation() { return translation_; }
+    //! Return a const reference to the translation part
+    inline
+    const TranslationStorageType& translation() const { return translation_; }
+
+private:
+    //! Internal storage (translation)
+    TranslationStorageType translation_;
+    //! Internal storage (rotation)
+    RotationStorageType rotation_;
+};
+
+//! Specialization of Eigen::Map for const SE3Group
+template <typename _Scalar, int _Options>
+class Map<const ceres_slam::SE3Group<_Scalar>,_Options>
+    : public ceres_slam::SE3GroupBase<
+        Map<const ceres_slam::SE3Group<_Scalar>,_Options> > {
+
+    //! Base class definition
+    typedef ceres_slam::SE3GroupBase<
+        Map<const ceres_slam::SE3Group<_Scalar>,_Options> > Base;
+
+public:
+    //! Scalar type
+    typedef typename internal::traits<Map>::Scalar Scalar;
+    //! Rotation storage type
+    typedef typename internal::traits<Map>::RotationStorageType
+        RotationStorageType;
+    //! Translation storage type
+    typedef typename internal::traits<Map>::TranslationStorageType
+        TranslationStorageType;
+
+    //! Degrees of freedom (3 for rotation)
+    static const int dof = Base::dof;
+    //! Dimension of transformation matrix
+    static const int dim = Base::dim;
+    //! Point type
+    typedef typename Base::Point Point;
+    //! Vector type
+    typedef typename Base::Vector Vector;
+    //! Rotation type
+    typedef typename Base::SO3 SO3;
+    //! Tangent vector type
+    typedef typename Base::TangentVector TangentVector;
+    //! Transformation matrix type
+    typedef typename Base::TransformationMatrix TransformationMatrix;
+    //! Adjoint transformation type
+    typedef typename Base::AdjointMatrix AdjointMatrix;
+    //! Transformed point Jacobian matrix
+    typedef typename Base::PerturbationJacobian PerturbationJacobian;
+
+    // Inherit operators from base class
+    using Base::operator=;
+    using Base::operator*=;
+    using Base::operator*;
+
+    //! Construct from POD array
+    Map(const Scalar* array) :
+            translation_(array),
+            rotation_(array + 3) { }
+
+    //! Return a const reference to the rotation part
+    inline
+    const RotationStorageType& rotation() const { return rotation_; }
     //! Return a const reference to the translation part
     inline
     const TranslationStorageType& translation() const { return translation_; }
