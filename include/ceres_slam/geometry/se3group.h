@@ -247,6 +247,25 @@ public:
             jacobian.block(0,0,3,3) = SO3::TransformationMatrix::Zero();
             jacobian.block(0,3,3,3) = SO3::wedge(-v_transformed);
         }
+    }
+
+    //! Transform a 3D vector.
+    /*!
+        Transform a 3D vector and, if requested, compute the
+        Jacobian of the transformed point w.r.t. a perturbation in the
+        transformation parameters
+    */
+    inline
+    const Vector transform(const Vector& v,
+        PerturbationJacobian* jacobian_ptr = nullptr) const {
+
+        Vector v_transformed = this->rotation() * v;
+
+        if(jacobian_ptr != nullptr) {
+            PerturbationJacobian& jacobian = *jacobian_ptr;
+            jacobian.block(0,0,3,3) = SO3::TransformationMatrix::Zero();
+            jacobian.block(0,3,3,3) = SO3::wedge(-v_transformed);
+        }
 
         return v_transformed;
     }
@@ -409,13 +428,11 @@ public:
     //! Construct from transformation matrix
     SE3Group(const TransformationMatrix& matrix) :
             translation_(matrix.block(0,3,3,1) ),
-            rotation_(matrix.block(0,0,3,3) ) {
-    }
+            rotation_(matrix.block(0,0,3,3) ) { }
     //! Construct from a translation and a rotation
     SE3Group(const Vector& translation, const SO3& rotation) :
             translation_(translation),
-            rotation_(rotation) {
-    }
+            rotation_(rotation) { }
 
     //! Return a reference to the underlying rotation
     inline

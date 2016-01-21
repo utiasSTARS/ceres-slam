@@ -64,7 +64,6 @@ public:
     //! Covariance matrix type
     typedef Eigen::Matrix<Scalar, dim, dim, Eigen::RowMajor> Covariance;
 
-
     //! Default constructor
     Point3D() : Base() { }
 
