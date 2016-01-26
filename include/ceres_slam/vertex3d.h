@@ -25,7 +25,7 @@ public:
     //! Material pointer type
     typedef typename Material<Scalar>::Ptr MaterialPtr;
     //! Vertex dimension
-    static const int dim = 8;
+    static const int dim = Point::dim + Vector::dim + Material<Scalar>::dim;
 
     //! Default constructor
     Vertex3D() : Vertex3D(Point(), Vector(), nullptr) { }

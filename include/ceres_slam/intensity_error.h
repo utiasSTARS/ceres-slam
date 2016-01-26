@@ -41,6 +41,7 @@ public:
 
         // Camera pose in the global frame
         Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
+        VectorT r_c_g_c = T_c_g.inverse().translation();
 
         // Map point
         Eigen::Map<const PointT> pt_g(pt_g_ceres);  // Global frame
@@ -53,7 +54,8 @@ public:
 
         // Phong reflectance coefficients (ambient and diffuse only for now)
         Eigen::Map<const PhongParamsT> phong_params(phong_params_ceres);
-        typename MaterialT::Ptr material = std::make_shared<MaterialT>(phong_params);
+        typename MaterialT::Ptr material =
+            std::make_shared<MaterialT>(phong_params);
 
         // Vertex in the camera frame for shading
         VertexT vertex_c(pt_c, normal_c, material);
@@ -63,15 +65,23 @@ public:
         PointT lightpos_c = T_c_g * lightpos_g;                 // Camera frame
 
         // Light source model
-        LightT light(lightpos_c, PhongParamsT::Constant(static_cast<T>(1)));
+        ColourT colourT = static_cast<ColourT>(colour_);
+        LightT light(lightpos_c, colourT);
 
         // Compute the predicted intensity at the vertex
-        ColourT predicted_colour = light.shade(vertex_c);
+        ColourT predicted_colour = light.shade(vertex_c, r_c_g_c);
+
+        // NaN check
+        // TODO: Figure out why this happens to the
+        //       specular component and fix it
+        // if(ceres::IsNaN(static_cast<T>(predicted_colour) ) ) {
+        //     predicted_colour = ColourT(static_cast<T>(0) );
+        // }
 
         // Compute the residuals
         // (no need to map to an eigen matrix yet since it's only 1D)
         residuals_ceres[0] = static_cast<T>(stiffness_)
-                                * (predicted_colour - static_cast<T>(colour_));
+                                * (predicted_colour - colourT);
         // std::cout << residuals_ceres[0] << std::endl;
 
         return true;
@@ -88,7 +98,7 @@ public:
                        12, // Compact SE(3) vehicle pose (3 trans + 9 rot)
                        3,  // Map point position
                        3,  // Map point normal
-                       2,  // Map point Phong parameters
+                       4,  // Map point Phong parameters
                        3>  // Light source position
                        (new IntensityErrorAutomatic(colour, stiffness))
               );

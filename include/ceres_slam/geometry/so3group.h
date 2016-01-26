@@ -112,7 +112,7 @@ public:
     //! Return the inverse transformation
     inline
     const SO3Group<Scalar> inverse() const {
-        return SO3Group<Scalar>(this->matrix().transpose());
+        return SO3Group<Scalar>(this->matrix().transpose() );
     }
 
     //! Normalize the underlying matrix to ensure it is a valid rotation

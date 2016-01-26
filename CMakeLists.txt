@@ -62,8 +62,8 @@ file(GLOB ${PROJECT_NAME}_SOURCES "src/ceres_slam/*.cpp")
 add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
-# add_executable(ceres_odometry_node src/nodes/odometry_node.cpp)
-# target_link_libraries(ceres_odometry_node ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+# add_executable(sparse_stereo_odometry src/nodes/sparse_stereo_odometry_node.cpp)
+# target_link_libraries(sparse_stereo_odometry ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(camera_test src/tests/camera_test.cpp)
 target_link_libraries(camera_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})

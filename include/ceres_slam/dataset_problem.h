@@ -57,7 +57,7 @@ public:
 
     //! Light source position in base frame (to be estimated)
     Point light_pos;
-    //! Noise initial guess for light source position (temporary)
+    //! Noisy initial guess for light source position (temporary)
     Point initial_light_pos;
 
     //! Material (just one for now, to be estimated)
@@ -81,7 +81,7 @@ public:
         Assuming first row is num_states, num_vertices,
         second row is intrinsics,
         and remaining rows are observations of the form [t,j,u,v,d,I]
-        where t: timestemp
+        where t: timestamp
               j: point index
               (u,v): left image coordinates
               d: disparity

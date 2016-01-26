@@ -88,19 +88,41 @@ int main(int argc, char** argv) {
                     dataset.poses[k].data(),
                     dataset.map_vertices[j].position().data() );
 
-                // Cost function for the intensity observation
-                ceres::CostFunction* intensity_cost =
-                    ceres_slam::IntensityErrorAutomatic::Create(
-                        dataset.int_list[i],
-                        int_stiffness);
-                // Add the intensity cost function to the problem
-                problem.AddResidualBlock(
-                    intensity_cost, NULL,
-                    dataset.poses[k].data(),
-                    dataset.map_vertices[j].position().data(),
-                    dataset.map_vertices[j].normal().data(),
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    dataset.light_pos.data());
+                // // Cost function for the intensity observation
+                // ceres::CostFunction* intensity_cost =
+                //     ceres_slam::IntensityErrorAutomatic::Create(
+                //         dataset.int_list[i],
+                //         int_stiffness);
+                // // Add the intensity cost function to the problem
+                // problem.AddResidualBlock(
+                //     intensity_cost, NULL,
+                //     dataset.poses[k].data(),
+                //     dataset.map_vertices[j].position().data(),
+                //     dataset.map_vertices[j].normal().data(),
+                //     dataset.map_vertices[j].material()->phong_params().data(),
+                //     dataset.light_pos.data());
+                // // Set upper and lower bounds on Phong parameters
+                // problem.SetParameterLowerBound(
+                //     dataset.map_vertices[j].material()->phong_params().data(),
+                //     0, 0.);
+                // problem.SetParameterUpperBound(
+                //     dataset.map_vertices[j].material()->phong_params().data(),
+                //     0, 1.);
+                // problem.SetParameterLowerBound(
+                //     dataset.map_vertices[j].material()->phong_params().data(),
+                //     1, 0.);
+                // problem.SetParameterUpperBound(
+                //     dataset.map_vertices[j].material()->phong_params().data(),
+                //     1, 1.);
+                // problem.SetParameterLowerBound(
+                //     dataset.map_vertices[j].material()->phong_params().data(),
+                //     2, 0.);
+                // problem.SetParameterUpperBound(
+                //     dataset.map_vertices[j].material()->phong_params().data(),
+                //     2, 1.);
+                // problem.SetParameterLowerBound(
+                //     dataset.map_vertices[j].material()->phong_params().data(),
+                //     3, 0.);
 
                 // Cost function for the normal observation
                 ceres::CostFunction* normal_cost =
@@ -135,9 +157,9 @@ int main(int argc, char** argv) {
     // solver_options.check_gradients = true;
 
     ceres::Solver::Summary summary;
-    Solve(solver_options, &problem, &summary);
+    // Solve(solver_options, &problem, &summary);
 
-    std::cout << summary.FullReport() << std::endl;
+    // std::cout << summary.FullReport() << std::endl;
 
     // Estimate covariance?
 

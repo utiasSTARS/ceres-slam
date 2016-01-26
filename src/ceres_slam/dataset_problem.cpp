@@ -153,7 +153,8 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     }
 
     // Convert initialized vertices to CSV entries
-    map_file << "point_id, x, y, z, nx, ny, nz, ka, kd" << std::endl;
+    map_file << "point_id, x, y, z, nx, ny, nz, ka, kd, ks, exponent"
+             << std::endl;
     for(unsigned int j = 0; j < map_vertices.size(); ++j) {
         if(initialized_vertex[j]) {
             map_file << j << "," << map_vertices[j].str() << std::endl;
@@ -188,7 +189,7 @@ void DatasetProblem::compute_initial_guess() {
 
     // Initialize the material (assuming everything is the same material)
     material = std::make_shared< Material<double> >(
-        Material<double>::PhongParams(0.5, 0.5) );
+        Material<double>::PhongParams(0.1, 0.6, 0.3, 10.) );
 
     // First pose is either identity, or the first ground truth pose
     poses[0] = first_pose;
@@ -249,9 +250,9 @@ void DatasetProblem::compute_initial_guess() {
         SE3 T_k_km1 = point_cloud_aligner.compute_transformation_and_inliers(
             pts_km1, pts_k, camera, 400, 9);
 
-        // std::cout <<"Best inlier set has " << pts_km1.size()
-        //               << " elements" << std::endl;
-        // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
+        std::cout <<"Best inlier set has " << pts_km1.size()
+                      << " elements" << std::endl;
+        std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
 
         // Compound the transformation estimate onto the previous one
         poses[k] = T_k_km1 * poses[k-1];

@@ -169,9 +169,8 @@ public:
     inline
     void operator*=(const SE3Group<Scalar>& other) {
         this->rotation()    *= other.rotation();
-        this->translation()  = other.rotation() * this->translation();
-        this->translation() += other.translation();
-        this->normalize();
+        this->translation() = other.rotation() * this->translation()
+                                + other.translation();
     }
 
     //! Multiplication operator for two group elements
