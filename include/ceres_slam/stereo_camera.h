@@ -119,8 +119,8 @@ public:
 
     //! Triangulates a 3D point in the camera frame
     //! from a uvd stereo observation.
-    const Point triangulate(
-        const Observation& obs, TriangulationJacobian* jacobian_ptr = nullptr) const {
+    const Point triangulate(const Observation& obs,
+            TriangulationJacobian* jacobian_ptr = nullptr) const {
         Point pt_c;
         Scalar b_over_d = b() / obs(2);
         Scalar fu_over_fv = fu() / fv();

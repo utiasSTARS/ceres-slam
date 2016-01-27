@@ -118,7 +118,9 @@ public:
 
         // Check for NaN -- pathological case where halfway_dir.norm() == 0
         if(halfway_dir.allFinite() ) {
-            halfway_dir_dot_normal = halfway_dir.dot(vertex.normal() );
+            // pow(x,y) returns NaN if x < 0 and y non-integer
+            halfway_dir_dot_normal = fmax(static_cast<Scalar>(0),
+                                          halfway_dir.dot(vertex.normal() ) );
             pow_halfway_dir_dot_normal_exponent =
                 pow(halfway_dir_dot_normal, vertex.material()->exponent() );
 
@@ -138,57 +140,58 @@ public:
 
         // Compute jacobian if needed
         if(jacobian_ptr != nullptr) {
-            ColourJacobian& jacobian = *jacobian_ptr;
-            jacobian = ColourJacobian::Zero();
-
-            Scalar light_norm = light_vec.norm();
-            Scalar two_light_norm2 = static_cast<Scalar>(2)
-                                        * light_norm * light_norm;
-            Scalar one_over_two_light_norm3 =
-                static_cast<Scalar>(1) / (two_light_norm2 * light_norm);
-
-            // d(I)/d(pj) = d(I)/d(l) d(l)/d(pj)
-            if(light_dir_dot_normal >= 0.) {
-                jacobian.block(0,0,1,3) =
-                    // d(I)/d(l) (1 x 3)
-                    vertex.material()->diffuse() * vertex.normal().transpose()
-                    // d(l)/d(pj) (3 x 3)
-                    * (-one_over_two_light_norm3)
-                        * ( two_light_norm2
-                            * Eigen::Matrix<Scalar, 3, 3,
-                                            Eigen::RowMajor>::Identity()
-                            - light_vec * light_vec.transpose() );
-            } // else zeros
-
-            // d(I)/d(nj)
-            if(light_dir_dot_normal >= static_cast<Scalar>(0)) {
-                jacobian.block(0,3,1,3) = vertex.material()->diffuse()
-                                            * light_dir.transpose();
-            } // else zeros
-
-            // d(I)/d(ka)
-            jacobian(0,6) = static_cast<Scalar>(1);
-
-            // d(I)/d(kd)
-            jacobian(0,7) = fmax(static_cast<Scalar>(0), light_dir_dot_normal);
-
-            // d(I)/d(ks)
-            jacobian(0,8) = fmax(static_cast<Scalar>(0),
-                                 pow_halfway_dir_dot_normal_exponent);
-
-            // d(I)/d(alpha) = i_s k_s alpha (h.n)^(alpha-1)
-            jacobian(0,9) = fmax(static_cast<Scalar>(0),
-                vertex.material()->specular()
-                    * vertex.material()->exponent()
-                    * pow(halfway_dir_dot_normal,
-                          vertex.material()->exponent()
-                          - static_cast<Scalar>(1) ) );
-
-            // d(I)/d(pL)
-            jacobian.block(0,10,1,3) = -jacobian.block(0,0,1,3);
-
-            // Constant factor for light colour
-            jacobian *= this->colour();
+            std::cerr << "PointLight::shade() jacobian not implemented. Come back later." << std::endl;
+            // ColourJacobian& jacobian = *jacobian_ptr;
+            // jacobian = ColourJacobian::Zero();
+            //
+            // Scalar light_norm = light_vec.norm();
+            // Scalar two_light_norm2 = static_cast<Scalar>(2)
+            //                             * light_norm * light_norm;
+            // Scalar one_over_two_light_norm3 =
+            //     static_cast<Scalar>(1) / (two_light_norm2 * light_norm);
+            //
+            // // d(I)/d(pj) = d(I)/d(l) d(l)/d(pj)
+            // if(light_dir_dot_normal >= 0.) {
+            //     jacobian.block(0,0,1,3) =
+            //         // d(I)/d(l) (1 x 3)
+            //         vertex.material()->diffuse() * vertex.normal().transpose()
+            //         // d(l)/d(pj) (3 x 3)
+            //         * (-one_over_two_light_norm3)
+            //             * ( two_light_norm2
+            //                 * Eigen::Matrix<Scalar, 3, 3,
+            //                                 Eigen::RowMajor>::Identity()
+            //                 - light_vec * light_vec.transpose() );
+            // } // else zeros
+            //
+            // // d(I)/d(nj)
+            // if(light_dir_dot_normal >= static_cast<Scalar>(0)) {
+            //     jacobian.block(0,3,1,3) = vertex.material()->diffuse()
+            //                                 * light_dir.transpose();
+            // } // else zeros
+            //
+            // // d(I)/d(ka)
+            // jacobian(0,6) = static_cast<Scalar>(1);
+            //
+            // // d(I)/d(kd)
+            // jacobian(0,7) = fmax(static_cast<Scalar>(0), light_dir_dot_normal);
+            //
+            // // d(I)/d(ks)
+            // jacobian(0,8) = fmax(static_cast<Scalar>(0),
+            //                      pow_halfway_dir_dot_normal_exponent);
+            //
+            // // d(I)/d(alpha) = i_s k_s alpha (h.n)^(alpha-1)
+            // jacobian(0,9) = fmax(static_cast<Scalar>(0),
+            //     vertex.material()->specular()
+            //         * vertex.material()->exponent()
+            //         * pow(halfway_dir_dot_normal,
+            //               vertex.material()->exponent()
+            //               - static_cast<Scalar>(1) ) );
+            //
+            // // d(I)/d(pL)
+            // jacobian.block(0,10,1,3) = -jacobian.block(0,0,1,3);
+            //
+            // // Constant factor for light colour
+            // jacobian *= this->colour();
         }
 
         return col;

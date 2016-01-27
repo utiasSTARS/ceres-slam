@@ -250,9 +250,9 @@ void DatasetProblem::compute_initial_guess() {
         SE3 T_k_km1 = point_cloud_aligner.compute_transformation_and_inliers(
             pts_km1, pts_k, camera, 400, 9);
 
-        std::cout <<"Best inlier set has " << pts_km1.size()
-                      << " elements" << std::endl;
-        std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
+        // std::cout <<"Best inlier set has " << pts_km1.size()
+        //               << " elements" << std::endl;
+        // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
 
         // Compound the transformation estimate onto the previous one
         poses[k] = T_k_km1 * poses[k-1];

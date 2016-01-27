@@ -13,10 +13,11 @@ int main() {
     Material<double>::Ptr m = std::make_shared<Material<double>>();
     m->phong_params() = Material<double>::PhongParams(0.1, 0.9, 0.5, 4.);
 
-    Vertex3D<double> v6;
-    v6.position() << 0.39151551, -0.04951286,  0. ;
-    v6.normal() << 0.,0.,1.;
-    v6.material() = m;
+    Point3D<double> v6_p;
+    v6_p << 0.39151551, -0.04951286,  0. ;
+    Vector3D<double> v6_n;
+    v6_n << 0.,0.,1.;
+    Vertex3D<double> v6(v6_p, v6_n, m);
 
     Vertex3D<double> v118;
     v118.position() << 1., 0.88091717, 0.09214285;

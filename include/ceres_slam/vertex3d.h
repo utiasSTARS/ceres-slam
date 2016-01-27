@@ -28,7 +28,10 @@ public:
     static const int dim = Point::dim + Vector::dim + Material<Scalar>::dim;
 
     //! Default constructor
-    Vertex3D() : Vertex3D(Point(), Vector(), nullptr) { }
+    Vertex3D() :
+        position_(Point() ),
+        normal_(Vector() ),
+        material_ptr_(nullptr) { }
     //! Construct from position, normal, and phong parameters
     Vertex3D(const Point& position,
              const Vector& normal,
