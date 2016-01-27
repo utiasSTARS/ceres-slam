@@ -71,13 +71,6 @@ public:
         // Compute the predicted intensity at the vertex
         ColourT predicted_colour = light.shade(vertex_c, r_c_g_c);
 
-        // NaN check
-        // TODO: Figure out why this happens to the
-        //       specular component and fix it
-        if(ceres::IsNaN(static_cast<T>(predicted_colour) ) ) {
-            predicted_colour = ColourT(static_cast<T>(0) );
-        }
-
         // Compute the residuals
         // (no need to map to an eigen matrix yet since it's only 1D)
         residuals_ceres[0] = static_cast<T>(stiffness_)
