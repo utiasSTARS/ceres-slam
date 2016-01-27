@@ -165,19 +165,13 @@ public:
         this->rotation().normalize();
     }
 
-    //! In place multiplication by another group element
-    inline
-    void operator*=(const SE3Group<Scalar>& other) {
-        this->rotation()    *= other.rotation();
-        this->translation() = other.rotation() * this->translation()
-                                + other.translation();
-    }
-
     //! Multiplication operator for two group elements
     inline
     const SE3Group<Scalar> operator*(const SE3Group<Scalar>& other) const {
-        SE3Group<Scalar> result(*this);
-        result *= other;
+        SE3Group<Scalar> result;
+        result.rotation() = this->rotation() * other.rotation();
+        result.translation() = this->rotation() * other.translation()
+                                + this->translation();
         return result;
     }
 
@@ -478,7 +472,6 @@ public:
 
     // Inherit operators from base class
     using Base::operator=;
-    using Base::operator*=;
     using Base::operator*;
 
     //! Construct from POD array
@@ -547,7 +540,6 @@ public:
 
     // Inherit operators from base class
     using Base::operator=;
-    using Base::operator*=;
     using Base::operator*;
 
     //! Construct from POD array

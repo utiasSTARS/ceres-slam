@@ -127,18 +127,10 @@ public:
         this->matrix() = svd.matrixU() * middle * svd.matrixV().transpose();
     }
 
-    //! In place multiplication by another group element
-    inline
-    void operator*=(const SO3Group<Scalar>& other) {
-        this->matrix() *= other.matrix();
-        this->normalize();
-    }
     //! Multiplication operator for two group elements
     inline
     const SO3Group<Scalar> operator*(const SO3Group<Scalar>& other) const {
-        SO3Group<Scalar> result(*this);
-        result *= other;
-        return result;
+        return SO3Group<Scalar>(this->matrix() * other.matrix() );
     }
 
     //! Transform a 3D point.
@@ -432,7 +424,6 @@ public:
 
     // Inherit operators from base class
     using Base::operator=;
-    using Base::operator*=;
     using Base::operator*;
 
     //! Construct from POD array
@@ -483,7 +474,6 @@ public:
 
     // Inherit operators from base class
     using Base::operator=;
-    using Base::operator*=;
     using Base::operator*;
 
     //! Construct from POD array

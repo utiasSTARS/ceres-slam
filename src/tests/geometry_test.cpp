@@ -52,8 +52,11 @@ int main() {
     Vector v3 = v2;
     std::cout << "v3: " << v3 << std::endl;
 
+    std::cout << "p1 + p2" << p1 + p2 << std::endl;
+    std::cout << "v1 + v2" << v1 + v2 << std::endl;
+
     Point p4 = p2 + v3;
-    std::cout << "p4: " << p4 << std::endl;
+    std::cout << "p4 = p2 + v3: " << p4 << std::endl;
 
     Eigen::Map<const Point> p5(p4.data());
     std::cout << "p5: " << p5 << std::endl;
@@ -101,8 +104,8 @@ int main() {
     double C4_data[9] = {0, -1, 0, 1, 0, 0, 0, 0, 1};
     Eigen::Map<SO3> C4(C4_data);
     std::cout << "C4: " << C4 << std::endl;
-    C4 *= C2;
-    std::cout << "C4 *= C2: " << C4 << std::endl;
+    C4 = C4 * C2;
+    std::cout << "C4 = C4 * C2: " << C4 << std::endl;
     std::cout << "C4_data: ";
     print_array(C4_data, 9);
     std::cout << "C4 * p2: " << C4 * p2 << std::endl;
@@ -167,8 +170,8 @@ int main() {
     double T4_data[12] = {1, -1, 1, 0, -1, 0, 1, 0, 0, 0, 0, 1};
     Eigen::Map<SE3> T4(T4_data);
     std::cout << "T4: " << T4 << std::endl;
-    T4 *= T2;
-    std::cout << "T4 *= T2: " << T4 << std::endl;
+    T4 = T4 * T2;
+    std::cout << "T4 = T4 * T2: " << T4 << std::endl;
     std::cout << "T4_data: ";
     print_array(T4_data, 12);
     std::cout << "T4 * p2: " << T4 * p2 << std::endl;
@@ -182,6 +185,35 @@ int main() {
     Eigen::Map<const SE3> T6(T6_data);
     std::cout << "T6: " << T6 << std::endl;
     std::cout << "T6 * p6: " << T6 * p6 << std::endl;
+
+    SE3::TransformationMatrix T_0_w_matrix, T_1_0_ceres_matrix, T_1_w_ceres_matrix;
+    T_0_w_matrix << 1,-0,0,-1,0,-0.4472,-0.8944,0.4472,0,0.8944,-0.4472,1.342,0,0,0,1;
+    T_1_0_ceres_matrix << 0.9998,0.009125,-0.01825,0.04081,-0.009271,0.9999,-0.007961,0.0178,0.01818,0.008128,0.9998,-0.0349,0,0,0,1;
+    T_1_w_ceres_matrix << 0.9995,-0.02937,0.009072,-0.9472,-0.005199,-0.4525,-0.8918,0.4422,0.03029,0.8913,-0.4524,1.35,0,0,0,1;
+
+    SO3 C_0_w(T_0_w_matrix.block<3,3>(0,0));
+    SO3 C_1_0(T_1_0_ceres_matrix.block<3,3>(0,0));
+    SO3 C_1_w(T_1_w_ceres_matrix.block<3,3>(0,0));
+
+    std::cout << "C_0_w: " << C_0_w << std::endl;
+    std::cout << "C_1_0: " << C_1_0 << std::endl;
+    std::cout << "C_1_w: " << C_1_w << std::endl;
+
+    std::cout << "C_1_0.matrix() * C_0_w.matrix(): "
+              << std::endl << C_1_0.matrix() * C_0_w.matrix() << std::endl;
+    std::cout << "C_1_0 * C_0_w: " << std::endl << C_1_0 * C_0_w << std::endl;
+    std::cout << "T_1_0_ceres_matrix.block<3,3>(0,0) * T_0_w_matrix.block<3,3>(0,0): " << std::endl << T_1_0_ceres_matrix.block<3,3>(0,0) * T_0_w_matrix.block<3,3>(0,0) << std::endl;
+
+    SE3 T_0_w(T_0_w_matrix);
+    SE3 T_1_0(T_1_0_ceres_matrix);
+    SE3 T_1_w(T_1_w_ceres_matrix);
+
+    std::cout << "T_0_w: " << T_0_w << std::endl;
+    std::cout << "T_1_0: " << T_1_0 << std::endl;
+    std::cout << "T_1_w: " << T_1_w << std::endl;
+    std::cout << "T_1_0_ceres_matrix * T_0_w_matrix: "
+              << std::endl << T_1_0_ceres_matrix * T_0_w_matrix << std::endl;
+    std::cout << "T_1_0 * T_0_w: " << std::endl << T_1_0 * T_0_w << std::endl;
 
     return EXIT_SUCCESS;
 }
