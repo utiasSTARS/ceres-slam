@@ -55,7 +55,8 @@ public:
     //! Return the colour of the light (const)
     inline const Colour& colour() const { return colour_; }
 
-    //! Shade a 3D vertex using Phong lighting (without specularities)
+
+    //! Shade a 3D vertex using Phong lighting
     /*!
         NOTE: The vertex must be expressed in the same
         frame as the light position!
@@ -88,15 +89,13 @@ public:
         Vector light_dir = light_vec;
         light_dir.normalize();
 
-        // Dot product of light direction and surface normal
-        Scalar light_dir_dot_normal = static_cast<Scalar>(0);
-
         // Check for NaN -- pathological case where light_vec.norm() == 0
         if(light_dir.allFinite() ) {
-            light_dir_dot_normal = light_dir.dot(vertex.normal());
+            // Dot product of light direction and surface normal
+            Scalar light_dir_dot_normal = fmax(static_cast<Scalar>(0),
+                                        light_dir.dot(vertex.normal() ) );
 
-            diffuse = fmax(static_cast<Scalar>(0),
-                vertex.material()->diffuse() * light_dir_dot_normal);
+            diffuse = vertex.material()->diffuse() * light_dir_dot_normal;
         }
 
 
@@ -112,27 +111,20 @@ public:
         Vector halfway_dir = light_dir + camera_dir;
         halfway_dir.normalize();
 
-        // Dot product of halfway direction and normal vector
-        Scalar halfway_dir_dot_normal = static_cast<Scalar>(0);
-        Scalar pow_halfway_dir_dot_normal_exponent = static_cast<Scalar>(0);
-
-        // Check for NaN -- pathological case where halfway_dir.norm() == 0
+        // Check for NaN in case of pathological cases
+        // where halfway_dir.norm() == 0 or light_vec.norm() == 0
         if(halfway_dir.allFinite() ) {
-            // pow(x,y) returns NaN if x < 0 and y non-integer
-            halfway_dir_dot_normal = fmax(static_cast<Scalar>(0),
+            // Dot product of halfway direction and normal vector
+            // NOTE: pow(x,y) returns NaN if x < 0 and y non-integer
+            Scalar halfway_dir_dot_normal = fmax(static_cast<Scalar>(0),
                                           halfway_dir.dot(vertex.normal() ) );
-            pow_halfway_dir_dot_normal_exponent =
-                pow(halfway_dir_dot_normal, vertex.material()->exponent() );
 
-            specular = fmax(static_cast<Scalar>(0),
-                            vertex.material()->specular()
-                                * pow_halfway_dir_dot_normal_exponent);
+            specular = vertex.material()->specular()
+                        * pow(halfway_dir_dot_normal,
+                              vertex.material()->exponent() );
         }
 
         // Total intensity
-        // std::cout << "ambient: " << ambient << std::endl;
-        // std::cout << "diffuse: " << diffuse << std::endl;
-        // std::cout << "specular: " << specular << std::endl;
         Colour col = this->colour() * (ambient + diffuse + specular);
 
         // Enforce intensities in [0,1]

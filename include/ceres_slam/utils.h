@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 
 #include <Eigen/Core>
 
@@ -18,6 +19,13 @@ Scalar fmin(Scalar a, Scalar b) { return ( (a <= b) ? a : b ); }
 
 //! String formatting for Eigen file IO
 const Eigen::IOFormat CommaInitFmt(4, 1, ",", ",", "", "", "", "");
+
+//! Print an array given its address and size
+template <typename Scalar>
+void print_array(const Scalar* array, const int n) {
+    for(int i = 0; i < n; ++i)
+        std::cout << *(array + i) << std::endl;
+}
 
 //! Split a delimited string into a vector of tokens
 std::vector<std::string> split(const std::string str, const char del);

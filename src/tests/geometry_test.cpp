@@ -215,5 +215,8 @@ int main() {
               << std::endl << T_1_0_ceres_matrix * T_0_w_matrix << std::endl;
     std::cout << "T_1_0 * T_0_w: " << std::endl << T_1_0 * T_0_w << std::endl;
 
+    std::cout << "T_1_w * T_1_w.inverse(): " << T_1_w * T_1_w.inverse() << std::endl;
+    std::cout << "T_1_w.inverse() * T_1_w: " << T_1_w.inverse() * T_1_w << std::endl;
+
     return EXIT_SUCCESS;
 }

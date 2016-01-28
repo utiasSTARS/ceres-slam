@@ -130,7 +130,9 @@ public:
     //! Multiplication operator for two group elements
     inline
     const SO3Group<Scalar> operator*(const SO3Group<Scalar>& other) const {
-        return SO3Group<Scalar>(this->matrix() * other.matrix() );
+        SO3Group<Scalar> result(this->matrix() * other.matrix() );
+        result.normalize();
+        return result;
     }
 
     //! Transform a 3D point.

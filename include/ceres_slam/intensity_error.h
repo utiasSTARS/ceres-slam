@@ -3,6 +3,7 @@
 
 #include <ceres/ceres.h>
 
+#include <ceres_slam/utils.h>
 #include <ceres_slam/geometry.h>
 #include <ceres_slam/point_light.h>
 #include <ceres_slam/material.h>
@@ -41,41 +42,55 @@ public:
 
         // Camera pose in the global frame
         Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
-        VectorT r_c_g_c = T_c_g.inverse().translation();
+        // std::cout << "T_c_g: " << T_c_g << std::endl;
 
         // Map point
         Eigen::Map<const PointT> pt_g(pt_g_ceres);  // Global frame
         PointT pt_c = T_c_g * pt_g;                 // Camera frame
+        // std::cout << "pt_g: " << pt_g << std::endl;
+        // std::cout << "pt_c: " << pt_c << std::endl;
 
         // Normal vector at the map point
         Eigen::Map<const VectorT> normal_g(normal_g_ceres); // Global frame
         VectorT normal_c = T_c_g * normal_g;                // Camera frame
         normal_c.normalize();
+        // std::cout << "normal_g: " << normal_g << std::endl;
+        // std::cout << "normal_c: " << normal_c << std::endl;
 
         // Phong reflectance coefficients (ambient and diffuse only for now)
         Eigen::Map<const PhongParamsT> phong_params(phong_params_ceres);
         typename MaterialT::Ptr material =
             std::make_shared<MaterialT>(phong_params);
+        // std::cout << "material: " << *material << std::endl;
 
         // Vertex in the camera frame for shading
         VertexT vertex_c(pt_c, normal_c, material);
+        // std::cout << "vertex_c: " << vertex_c << std::endl;
 
         // Light source position
         Eigen::Map<const PointT> lightpos_g(lightpos_g_ceres);  // Global frame
         PointT lightpos_c = T_c_g * lightpos_g;                 // Camera frame
+        // std::cout << "lightpos_g: " << lightpos_g << std::endl;
+        // std::cout << "lightpos_c: " << lightpos_c << std::endl;
 
         // Light source model
-        ColourT colourT = static_cast<ColourT>(colour_);
-        LightT light(lightpos_c, colourT);
+        ColourT light_colour = static_cast<ColourT>(1);
+        LightT light(lightpos_c, light_colour);
+        // std::cout << "light: " << light << std::endl;
 
         // Compute the predicted intensity at the vertex
-        ColourT predicted_colour = light.shade(vertex_c, r_c_g_c);
+        // NOTE: camera position in camera frame is the origin
+        ColourT predicted_colour = light.shade(vertex_c, VectorT::Zero() );
 
         // Compute the residuals
         // (no need to map to an eigen matrix yet since it's only 1D)
         residuals_ceres[0] = static_cast<T>(stiffness_)
-                                * (predicted_colour - colourT);
-        // std::cout << residuals_ceres[0] << std::endl;
+                                * (predicted_colour
+                                    - static_cast<ColourT>(colour_) );
+
+        // std::cout << "predicted_colour: " << predicted_colour << std::endl;
+        // std::cout << "colour_: " << colour_ << std::endl;
+        // std::cout << "residuals_ceres[0]" << residuals_ceres[0] << std::endl;
 
         return true;
     }
