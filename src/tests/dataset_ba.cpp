@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 
     dataset.stereo_obs_var << 4., 4., 16.; // u,v,d variance
     dataset.normal_obs_var << 0.01, 0.01, 0.01; // i,j,k variance
-    dataset.int_var = 0.001; // I variance
+    dataset.int_var = 0.0001; // I variance
 
     // Compute the stiffness matrix to apply to the residuals
     Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
     ceres::LocalParameterization* se3_perturbation
         = ceres_slam::SE3Perturbation::Create();
 
+    // Add observations and cost functions
     for(unsigned int k = 0; k < dataset.num_states; ++k) {
         for(unsigned int i : dataset.obs_indices_at_state(k) ) {
             // Map point ID for this observation

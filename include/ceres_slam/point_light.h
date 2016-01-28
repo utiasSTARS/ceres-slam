@@ -92,10 +92,11 @@ public:
         // Check for NaN -- pathological case where light_vec.norm() == 0
         if(light_dir.allFinite() ) {
             // Dot product of light direction and surface normal
-            Scalar light_dir_dot_normal = fmax(static_cast<Scalar>(0),
-                                        light_dir.dot(vertex.normal() ) );
+            Scalar light_dir_dot_normal = light_dir.dot(vertex.normal() );
 
-            diffuse = vertex.material()->diffuse() * light_dir_dot_normal;
+            if(light_dir_dot_normal > static_cast<Scalar>(0) ) {
+                diffuse = vertex.material()->diffuse() * light_dir_dot_normal;
+            }
         }
 
 
@@ -116,16 +117,18 @@ public:
         if(halfway_dir.allFinite() ) {
             // Dot product of halfway direction and normal vector
             // NOTE: pow(x,y) returns NaN if x < 0 and y non-integer
-            Scalar halfway_dir_dot_normal = fmax(static_cast<Scalar>(0),
-                                          halfway_dir.dot(vertex.normal() ) );
+            Scalar halfway_dir_dot_normal = halfway_dir.dot(vertex.normal() );
 
-            specular = vertex.material()->specular()
-                        * pow(halfway_dir_dot_normal,
-                              vertex.material()->exponent() );
+            if(halfway_dir_dot_normal > static_cast<Scalar>(0) ) {
+                specular = vertex.material()->specular()
+                            * pow(halfway_dir_dot_normal,
+                                  vertex.material()->exponent() );
+            }
         }
 
         // Total intensity
         Colour col = this->colour() * (ambient + diffuse + specular);
+        // Colour col = this->colour() * (ambient + diffuse);
 
         // Enforce intensities in [0,1]
         clamp(col);
