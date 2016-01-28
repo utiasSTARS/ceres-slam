@@ -189,7 +189,7 @@ void DatasetProblem::compute_initial_guess() {
 
     // Initialize the material (assuming everything is the same material)
     material = std::make_shared< Material<double> >(
-        Material<double>::PhongParams(0.1, 0.6, 0.3, 10.) );
+        Material<double>::PhongParams(0.5, 0.5, 0.5, 1.) );
 
     // First pose is either identity, or the first ground truth pose
     poses[0] = first_pose;
