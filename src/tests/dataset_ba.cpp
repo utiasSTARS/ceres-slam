@@ -23,8 +23,8 @@ using Camera = ceres_slam::DatasetProblem::Camera;
 using Light = ceres_slam::DatasetProblem::Light;
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-      std::cerr << "usage: dataset_ba <input_file>"
+    if(argc < 2) {
+      std::cerr << "usage: dataset_ba <input_file> [--nolight]"
                 << std::endl;
       return EXIT_FAILURE;
     }
@@ -32,8 +32,17 @@ int main(int argc, char** argv) {
     // Read dataset from file
     std::string filename(argv[1]);
     ceres_slam::DatasetProblem dataset;
-    if( !dataset.read_csv(filename) ) {
+    if(!dataset.read_csv(filename) ) {
         return EXIT_FAILURE;
+    }
+
+    // Set boolean flags
+    bool use_light = true;
+    if(argc >= 3) {
+        std::string flag(argv[2]);
+        if(flag == "--nolight") {
+            use_light = false;
+        }
     }
 
     // Compute initial guess
@@ -89,52 +98,55 @@ int main(int argc, char** argv) {
                     dataset.poses[k].data(),
                     dataset.map_vertices[j].position().data() );
 
-                // Cost function for the intensity observation
-                ceres::CostFunction* intensity_cost =
-                    ceres_slam::IntensityErrorAutomatic::Create(
-                        dataset.int_list[i],
-                        int_stiffness);
-                // Add the intensity cost function to the problem
-                problem.AddResidualBlock(
-                    intensity_cost, NULL,
-                    dataset.poses[k].data(),
-                    dataset.map_vertices[j].position().data(),
-                    dataset.map_vertices[j].normal().data(),
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    dataset.light_pos.data() );
-                // Set upper and lower bounds on Phong parameters
-                problem.SetParameterLowerBound(
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    0, 0.);
-                problem.SetParameterUpperBound(
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    0, 1.);
-                problem.SetParameterLowerBound(
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    1, 0.);
-                problem.SetParameterUpperBound(
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    1, 1.);
-                problem.SetParameterLowerBound(
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    2, 0.);
-                problem.SetParameterUpperBound(
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    2, 1.);
-                problem.SetParameterLowerBound(
-                    dataset.map_vertices[j].material()->phong_params().data(),
-                    3, 0.);
+                if(use_light) {
+                    // Cost function for the intensity observation
+                    ceres::CostFunction* intensity_cost =
+                        ceres_slam::IntensityErrorAutomatic::Create(
+                            dataset.int_list[i],
+                            int_stiffness);
+                    // Add the intensity cost function to the problem
+                    problem.AddResidualBlock(
+                        intensity_cost, NULL,
+                        dataset.poses[k].data(),
+                        dataset.map_vertices[j].position().data(),
+                        dataset.map_vertices[j].normal().data(),
+                        dataset.map_vertices[j].material()
+                            ->phong_params().data(),
+                        dataset.light_pos.data() );
+                    // Set upper and lower bounds on Phong parameters
+                    problem.SetParameterLowerBound(
+                        dataset.map_vertices[j].material()
+                            ->phong_params().data(), 0, 0.);
+                    problem.SetParameterUpperBound(
+                        dataset.map_vertices[j].material()
+                            ->phong_params().data(), 0, 1.);
+                    problem.SetParameterLowerBound(
+                        dataset.map_vertices[j].material()
+                            ->phong_params().data(), 1, 0.);
+                    problem.SetParameterUpperBound(
+                        dataset.map_vertices[j].material()
+                            ->phong_params().data(), 1, 1.);
+                    problem.SetParameterLowerBound(
+                        dataset.map_vertices[j].material()
+                            ->phong_params().data(), 2, 0.);
+                    problem.SetParameterUpperBound(
+                        dataset.map_vertices[j].material()
+                            ->phong_params().data(), 2, 1.);
+                    problem.SetParameterLowerBound(
+                        dataset.map_vertices[j].material()
+                            ->phong_params().data(), 3, 0.);
 
-                // Cost function for the normal observation
-                ceres::CostFunction* normal_cost =
-                    ceres_slam::NormalErrorAutomatic::Create(
-                        dataset.normal_obs_list[i],
-                        normal_obs_stiffness);
-                // Add the normal cost function to the problem
-                problem.AddResidualBlock(
-                    normal_cost, NULL,
-                    dataset.poses[k].data(),
-                    dataset.map_vertices[j].normal().data() );
+                    // Cost function for the normal observation
+                    ceres::CostFunction* normal_cost =
+                        ceres_slam::NormalErrorAutomatic::Create(
+                            dataset.normal_obs_list[i],
+                            normal_obs_stiffness);
+                    // Add the normal cost function to the problem
+                    problem.AddResidualBlock(
+                        normal_cost, NULL,
+                        dataset.poses[k].data(),
+                        dataset.map_vertices[j].normal().data() );
+                }
             }
         }
 
