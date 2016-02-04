@@ -6,9 +6,8 @@
 #include <sstream>
 
 #include <ceres_slam/stereo_camera.h>
-#include <ceres_slam/point_light.h>
+#include <ceres_slam/lighting.h>
 #include <ceres_slam/geometry.h>
-#include <ceres_slam/vertex3d.h>
 
 namespace ceres_slam {
 

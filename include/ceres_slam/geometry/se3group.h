@@ -10,7 +10,10 @@
 #include <Eigen/Geometry>
 
 #include <ceres_slam/utils.h>
-#include <ceres_slam/geometry/so3group.h>
+
+#include "point3d.h"
+#include "vector3d.h"
+#include "so3group.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declarations

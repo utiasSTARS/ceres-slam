@@ -10,7 +10,9 @@
 #include <Eigen/Eigenvalues> // For SVD
 
 #include <ceres_slam/utils.h>
-#include <ceres_slam/geometry.h>
+
+#include "point3d.h"
+#include "vector3d.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declarations

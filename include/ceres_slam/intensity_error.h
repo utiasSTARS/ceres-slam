@@ -5,8 +5,7 @@
 
 #include <ceres_slam/utils.h>
 #include <ceres_slam/geometry.h>
-#include <ceres_slam/point_light.h>
-#include <ceres_slam/material.h>
+#include <ceres_slam/lighting.h>
 
 namespace ceres_slam {
 

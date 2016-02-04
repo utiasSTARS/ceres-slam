@@ -6,10 +6,11 @@
 #include <ceres/ceres.h>
 
 #include <ceres_slam/utils.h>
+#include <ceres_slam/geometry.h>
+#include <ceres_slam/lighting.h>
 #include <ceres_slam/dataset_problem.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/stereo_reprojection_error.h>
-#include <ceres_slam/point_light.h>
 #include <ceres_slam/intensity_error.h>
 #include <ceres_slam/normal_error.h>
 #include <ceres_slam/perturbations.h>

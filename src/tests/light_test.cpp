@@ -2,8 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <ceres_slam/geometry.h>
-#include <ceres_slam/point_light.h>
-#include <ceres_slam/material.h>
+#include <ceres_slam/lighting.h>
 #include <ceres_slam/intensity_error.h>
 
 // TODO: Rewrite this as a proper unit test
