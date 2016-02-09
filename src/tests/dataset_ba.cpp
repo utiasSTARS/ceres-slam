@@ -76,9 +76,11 @@ int main(int argc, char** argv) {
 
     Light::ColourCovariance int_stiffness = 1. / sqrt(dataset.int_var);
 
-    // Set up local parameterization on SE(3)
+    // Set up local parameterizations
     ceres::LocalParameterization* se3_perturbation
         = ceres_slam::SE3Perturbation::Create();
+    ceres::LocalParameterization* unit_vector_perturbation
+        = ceres_slam::UnitVectorPerturbation::Create();
 
     // Add observations and cost functions
     for(unsigned int k = 0; k < dataset.num_states; ++k) {
@@ -114,6 +116,7 @@ int main(int argc, char** argv) {
                         dataset.map_vertices[j].material()
                             ->phong_params().data(),
                         dataset.light_pos.data() );
+
                     // Set upper and lower bounds on Phong parameters
                     problem.SetParameterLowerBound(
                         dataset.map_vertices[j].material()
@@ -147,6 +150,11 @@ int main(int argc, char** argv) {
                         normal_cost, NULL,
                         dataset.poses[k].data(),
                         dataset.map_vertices[j].normal().data() );
+
+                    // Constrain normal vector updates to stay on unit sphere
+                    problem.SetParameterization(
+                        dataset.map_vertices[j].normal().data(),
+                        unit_vector_perturbation);
                 }
             }
         }

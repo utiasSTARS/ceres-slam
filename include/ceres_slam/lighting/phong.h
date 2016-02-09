@@ -28,7 +28,14 @@ public:
                        const Vector& camera_dir,    // Must be unit length
                        const Colour& light_colour) {
         // Shade each component
-        Colour ambient  = shade_ambient(vertex);
+        Colour ambient = shade_ambient(vertex);
+
+        // Check if normal is pointing away from camera
+        // if(camera_dir.dot(vertex.normal() ) <= static_cast<Scalar>(0) ) {
+        //     clamp(ambient);
+        //     return ambient;
+        // }
+
         Colour diffuse  = shade_diffuse(vertex, light_dir);
         Colour specular = shade_specular(vertex, light_dir, camera_dir);
 
@@ -49,19 +56,20 @@ public:
     inline static
     const Colour shade_diffuse(const Vertex& vertex,
                                const Vector& light_dir) {
-        Colour diffuse = Colour(static_cast<Scalar>(0) );
 
         // Check for NaN -- pathological case where light_vec.norm() == 0
-        if(light_dir.allFinite() ) {
-            // Dot product of light direction and surface normal
-            Scalar light_dir_dot_normal = light_dir.dot(vertex.normal() );
-
-            if(light_dir_dot_normal > static_cast<Scalar>(0) ) {
-                diffuse = vertex.material()->diffuse() * light_dir_dot_normal;
-            }
+        if(!light_dir.allFinite() ) {
+            return Colour(static_cast<Scalar>(0) );
         }
 
-        return diffuse;
+        // Dot product of light direction and surface normal
+        Scalar light_dir_dot_normal = light_dir.dot(vertex.normal() );
+
+        if(light_dir_dot_normal <= static_cast<Scalar>(0) ) {
+            return Colour(static_cast<Scalar>(0) );
+        }
+
+        return vertex.material()->diffuse() * light_dir_dot_normal;
     }
 
     //! Shade the specular component of the Phong model (Blinn-Phong)
@@ -69,27 +77,27 @@ public:
     const Colour shade_specular(const Vertex& vertex,
                                 const Vector& light_dir,
                                 const Vector& camera_dir) {
-        Colour specular = Colour(static_cast<Scalar>(0) );
-
         // Halfway direction
         Vector halfway_dir = light_dir + camera_dir;
         halfway_dir.normalize();
 
         // Check for NaN in case of pathological cases
         // where halfway_dir.norm() == 0 or light_vec.norm() == 0
-        if(halfway_dir.allFinite() ) {
-            // Dot product of halfway direction and normal vector
-            // NOTE: pow(x,y) returns NaN if x < 0 and y non-integer
-            Scalar halfway_dir_dot_normal = halfway_dir.dot(vertex.normal() );
-
-            if(halfway_dir_dot_normal > static_cast<Scalar>(0) ) {
-                specular = vertex.material()->specular()
-                            * pow(halfway_dir_dot_normal,
-                                  vertex.material()->exponent() );
-            }
+        if(!halfway_dir.allFinite() ) {
+            return Colour(static_cast<Scalar>(0) );
         }
 
-        return specular;
+        // Dot product of halfway direction and normal vector
+        // NOTE: pow(x,y) returns NaN if x < 0 and y non-integer
+        Scalar halfway_dir_dot_normal = halfway_dir.dot(vertex.normal() );
+
+        if(halfway_dir_dot_normal <= static_cast<Scalar>(0) ) {
+            return Colour(static_cast<Scalar>(0) );
+        }
+
+        return vertex.material()->specular()
+                    * pow(halfway_dir_dot_normal,
+                          vertex.material()->exponent() );
     }
 
 private:

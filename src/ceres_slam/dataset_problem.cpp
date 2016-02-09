@@ -186,10 +186,11 @@ void DatasetProblem::compute_initial_guess() {
     // Initialize the light source to something close to ground truth.
     // Need to figure out a way to do this in general.
     light_pos = initial_light_pos;
+    // light_pos << -2., -2., 2.;
 
     // Initialize the material (assuming everything is the same material)
     material = std::make_shared< Material<double> >(
-        Material<double>::PhongParams(0.5, 0.5, 0.5, 1.) );
+        Material<double>::PhongParams(0.3, 0.4, 0.3, 1.) );
 
     // First pose is either identity, or the first ground truth pose
     poses[0] = first_pose;
@@ -229,6 +230,12 @@ void DatasetProblem::compute_initial_guess() {
             pts_km1.push_back(camera->triangulate(stereo_obs_list[i]));
             // Also store the observed normals corresponding to each
             // point in case we need to use them as an initial guess
+
+            // Initialize the normal with the negative of the ray direction
+            // i.e., assume the surface is pointing towards the camera
+            // Vector normal_obs = -camera->triangulate(stereo_obs_list[i]);
+            // normal_obs.normalize();
+            // normals_km1.push_back(normal_obs);
             normals_km1.push_back(normal_obs_list[i]);
         }
         for(unsigned int i : idx_k) {

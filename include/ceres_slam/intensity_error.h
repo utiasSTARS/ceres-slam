@@ -52,7 +52,7 @@ public:
         // Normal vector at the map point
         Eigen::Map<const VectorT> normal_g(normal_g_ceres); // Global frame
         VectorT normal_c = T_c_g * normal_g;                // Camera frame
-        normal_c.normalize();
+
         // std::cout << "normal_g: " << normal_g << std::endl;
         // std::cout << "normal_c: " << normal_c << std::endl;
 
@@ -79,7 +79,8 @@ public:
 
         // Compute the predicted intensity at the vertex
         // NOTE: camera position in camera frame is the origin
-        ColourT predicted_colour = light.shade(vertex_c, VectorT::Zero() );
+        PointT campos_c = VectorT::Zero();
+        ColourT predicted_colour = light.shade(vertex_c, campos_c);
 
         // Compute the residuals
         // (no need to map to an eigen matrix yet since it's only 1D)

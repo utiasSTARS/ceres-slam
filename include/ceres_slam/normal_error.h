@@ -53,7 +53,7 @@ public:
                        3,  // Residual dimension
                        12, // Compact SE(3) vehicle pose (3 trans + 9 rot)
                        3>  // Map point normal
-                       (new NormalErrorAutomatic(obs, stiffness))
+                       (new NormalErrorAutomatic(obs, stiffness) )
               );
     }
 

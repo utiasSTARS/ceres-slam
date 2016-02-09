@@ -4,11 +4,12 @@
 #include <functional>
 #include <random>
 
+#include <ceres_slam/geometry.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/stereo_reprojection_error.h>
+#include <ceres_slam/point_cloud_aligner.h>
 
 #include <ceres/ceres.h>
-#include <ceres/rotation.h>
 
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
@@ -32,9 +33,10 @@
 
 //! Frame-to-frame feature-based odometry pipeline,
 //! heavily borrowed from image_view/src/nodes/stereo_view.cpp
-class OdometryNode {
+class SparseStereoOdometryNode {
 public:
-    OdometryNode() {
+    //! Default constructor
+    SparseStereoOdometryNode() {
         // Read in parameters
         ros::NodeHandle private_nh("~");
         private_nh.param("queue_size", queue_size_, 5);
@@ -77,7 +79,7 @@ public:
                                     left_image_sub_, left_info_sub_,
                                     right_image_sub_, right_info_sub_) );
             approximate_sync_->registerCallback(
-                std::bind(&OdometryNode::imageCallback, this,
+                std::bind(&SparseStereoOdometryNode::imageCallback, this,
                           std::placeholders::_1, std::placeholders::_2,
                           std::placeholders::_3, std::placeholders::_4) );
         }
@@ -87,7 +89,7 @@ public:
                                     left_image_sub_, left_info_sub_,
                                     right_image_sub_, right_info_sub_) );
             exact_sync_->registerCallback(
-                std::bind(&OdometryNode::imageCallback, this,
+                std::bind(&SparseStereoOdometryNode::imageCallback, this,
                           std::placeholders::_1, std::placeholders::_2,
                           std::placeholders::_3, std::placeholders::_4) );
         }
@@ -98,7 +100,7 @@ public:
         vo_image_publisher_ = it.advertise(vo_image_topic, 1);
     }
 
-    ~OdometryNode() {}
+    ~SparseStereoOdometryNode() {}
 
     //! Stereo image callback
     void imageCallback(const sensor_msgs::ImageConstPtr& left_image,
@@ -312,106 +314,6 @@ public:
         prev_right_cv_ptr_ = right_cv_ptr;
     }
 
-    //! RANSAC stereo point cloud alignment
-    std::vector<unsigned int> doRANSAC(
-                    const std::vector<ceres_slam::StereoCamera::Point>& pts_0,
-                    const std::vector<ceres_slam::StereoCamera::Point>& pts_1,
-                    Eigen::Affine3d& T_1_0,
-                    int num_iters = 600, double thresh = 1e-2) {
-
-        // Uniformly distributed integers in [a,b], NOT [a,b)
-        std::random_device rd;
-        std::mt19937 rng(rd());
-        std::uniform_int_distribution<unsigned int> idx_selector(0, pts_0.size()-1);
-        unsigned int rand_idx[3];
-
-        std::vector<ceres_slam::StereoCamera::Point> test_pts_0, test_pts_1;
-        std::vector<unsigned int> inlier_idx, best_inlier_idx;
-
-        for(int ransac_iter = 0; ransac_iter < num_iters; ++ransac_iter) {
-            // Get 3 random, unique indices
-            rand_idx[0] = idx_selector(rng);
-
-            rand_idx[1] = idx_selector(rng);
-            while(rand_idx[1] == rand_idx[0])
-                rand_idx[1] = idx_selector(rng);
-
-            rand_idx[2] = idx_selector(rng);
-            while(rand_idx[2] == rand_idx[0] || rand_idx[2] == rand_idx[1])
-                rand_idx[2] = idx_selector(rng);
-
-            // Bundle test points
-            test_pts_0.clear();
-            test_pts_1.clear();
-            for(unsigned int i = 0; i < 2; ++i) {
-                test_pts_0.push_back(pts_0[rand_idx[i]]);
-                test_pts_1.push_back(pts_1[rand_idx[i]]);
-            }
-
-            // Compute minimal transformation estimate
-            Eigen::Affine3d T_test = alignPointClouds(test_pts_0, test_pts_1);
-
-            // Classify points and get inlier indices
-            Eigen::Vector3d error;
-            inlier_idx.clear();
-            for(unsigned int i = 0; i < pts_0.size(); ++i) {
-                error = pts_1[i] - T_test * pts_0[i];
-                if(error.squaredNorm() < thresh) {
-                    inlier_idx.push_back(i);
-                }
-            }
-
-            if(inlier_idx.size() > best_inlier_idx.size()) {
-                best_inlier_idx = inlier_idx;
-                T_1_0 = T_test;
-            }
-        }
-
-        return best_inlier_idx;
-    }
-
-    Eigen::Affine3d alignPointClouds(
-        const std::vector<ceres_slam::StereoCamera::Point>& pts_0,
-        const std::vector<ceres_slam::StereoCamera::Point>& pts_1) {
-        unsigned int n_pts = pts_0.size();
-
-        // Compute the centroids of each cloud
-        ceres_slam::StereoCamera::Point p_0 = ceres_slam::StereoCamera::Point::Zero();
-        ceres_slam::StereoCamera::Point p_1 = ceres_slam::StereoCamera::Point::Zero();
-        for(unsigned int i = 0; i < n_pts; ++i) {
-            p_0 += pts_0[i];
-            p_1 += pts_1[i];
-        }
-        p_0 /= n_pts;
-        p_1 /= n_pts;
-
-        // Compute W_1_0
-        Eigen::Matrix3d W_1_0 = Eigen::Matrix3d::Zero();
-        for(unsigned int i = 0; i < n_pts; ++i) {
-            W_1_0 += (pts_1[i] - p_1) * (pts_0[i] - p_0).transpose();
-        }
-        W_1_0 /= n_pts;
-
-        // Compute rotation
-        Eigen::Matrix3d C_1_0;
-
-        Eigen::JacobiSVD<Eigen::Matrix3d> svd(W_1_0, Eigen::ComputeThinU | Eigen::ComputeThinV);
-        Eigen::Matrix3d middle = Eigen::Matrix3d::Identity();
-        middle(2,2) = svd.matrixU().determinant() * svd.matrixV().determinant();
-
-        C_1_0 = svd.matrixU() * middle * svd.matrixV().transpose();
-
-        // Compute translation
-        Eigen::Vector3d r_0_1_0 = -C_1_0.transpose() * p_1 + p_0;
-
-        // Compute final transformation
-        Eigen::Affine3d T_1_0;
-        T_1_0.linear() = C_1_0;
-        T_1_0.translation() = -C_1_0 * r_0_1_0;
-
-        return T_1_0;
-    }
-
     //! VO track publisher
     void publishVOTracks(cv_bridge::CvImagePtr image_ptr,
         std::vector<ceres_slam::StereoCamera::Observation>& prev_obs,
@@ -443,41 +345,53 @@ public:
     }
 
 private:
-    // Parameters
+    //! Message queue size
     int queue_size_;
+    //! Approximate or exact sync
     bool do_approximate_sync_;
+    //! Number of features to detect and track
     int num_features_;
 
-    // Camera model
+    //! Camera model
     ceres_slam::StereoCamera::Ptr camera_;
 
-    // Camera pose
-    Eigen::Affine3d T_curr_map_;
+    //! Camera pose
+    ceres_slam::SE3 T_curr_map_;
 
-    // Storage for previous frame's keypoints, descriptors, and images
+    //! Storage for previous frame's keypoints
     std::vector<cv::KeyPoint> prev_left_keypoints_, prev_right_keypoints_;
+    //! Storage for previous frame's descriptors
     cv::Mat prev_left_descriptors_, prev_right_descriptors_;
+    //! Storage for previous frame's images
     cv_bridge::CvImagePtr prev_left_cv_ptr_, prev_right_cv_ptr_;
 
-    // Subscribers and setup for synchronization
+    //! Image subscribers
     image_transport::SubscriberFilter left_image_sub_, right_image_sub_;
+    //! Camera info subscribers
     message_filters::Subscriber<sensor_msgs::CameraInfo> left_info_sub_, right_info_sub_;
 
+    //! Exact sync policy
     typedef message_filters::sync_policies::ExactTime
         <sensor_msgs::Image, sensor_msgs::CameraInfo,
          sensor_msgs::Image, sensor_msgs::CameraInfo> ExactPolicy;
+    //! Approximat sync policy
     typedef message_filters::sync_policies::ApproximateTime
         <sensor_msgs::Image, sensor_msgs::CameraInfo,
          sensor_msgs::Image, sensor_msgs::CameraInfo> ApproximatePolicy;
 
+    //! Exact sync message filter
     typedef message_filters::Synchronizer<ExactPolicy> ExactSync;
+    //! Approximate sync message filter
     typedef message_filters::Synchronizer<ApproximatePolicy> ApproximateSync;
 
+    //! Exact synchronizer
     std::shared_ptr<ExactSync> exact_sync_;
+    //! Approximate synchronizer
     std::shared_ptr<ApproximateSync> approximate_sync_;
 
-    // Publishers
+    //! Pose broadcaster
     tf::TransformBroadcaster pose_broadcaster_;
+    //! VO image publisher
     image_transport::Publisher vo_image_publisher_;
 };
 
@@ -489,7 +403,7 @@ int main(int argc, char** argv) {
              "\t$ rosrun ceres_slam odometry_node camera:=xb3");
     }
 
-    OdometryNode odometry_node;
+    SparseStereoOdometryNode odometry_node;
 
     ros::spin();
 

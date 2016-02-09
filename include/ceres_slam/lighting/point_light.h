@@ -90,7 +90,7 @@ public:
         camera_dir.normalize();
 
         return LightingModel::shade(vertex, light_dir,
-                                 camera_dir, this->colour() );
+                                    camera_dir, this->colour() );
     }
 
     //! Convert to a string

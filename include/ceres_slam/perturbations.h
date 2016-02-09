@@ -40,7 +40,7 @@ public:
                     3> // so(3) tangent vector
               );
     }
-}; // class SE3Perturbation
+}; // class SO3Perturbation
 
 //! SE(3) group perturbation via se(3) algebra
 class SE3Perturbation {
@@ -76,6 +76,45 @@ public:
               );
     }
 }; // class SE3Perturbation
+
+//! Orthogonal perturbation of unit vector
+/*!
+    Project delta onto the plane whose normal is x
+    and apply only the component of delta that is orthogonal
+    to x. This is done by subtracting the component of delta
+    that is along the normal direction:
+
+    \delta_\perp = \delta - \frac{\delta \cdot x}{||x||^2} x
+*/
+class UnitVectorPerturbation {
+public:
+    template <typename T>
+    bool operator()(const T* x_ceres,
+                    const T* delta_ceres,
+                    T* x_plus_delta_ceres) const {
+        typedef Vector3D<T> VectorT;
+
+        Eigen::Map<const VectorT> x(x_ceres);
+        Eigen::Map<const VectorT> delta(delta_ceres);
+        Eigen::Map<VectorT> x_plus_delta(x_plus_delta_ceres);
+
+        VectorT delta_orthogonal = delta
+                                    - (delta.dot(x) / x.squaredNorm() ) * x;
+
+        x_plus_delta = x + delta_orthogonal;
+
+        x_plus_delta.normalize();
+
+        return true;
+    }
+
+    //! Factory to hide the construction of the LocalParameterization object
+    //! from the client code.
+    static ceres::LocalParameterization* Create() {
+        return(new ceres::AutoDiffLocalParameterization
+                            <UnitVectorPerturbation, 3, 3> );
+    }
+}; // class UnitVectorPerturbation
 
 } // namespace ceres_slam
 
