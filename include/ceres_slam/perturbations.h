@@ -84,7 +84,7 @@ public:
     to x. This is done by subtracting the component of delta
     that is along the normal direction:
 
-    \delta_\perp = \delta - \frac{\delta \cdot x}{||x||^2} x
+    \f$ \delta_\perp = \delta - \frac{\delta \cdot x}{||x||^2} x \f$
 */
 class UnitVectorPerturbation {
 public:
