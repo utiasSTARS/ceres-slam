@@ -11,7 +11,8 @@
 #include <ceres_slam/dataset_problem.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/stereo_reprojection_error.h>
-#include <ceres_slam/intensity_error.h>
+#include <ceres_slam/intensity_error_point_light.h>
+#include <ceres_slam/intensity_error_directional_light.h>
 #include <ceres_slam/normal_error.h>
 #include <ceres_slam/perturbations.h>
 
@@ -21,7 +22,6 @@ using SE3 = ceres_slam::DatasetProblem::SE3;
 using Point = ceres_slam::DatasetProblem::Point;
 using Vector = ceres_slam::DatasetProblem::Vector;
 using Camera = ceres_slam::DatasetProblem::Camera;
-using Light = ceres_slam::DatasetProblem::Light;
 
 int main(int argc, char** argv) {
     if(argc < 2) {
@@ -30,9 +30,11 @@ int main(int argc, char** argv) {
       return EXIT_FAILURE;
     }
 
+    bool directional_light = true;
+
     // Read dataset from file
     std::string filename(argv[1]);
-    ceres_slam::DatasetProblem dataset;
+    ceres_slam::DatasetProblem dataset(directional_light);
     if(!dataset.read_csv(filename) ) {
         return EXIT_FAILURE;
     }
@@ -74,7 +76,7 @@ int main(int argc, char** argv) {
     Camera::ObservationCovariance normal_obs_stiffness =
         es_normal.operatorInverseSqrt();
 
-    Light::ColourCovariance int_stiffness = 1. / sqrt(dataset.int_var);
+    double int_stiffness = 1. / sqrt(dataset.int_var);
 
     // Set up local parameterizations
     ceres::LocalParameterization* se3_perturbation
@@ -102,21 +104,38 @@ int main(int argc, char** argv) {
                     dataset.map_vertices[j].position().data() );
 
                 if(use_light) {
-                    // Cost function for the intensity observation
-                    ceres::CostFunction* intensity_cost =
-                        ceres_slam::IntensityErrorAutomatic::Create(
-                            dataset.int_list[i],
-                            int_stiffness);
-                    // Add the intensity cost function to the problem
-                    problem.AddResidualBlock(
-                        intensity_cost, NULL,
-                        dataset.poses[k].data(),
-                        dataset.map_vertices[j].position().data(),
-                        dataset.map_vertices[j].normal().data(),
-                        dataset.map_vertices[j].material()
-                            ->phong_params().data(),
-                        dataset.map_vertices[j].texture_ptr(),
-                        dataset.light_pos.data() );
+                    if(directional_light) {
+                        ceres::CostFunction* intensity_cost =
+                            ceres_slam::IntensityErrorDirectionalLightAutomatic::Create(
+                                dataset.int_list[i],
+                                int_stiffness);
+                        // Add the intensity cost function to the problem
+                        problem.AddResidualBlock(
+                            intensity_cost, NULL,
+                            dataset.poses[k].data(),
+                            dataset.map_vertices[j].position().data(),
+                            dataset.map_vertices[j].normal().data(),
+                            dataset.map_vertices[j].material()
+                                ->phong_params().data(),
+                            dataset.map_vertices[j].texture_ptr(),
+                            dataset.light_dir.data() );
+                    } else {
+                        // Cost function for the intensity observation
+                        ceres::CostFunction* intensity_cost =
+                            ceres_slam::IntensityErrorPointLightAutomatic::Create(
+                                dataset.int_list[i],
+                                int_stiffness);
+                        // Add the intensity cost function to the problem
+                        problem.AddResidualBlock(
+                            intensity_cost, NULL,
+                            dataset.poses[k].data(),
+                            dataset.map_vertices[j].position().data(),
+                            dataset.map_vertices[j].normal().data(),
+                            dataset.map_vertices[j].material()
+                                ->phong_params().data(),
+                            dataset.map_vertices[j].texture_ptr(),
+                            dataset.light_pos.data() );
+                    }
 
                     // Set upper and lower bounds on Phong parameters
                     problem.SetParameterLowerBound(
@@ -162,6 +181,12 @@ int main(int argc, char** argv) {
 
         // Use local parameterization on SE(3)
         problem.SetParameterization(dataset.poses[k].data(), se3_perturbation);
+
+        // Constrain light direction updates to stay on unit sphere
+        if(use_light && directional_light) {
+            problem.SetParameterization(dataset.light_dir.data(),
+                                        unit_vector_perturbation);
+        }
     }
 
     // DEBUG: Hold light position constant

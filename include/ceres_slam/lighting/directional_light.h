@@ -99,10 +99,10 @@ public:
 
     //! Ostream operator for DirectionalLight
     friend std::ostream& operator<<( std::ostream& os,
-                                     const DirectionalLight<Scalar>& p ) {
+                                     const DirectionalLight<Scalar>& l ) {
         os << "Directional light source" << std::endl
-           << "Direction: " << p.direction() << std::endl
-           << "Colour: " << p.colour();
+           << "Direction: " << l.direction() << std::endl
+           << "Colour: " << l.colour();
         return os;
      }
 

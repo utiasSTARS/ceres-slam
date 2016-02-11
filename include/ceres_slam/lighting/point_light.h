@@ -103,10 +103,10 @@ public:
 
     //! Ostream operator for PointLight
     friend std::ostream& operator<<( std::ostream& os,
-                                     const PointLight<Scalar>& p ) {
+                                     const PointLight<Scalar>& l ) {
         os << "Point light source" << std::endl
-           << "Position: " << p.position() << std::endl
-           << "Colour: " << p.colour();
+           << "Position: " << l.position() << std::endl
+           << "Colour: " << l.colour();
         return os;
      }
 

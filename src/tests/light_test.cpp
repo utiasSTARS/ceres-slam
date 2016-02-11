@@ -3,7 +3,7 @@
 #include <memory>
 #include <ceres_slam/geometry.h>
 #include <ceres_slam/lighting.h>
-#include <ceres_slam/intensity_error.h>
+#include <ceres_slam/intensity_error_point_light.h>
 
 // TODO: Rewrite this as a proper unit test
 

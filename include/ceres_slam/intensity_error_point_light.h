@@ -1,5 +1,5 @@
-#ifndef CERES_SLAM_INTENSITY_ERROR_H_
-#define CERES_SLAM_INTENSITY_ERROR_H_
+#ifndef CERES_SLAM_INTENSITY_ERROR_POINT_LIGHT_H_
+#define CERES_SLAM_INTENSITY_ERROR_POINT_LIGHT_H_
 
 #include <ceres/ceres.h>
 
@@ -10,13 +10,13 @@
 namespace ceres_slam {
 
 //! Intensity error cost function for Ceres with automatic Jacobians
-class IntensityErrorAutomatic {
+class IntensityErrorPointLightAutomatic {
 public:
     //! Light source type
     typedef PointLight<double> Light;
 
     //! Constructor with fixed model parameters
-    IntensityErrorAutomatic(const Light::Colour& colour,
+    IntensityErrorPointLightAutomatic(const Light::Colour& colour,
                             const Light::ColourCovariance& stiffness) :
         colour_(colour),
         stiffness_(stiffness) { }
@@ -102,7 +102,7 @@ public:
                                     const Light::Colour& colour,
                                     const Light::ColourCovariance& stiffness) {
         return( new ceres::AutoDiffCostFunction
-                    <IntensityErrorAutomatic,
+                    <IntensityErrorPointLightAutomatic,
                        1,  // Residual dimension
                        12, // Compact SE(3) vehicle pose (3 trans + 9 rot)
                        3,  // Map point position
@@ -110,8 +110,8 @@ public:
                        3,  // Map point Phong parameters (ambient + specular)
                        1,  // Map point texture (per-pixel diffuse)
                        3>  // Light source position
-                       (new IntensityErrorAutomatic(colour, stiffness))
-              );
+                       (new IntensityErrorPointLightAutomatic(colour,
+                                                              stiffness) ) );
     }
 
 private:
@@ -120,8 +120,8 @@ private:
     //! Intensity stiffness matrix (inverse sqrt of covariance matrix)
     Light::ColourCovariance stiffness_;
 
-}; // class IntensityErrorAutomatic
+}; // class IntensityErrorPointLightAutomatic
 
 } // namespace ceres_slam
 
-#endif // CERES_SLAM_INTENSITY_ERROR_H_
+#endif // CERES_SLAM_INTENSITY_ERROR_POINT_LIGHT_H_

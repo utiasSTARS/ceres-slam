@@ -53,15 +53,25 @@ const bool DatasetProblem::read_csv(std::string filename) {
     camera = std::make_shared<Camera>(fu, fv, cu, cv, b);
     std::cerr << *camera << std::endl;
 
-    // Read the initial light position
+    // Read the initial light position/direction
     // Need to find a better way of initializing this in the future
-    std::cerr << "Reading initial light position" << std::endl;
-    std::getline(file, line);
-    tokens = split(line, ',');
-    initial_light_pos << std::stod(tokens.at(0)),
-                         std::stod(tokens.at(1)),
-                         std::stod(tokens.at(2));
-    std::cerr << initial_light_pos << std::endl;
+    if(directional_light) {
+        std::cerr << "Reading initial light direction" << std::endl;
+        std::getline(file, line);
+        tokens = split(line, ',');
+        initial_light_dir << std::stod(tokens.at(0)),
+                             std::stod(tokens.at(1)),
+                             std::stod(tokens.at(2));
+        std::cerr << initial_light_dir << std::endl;
+    } else {
+        std::cerr << "Reading initial light position" << std::endl;
+        std::getline(file, line);
+        tokens = split(line, ',');
+        initial_light_pos << std::stod(tokens.at(0)),
+                             std::stod(tokens.at(1)),
+                             std::stod(tokens.at(2));
+        std::cerr << initial_light_pos << std::endl;
+    }
 
     // Read first ground truth pose
     std::cerr << "Reading first ground truth pose" << std::endl;
@@ -162,9 +172,14 @@ const bool DatasetProblem::write_csv(std::string filename) const {
         }
     }
 
-    // Convert light positions to CSV entries
-    light_file << "x, y, z" << std::endl;
-    light_file << light_pos.str() << std::endl;
+    // Convert light position/direction to CSV entries
+    if(directional_light) {
+        light_file << "i, j, k" << std::endl;
+        light_file << light_dir.str() << std::endl;
+    } else {
+        light_file << "x, y, z" << std::endl;
+        light_file << light_pos.str() << std::endl;
+    }
 
     // Close files
     pose_file.close();
@@ -261,8 +276,11 @@ void DatasetProblem::compute_initial_guess() {
 
         // Initialize the light source to something close to ground truth.
         // Need to figure out a way to do this in general.
-        light_pos = initial_light_pos;
-        // light_pos << -2., -2., 2.;
+        if(directional_light) {
+            light_dir = initial_light_dir;
+        } else {
+            light_pos = initial_light_pos;
+        }
 
         // If the map point does not have an initial guess already,
         // initialize it
@@ -284,7 +302,6 @@ void DatasetProblem::compute_initial_guess() {
 
                 // Set the initialization flag to true for this vertex
                 initialized_vertex[ j_km1[i] ] = true;
-
             }
         }
     }

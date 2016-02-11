@@ -16,8 +16,6 @@ class DatasetProblem {
 public:
     //! Camera type
     typedef StereoCamera<double> Camera;
-    //! Light type
-    typedef PointLight<double> Light;
     //! SO(3) type
     typedef SO3Group<double> SO3;
     //! SE(3) type
@@ -30,7 +28,7 @@ public:
     typedef Vertex3D<double> Vertex;
 
     //! Default constructor
-    DatasetProblem() { }
+    DatasetProblem(bool dir_light = false) : directional_light(dir_light) { }
 
     //! Camera model
     Camera::Ptr camera;
@@ -54,10 +52,16 @@ public:
     //! True if map vertex j has been initialized
     std::vector<bool> initialized_vertex;
 
+    //! Use directional light?
+    bool directional_light;
     //! Light source position in base frame (to be estimated)
     Point light_pos;
     //! Noisy initial guess for light source position (temporary)
     Point initial_light_pos;
+    //! Light source position in base frame (to be estimated)
+    Vector light_dir;
+    //! Noisy initial guess for light source position (temporary)
+    Vector initial_light_dir;
 
     //! Material (just one for now, to be estimated)
     Material<double>::Ptr material;
@@ -69,7 +73,7 @@ public:
     //! List of observation intensities
     std::vector<double> int_list;
     //! Variance of observation intensities
-    Light::ColourVariance int_var;
+    double int_var;
     //! List of normal observations
     std::vector<Vector> normal_obs_list;
     //! Variance of normal observations
@@ -100,7 +104,7 @@ public:
 
 private:
     //! List of lists of indices corresponding to each state index
-    std::vector<std::vector<unsigned int>> state_indices_;
+    std::vector<std::vector<unsigned int> > state_indices_;
 
 }; // class DatasetProblem
 
