@@ -34,9 +34,10 @@ const bool DatasetProblem::read_csv(std::string filename) {
     num_vertices = std::stoi(tokens.at(1));
     poses.resize(num_states);
     map_vertices.resize(num_vertices);
-    for(unsigned int i = 0; i < num_vertices; ++i) {
+    for(unsigned int j = 0; j < num_vertices; ++j) {
         initialized_vertex.push_back(false);
     }
+
     std::cerr << "expecting " << num_states << " states"
               << " and " << num_vertices << " points" << std::endl;
 
@@ -153,7 +154,7 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     }
 
     // Convert initialized vertices to CSV entries
-    map_file << "point_id, x, y, z, nx, ny, nz, ka, kd, ks, exponent"
+    map_file << "point_id, x, y, z, nx, ny, nz, ka, ks, exponent, kd"
              << std::endl;
     for(unsigned int j = 0; j < map_vertices.size(); ++j) {
         if(initialized_vertex[j]) {
@@ -180,26 +181,23 @@ const std::vector<unsigned int> DatasetProblem::obs_indices_at_state(int k) cons
 void DatasetProblem::compute_initial_guess() {
     std::vector<Point> pts_km1, pts_k;
     std::vector<Vector> normals_km1;
+    std::vector<double> intensities_km1;
     std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
 
-    // Initialize the light source to something close to ground truth.
-    // Need to figure out a way to do this in general.
-    light_pos = initial_light_pos;
-    // light_pos << -2., -2., 2.;
+    // First pose is either identity, or the first ground truth pose
+    poses[0] = first_pose;
 
     // Initialize the material (assuming everything is the same material)
     material = std::make_shared< Material<double> >(
-        Material<double>::PhongParams(0.3, 0.4, 0.3, 1.) );
-
-    // First pose is either identity, or the first ground truth pose
-    poses[0] = first_pose;
+        Material<double>::PhongParams(0., 0., 0.) );
 
     // Iterate over all poses
     for(unsigned int k = 1; k < num_states; ++k) {
         pts_km1.clear();
         pts_k.clear();
         normals_km1.clear();
+        intensities_km1.clear();
         j_km1.clear();
         j_k.clear();
         idx_km1 = obs_indices_at_state(k-1);
@@ -230,13 +228,10 @@ void DatasetProblem::compute_initial_guess() {
             pts_km1.push_back(camera->triangulate(stereo_obs_list[i]));
             // Also store the observed normals corresponding to each
             // point in case we need to use them as an initial guess
-
-            // Initialize the normal with the negative of the ray direction
-            // i.e., assume the surface is pointing towards the camera
-            // Vector normal_obs = -camera->triangulate(stereo_obs_list[i]);
-            // normal_obs.normalize();
-            // normals_km1.push_back(normal_obs);
             normals_km1.push_back(normal_obs_list[i]);
+
+            // Store the intensities of each observed point as well
+            intensities_km1.push_back(int_list[i]);
         }
         for(unsigned int i : idx_k) {
             pts_k.push_back(camera->triangulate(stereo_obs_list[i]));
@@ -264,6 +259,11 @@ void DatasetProblem::compute_initial_guess() {
         // Compound the transformation estimate onto the previous one
         poses[k] = T_k_km1 * poses[k-1];
 
+        // Initialize the light source to something close to ground truth.
+        // Need to figure out a way to do this in general.
+        light_pos = initial_light_pos;
+        // light_pos << -2., -2., 2.;
+
         // If the map point does not have an initial guess already,
         // initialize it
         for(unsigned int i = 0; i < j_km1.size(); ++i) {
@@ -280,9 +280,11 @@ void DatasetProblem::compute_initial_guess() {
                 map_vertices[ j_km1[i] ].position() = vertex_position;
                 map_vertices[ j_km1[i] ].normal() = vertex_normal;
                 map_vertices[ j_km1[i] ].material() = material;
+                map_vertices[ j_km1[i] ].texture() = intensities_km1[i];
 
                 // Set the initialization flag to true for this vertex
                 initialized_vertex[ j_km1[i] ] = true;
+
             }
         }
     }

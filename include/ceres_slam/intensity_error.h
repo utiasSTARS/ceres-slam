@@ -27,6 +27,7 @@ public:
                     const T* const pt_g_ceres,
                     const T* const normal_g_ceres,
                     const T* const phong_params_ceres,
+                    const T* const texture_ceres,
                     const T* const lightpos_g_ceres,
                     T* residuals_ceres) const {
         // Local typedefs for convenience
@@ -56,14 +57,14 @@ public:
         // std::cout << "normal_g: " << normal_g << std::endl;
         // std::cout << "normal_c: " << normal_c << std::endl;
 
-        // Phong reflectance coefficients (ambient and diffuse only for now)
+        // Phong reflectance coefficients and per-pixel diffuse texture
         Eigen::Map<const PhongParamsT> phong_params(phong_params_ceres);
         typename MaterialT::Ptr material =
             std::make_shared<MaterialT>(phong_params);
         // std::cout << "material: " << *material << std::endl;
 
         // Vertex in the camera frame for shading
-        VertexT vertex_c(pt_c, normal_c, material);
+        VertexT vertex_c(pt_c, normal_c, material, *texture_ceres);
         // std::cout << "vertex_c: " << vertex_c << std::endl;
 
         // Light source position
@@ -106,7 +107,8 @@ public:
                        12, // Compact SE(3) vehicle pose (3 trans + 9 rot)
                        3,  // Map point position
                        3,  // Map point normal
-                       4,  // Map point Phong parameters
+                       3,  // Map point Phong parameters (ambient + specular)
+                       1,  // Map point texture (per-pixel diffuse)
                        3>  // Light source position
                        (new IntensityErrorAutomatic(colour, stiffness))
               );

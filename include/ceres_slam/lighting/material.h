@@ -15,7 +15,7 @@ public:
     //! Const pointer type
     typedef std::shared_ptr<const Material> ConstPtr;
     //! Number of parameters
-    static const int dim = 4;
+    static const int dim = 3;
     //! Colour type
     typedef Scalar Colour;
     //! Phong illumination parameters
@@ -36,20 +36,15 @@ public:
     //! Return the ambient component of the vertex reflectance (mutable)
     inline const Colour& ambient() const { return phong_params_(0); }
 
-    //! Return the diffuse component of the vertex reflectance (mutable)
-    inline Colour& diffuse() { return phong_params_(1); }
-    //! Return the diffuse component of the vertex reflectance (const)
-    inline const Colour& diffuse() const { return phong_params_(1); }
-
     //! Return the specular component of the vertex reflectance (mutable)
-    inline Colour& specular() { return phong_params_(2); }
+    inline Colour& specular() { return phong_params_(1); }
     //! Return the specular component of the vertex reflectance (mutable)
-    inline const Colour& specular() const { return phong_params_(2); }
+    inline const Colour& specular() const { return phong_params_(1); }
 
     //! Return the exponent component of the vertex reflectance (mutable)
-    inline Colour& exponent() { return phong_params_(3); }
+    inline Colour& exponent() { return phong_params_(2); }
     //! Return the exponent component of the vertex reflectance (const)
-    inline const Colour& exponent() const { return phong_params_(3); }
+    inline const Colour& exponent() const { return phong_params_(2); }
 
     //! Ostream operator for materials
     friend std::ostream& operator<<( std::ostream& os,
@@ -63,8 +58,8 @@ public:
 private:
     //! Phong illumination parameters stored column-wise in a matrix.
     /*!
-        phong_params_.col(0) is ambient,  col(1) is diffuse,
-        col(2) is specular, col(3) is shininess.
+        phong_params_.col(0) is ambient,
+        col(1) is specular, col(2) is shininess.
     */
     PhongParams phong_params_;
 };

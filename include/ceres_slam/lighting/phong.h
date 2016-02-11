@@ -69,7 +69,7 @@ public:
             return Colour(static_cast<Scalar>(0) );
         }
 
-        return vertex.material()->diffuse() * light_dir_dot_normal;
+        return vertex.texture() * light_dir_dot_normal;
     }
 
     //! Shade the specular component of the Phong model (Blinn-Phong)

@@ -115,6 +115,7 @@ int main(int argc, char** argv) {
                         dataset.map_vertices[j].normal().data(),
                         dataset.map_vertices[j].material()
                             ->phong_params().data(),
+                        dataset.map_vertices[j].texture_ptr(),
                         dataset.light_pos.data() );
 
                     // Set upper and lower bounds on Phong parameters
@@ -133,12 +134,12 @@ int main(int argc, char** argv) {
                     problem.SetParameterLowerBound(
                         dataset.map_vertices[j].material()
                             ->phong_params().data(), 2, 0.);
-                    problem.SetParameterUpperBound(
-                        dataset.map_vertices[j].material()
-                            ->phong_params().data(), 2, 1.);
+
+                    // Set upper and lower bounds on texture values
                     problem.SetParameterLowerBound(
-                        dataset.map_vertices[j].material()
-                            ->phong_params().data(), 3, 0.);
+                        dataset.map_vertices[j].texture_ptr(), 0, 0.);
+                    problem.SetParameterUpperBound(
+                        dataset.map_vertices[j].texture_ptr(), 0, 1.);
 
                     // Cost function for the normal observation
                     ceres::CostFunction* normal_cost =
@@ -173,6 +174,10 @@ int main(int argc, char** argv) {
     std::cerr << "Solving" << std::endl;
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = true;
+    // solver_options.num_threads = 8;
+    // solver_options.num_linear_solver_threads = 8;
+    // solver_options.max_num_iterations = 1000;
+
     // solver_options.trust_region_strategy_type = ceres::DOGLEG;
     // solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
     // solver_options.linear_solver_type = ceres::DENSE_SCHUR;

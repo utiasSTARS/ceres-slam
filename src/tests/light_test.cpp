@@ -25,7 +25,8 @@ int main() {
     Vector camera_position = Vector::Zero();
 
     Material::Ptr m = std::make_shared<Material>();
-    m->phong_params() = Material::PhongParams(0.1, 0.6, 0.3, 10.);
+    m->phong_params() = Material::PhongParams(0.1, 0.3, 10.);
+    double t = 0.6;
 
     Point v28_p;
     v28_p << 0.823015  ,  0.60803428,  0. ;
@@ -33,7 +34,7 @@ int main() {
     Vector v28_n;
     v28_n << 0.,0.,1.;
     // v28_n = T_1_w * v28_n;
-    Vertex v28(v28_p, v28_n, m);
+    Vertex v28(v28_p, v28_n, m, t);
     Light::Colour v28_obs = 0.377606521;
 
     Vertex v245;
@@ -42,6 +43,7 @@ int main() {
     v245.normal() << 0.,  -1.,  0.;
     // v245.normal() = T_1_w * v245.normal();
     v245.material() = m;
+    v245.texture() = t;
     Light::Colour v245_obs = 0.777672166;
 
     Light l;
@@ -70,14 +72,16 @@ int main() {
     // double v28_err;
     // ceres_slam::IntensityErrorAutomatic v28_cost(v28_obs, 1.);
     // v28_cost(T_1_w.data(), v28.position().data(), v28.normal().data(),
-    //          v28.material()->phong_params().data(), l.position().data(), &v28_err);
+    //          v28.material()->phong_params().data(), v28.texture_ptr(),
+    //          l.position().data(), &v28_err);
     //
     // std::cout << std::endl << "v245_err" << std::endl;
     //
     // double v245_err;
     // ceres_slam::IntensityErrorAutomatic v245_cost(v245_obs, 1.);
     // v245_cost(T_1_w.data(), v245.position().data(), v245.normal().data(),
-    //          v245.material()->phong_params().data(), l.position().data(), &v245_err);
+    //          v245.material()->phong_params().data(), v245.texture_ptr(),
+    //          l.position().data(), &v245_err);
 
     return EXIT_SUCCESS;
 }
