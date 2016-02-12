@@ -25,27 +25,39 @@ using Camera = ceres_slam::DatasetProblem::Camera;
 
 int main(int argc, char** argv) {
     if(argc < 2) {
-      std::cerr << "usage: dataset_ba <input_file> [--nolight]"
+      std::cerr << "usage: dataset_ba <input_file> "
+                << "[--nolight | --dirlight]"
                 << std::endl;
       return EXIT_FAILURE;
     }
 
-    bool directional_light = true;
-
-    // Read dataset from file
-    std::string filename(argv[1]);
-    ceres_slam::DatasetProblem dataset(directional_light);
-    if(!dataset.read_csv(filename) ) {
-        return EXIT_FAILURE;
-    }
-
-    // Set boolean flags
+    // Defaults
     bool use_light = true;
+    bool directional_light = false;
+
+    // Parse command line arguments
+    std::string filename(argv[1]);
     if(argc >= 3) {
         std::string flag(argv[2]);
         if(flag == "--nolight") {
             use_light = false;
         }
+        else if(flag == "--dirlight") {
+            use_light = true;
+            directional_light = true;
+        }
+        else {
+            std::cerr << "usage: dataset_ba <input_file> "
+                      << "[--nolight/--dirlight]"
+                      << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    // Read dataset from file
+    ceres_slam::DatasetProblem dataset(directional_light);
+    if(!dataset.read_csv(filename) ) {
+        return EXIT_FAILURE;
     }
 
     // Compute initial guess
