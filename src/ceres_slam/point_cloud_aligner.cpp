@@ -60,6 +60,8 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
 PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
     std::vector<PointCloudAligner::Point>& pts_0,
     std::vector<PointCloudAligner::Point>& pts_1,
+    std::vector<unsigned int>& j_0,
+    std::vector<unsigned int>& j_1,
     PointCloudAligner::Camera::ConstPtr camera,
     int num_iters, double thresh) {
 
@@ -128,12 +130,17 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
 
     // Delete outliers
     std::vector<PointCloudAligner::Point> inlier_pts_0, inlier_pts_1;
+        std::vector<unsigned int> inlier_j_0, inlier_j_1;
     for(unsigned int i : best_inlier_idx) {
         inlier_pts_0.push_back(pts_0[i]);
         inlier_pts_1.push_back(pts_1[i]);
+        inlier_j_0.push_back(j_0[i]);
+        inlier_j_1.push_back(j_1[i]);
     }
     pts_0 = inlier_pts_0;
     pts_1 = inlier_pts_1;
+    j_0 = inlier_j_0;
+    j_1 = inlier_j_1;
 
     return best_T_1_0;
 }

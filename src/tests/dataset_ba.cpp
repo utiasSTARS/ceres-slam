@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 
     dataset.stereo_obs_var << 4., 4., 16.; // u,v,d variance
     dataset.normal_obs_var << 0.01, 0.01, 0.01; // i,j,k variance
-    dataset.int_var = 0.0001; // I variance
+    dataset.int_var = 0.01; // I variance
 
     // Compute the stiffness matrix to apply to the residuals
     Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
@@ -211,9 +211,9 @@ int main(int argc, char** argv) {
     std::cerr << "Solving" << std::endl;
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = true;
-    // solver_options.num_threads = 8;
-    // solver_options.num_linear_solver_threads = 8;
-    // solver_options.max_num_iterations = 1000;
+    solver_options.num_threads = 8;
+    solver_options.num_linear_solver_threads = 8;
+    solver_options.max_num_iterations = 1000;
 
     // solver_options.trust_region_strategy_type = ceres::DOGLEG;
     // solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;

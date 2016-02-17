@@ -35,6 +35,8 @@ public:
     //! and remove outliers from the two clouds.
     SE3 compute_transformation_and_inliers(std::vector<Point>& pts_0,
                                            std::vector<Point>& pts_1,
+                                           std::vector<unsigned int>& j_0,
+                                           std::vector<unsigned int>& j_1,
                                            Camera::ConstPtr camera,
                                            int num_iters = 400,
                                            double thresh = 25);
