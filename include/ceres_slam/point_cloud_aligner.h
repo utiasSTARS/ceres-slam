@@ -32,14 +32,13 @@ public:
 
     //! Compute the transformation that aligns
     //! the origin cloud (pts_0) onto the destination cloud (pts_1)
-    //! and remove outliers from the two clouds.
-    SE3 compute_transformation_and_inliers(std::vector<Point>& pts_0,
-                                           std::vector<Point>& pts_1,
-                                           std::vector<unsigned int>& j_0,
-                                           std::vector<unsigned int>& j_1,
-                                           Camera::ConstPtr camera,
-                                           int num_iters = 400,
-                                           double thresh = 25);
+    //! and return the indices of the inlier measurements
+    std::vector<unsigned int> compute_transformation_and_inliers(SE3& T_1_0_out,
+                                           const std::vector<Point>& pts_0,
+                                           const std::vector<Point>& pts_1,
+                                           const Camera::ConstPtr camera,
+                                           const unsigned int num_iters = 400,
+                                           const double thresh = 25);
 };
 
 } // namespace ceres_slam

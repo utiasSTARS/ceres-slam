@@ -57,13 +57,12 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
     return SE3(r_1_0_1, C_1_0);
 }
 
-PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
-    std::vector<PointCloudAligner::Point>& pts_0,
-    std::vector<PointCloudAligner::Point>& pts_1,
-    std::vector<unsigned int>& j_0,
-    std::vector<unsigned int>& j_1,
-    PointCloudAligner::Camera::ConstPtr camera,
-    int num_iters, double thresh) {
+std::vector<unsigned int> PointCloudAligner::compute_transformation_and_inliers(
+    SE3& T_1_0_out,
+    const std::vector<PointCloudAligner::Point>& pts_0,
+    const std::vector<PointCloudAligner::Point>& pts_1,
+    const PointCloudAligner::Camera::ConstPtr camera,
+    const unsigned int num_iters, const double thresh) {
 
     // Uniformly distributed integers in [a,b], NOT [a,b)
     std::random_device rd;
@@ -78,7 +77,7 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
     PointCloudAligner::SE3 best_T_1_0;
 
     // 3-point RANSAC algorithm
-    for(int ransac_iter = 0; ransac_iter < num_iters; ++ransac_iter) {
+    for(unsigned int ransac_iter = 0; ransac_iter < num_iters; ++ransac_iter) {
         // std::cout << "RANSAC iter = " << ransac_iter << std::endl;
         // Get 3 random, unique indices
         rand_idx[0] = idx_selector(rng);
@@ -128,21 +127,9 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation_and_inliers(
         }
     }
 
-    // Delete outliers
-    std::vector<PointCloudAligner::Point> inlier_pts_0, inlier_pts_1;
-        std::vector<unsigned int> inlier_j_0, inlier_j_1;
-    for(unsigned int i : best_inlier_idx) {
-        inlier_pts_0.push_back(pts_0[i]);
-        inlier_pts_1.push_back(pts_1[i]);
-        inlier_j_0.push_back(j_0[i]);
-        inlier_j_1.push_back(j_1[i]);
-    }
-    pts_0 = inlier_pts_0;
-    pts_1 = inlier_pts_1;
-    j_0 = inlier_j_0;
-    j_1 = inlier_j_1;
+    T_1_0_out = best_T_1_0;
 
-    return best_T_1_0;
+    return best_inlier_idx;
 }
 
 } // namespace ceres_slam

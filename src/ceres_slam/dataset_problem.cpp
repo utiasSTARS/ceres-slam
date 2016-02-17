@@ -264,10 +264,12 @@ void DatasetProblem::compute_initial_guess() {
         // std::cout <<"Initial set has " << pts_km1.size()
         //           << " elements" << std::endl;
 
-        SE3 T_k_km1 = point_cloud_aligner.compute_transformation_and_inliers(
-            pts_km1, pts_k, j_km1, j_k, camera, 400, 9);
+        SE3 T_k_km1;
+        std::vector<unsigned int> inlier_idx
+            = point_cloud_aligner.compute_transformation_and_inliers(
+                                    T_k_km1, pts_km1, pts_k, camera, 400, 9);
         //
-        // std::cout <<"Best inlier set has " << pts_km1.size()
+        // std::cout <<"Best inlier set has " << inlier_idx.size()
         //               << " elements" << std::endl;
         // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
 
@@ -284,7 +286,7 @@ void DatasetProblem::compute_initial_guess() {
 
         // If the map point does not have an initial guess already,
         // initialize it
-        for(unsigned int i = 0; i < j_km1.size(); ++i) {
+        for(unsigned int i : inlier_idx) {
             if(!initialized_vertex[ j_km1[i] ]) {
                 // Initialize the position with the guess from the
                 // first point cloud, transformed into the base frame
