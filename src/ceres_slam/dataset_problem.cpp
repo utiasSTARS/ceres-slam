@@ -53,6 +53,23 @@ const bool DatasetProblem::read_csv(std::string filename) {
     camera = std::make_shared<Camera>(fu, fv, cu, cv, b);
     std::cerr << *camera << std::endl;
 
+    // Read observation variance
+    std::cerr << "Reading observation variances" << std::endl;
+    std::getline(file, line);
+    tokens = split(line, ',');
+    stereo_obs_var << std::stod(tokens.at(0)),
+                      std::stod(tokens.at(1)),
+                      std::stod(tokens.at(2));
+    normal_obs_var << std::stod(tokens.at(3)),
+                      std::stod(tokens.at(4)),
+                      std::stod(tokens.at(5));
+    int_var = std::stod(tokens.at(6));
+    std::cerr << "Stereo observation variance: "
+              << stereo_obs_var.transpose() << std::endl;
+    std::cerr << "Normal observation variance: "
+              << normal_obs_var.transpose() << std::endl;
+    std::cerr << "Intensity variance: " << int_var << std::endl;
+
     // Read the initial light position/direction
     // Need to find a better way of initializing this in the future
     if(directional_light) {

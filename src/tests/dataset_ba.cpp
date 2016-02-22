@@ -60,11 +60,6 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    // Set noise paramaters
-    dataset.stereo_obs_var << 4., 4., 16.; // u,v,d variance
-    dataset.normal_obs_var << 0.01, 0.01, 0.01; // i,j,k variance
-    dataset.int_var = 0.01; // I variance
-
     // Compute initial guess
     std::cerr << "Computing VO initial guess" << std::endl;
     dataset.compute_initial_guess();
