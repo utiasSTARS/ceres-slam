@@ -98,6 +98,9 @@ public:
     //! Return list of indices corresponding to a specified state index
     const std::vector<unsigned int> obs_indices_at_state(int k) const;
 
+    //! Return list of indices corresponding to a specified feature index
+    const std::vector<unsigned int> obs_indices_for_feature(int j) const;
+
     //! Generate initial guess for poses and map points
     //! using scalar-weighted point cloud alignment for stereo VO
     void compute_initial_guess();
@@ -105,6 +108,9 @@ public:
 private:
     //! List of lists of indices corresponding to each state index
     std::vector<std::vector<unsigned int> > state_indices_;
+
+    //! List of lists of indices corresponding to each feature index
+    std::vector<std::vector<unsigned int> > feature_indices_;
 
 }; // class DatasetProblem
 

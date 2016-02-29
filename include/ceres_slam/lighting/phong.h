@@ -28,7 +28,9 @@ public:
                        const Vector& camera_dir,    // Must be unit length
                        const Colour& light_colour) {
         // Shade each component
-        Colour ambient = shade_ambient(vertex);
+        // DEBUG: Don't use this component
+        // Colour ambient = shade_ambient(vertex);
+        Colour ambient = Colour(0.);
 
         // Check if normal is pointing away from camera
         // if(camera_dir.dot(vertex.normal() ) <= static_cast<Scalar>(0) ) {
@@ -38,6 +40,7 @@ public:
 
         Colour diffuse  = shade_diffuse(vertex, light_dir);
         Colour specular = shade_specular(vertex, light_dir, camera_dir);
+        // Colour specular = shade_specular_blinn(vertex, light_dir, camera_dir);
 
         // Total intensity
         Colour col = light_colour * (ambient + diffuse + specular);
@@ -72,20 +75,52 @@ public:
         return vertex.texture() * light_dir_dot_normal;
     }
 
-    //! Shade the specular component of the Phong model (Blinn-Phong)
+    //! Shade the specular component of the Phong model
     inline static
     const Colour shade_specular(const Vertex& vertex,
                                 const Vector& light_dir,
                                 const Vector& camera_dir) {
+        // Mirror direction
+        Vector mirror_dir = static_cast<Scalar>(2)
+            * vertex.normal().dot(light_dir) * vertex.normal() - light_dir;
+
+        // Check for NaN in case of pathological cases
+        // where mirror_dir.norm() == 0 or light_vec.norm() == 0
+        if(mirror_dir.squaredNorm() <= static_cast<Scalar>(0) ) {
+            return Colour(static_cast<Scalar>(0) );
+        }
+
+        mirror_dir.normalize();
+
+        // Dot product of mirror direction and camera direction
+        // NOTE: pow(x,y) returns NaN if x < 0 and y non-integer
+        Scalar mirror_dir_dot_camera_dir = mirror_dir.dot(camera_dir );
+
+        if(mirror_dir_dot_camera_dir <= static_cast<Scalar>(0) ) {
+            return Colour(static_cast<Scalar>(0) );
+        }
+
+        return vertex.material()->specular()
+                    * pow(mirror_dir_dot_camera_dir,
+                          vertex.material()->exponent() );
+    }
+
+    //! Shade the specular component of the Phong model
+    //! using the Blinn-Phong approximation
+    inline static
+    const Colour shade_specular_blinn(const Vertex& vertex,
+                                const Vector& light_dir,
+                                const Vector& camera_dir) {
         // Halfway direction
         Vector halfway_dir = light_dir + camera_dir;
-        halfway_dir.normalize();
 
         // Check for NaN in case of pathological cases
         // where halfway_dir.norm() == 0 or light_vec.norm() == 0
-        if(!halfway_dir.allFinite() ) {
+        if(halfway_dir.squaredNorm() <= static_cast<Scalar>(0) ) {
             return Colour(static_cast<Scalar>(0) );
         }
+
+        halfway_dir.normalize();
 
         // Dot product of halfway direction and normal vector
         // NOTE: pow(x,y) returns NaN if x < 0 and y non-integer

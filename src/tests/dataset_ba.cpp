@@ -160,7 +160,11 @@ int main(int argc, char** argv) {
                             ->phong_params().data(), 1, 1.);
                     problem.SetParameterLowerBound(
                         dataset.map_vertices[j].material()
-                            ->phong_params().data(), 2, 0.);
+                            ->phong_params().data(), 2, 2.);
+
+                    // DEBUG: Hold material parameters constant
+                    // problem.SetParameterBlockConstant(dataset.map_vertices[j]
+                    //     .material()->phong_params().data() );
 
                     // Set upper and lower bounds on texture values
                     problem.SetParameterLowerBound(
@@ -198,7 +202,9 @@ int main(int argc, char** argv) {
     }
 
     // DEBUG: Hold light position constant
-    // problem.SetParameterBlockConstant(dataset.light_pos.data() );
+    // if(use_light) {
+    //     problem.SetParameterBlockConstant(dataset.light_pos.data() );
+    // }
 
     // Hold the first pose constant
     problem.SetParameterBlockConstant(dataset.poses[0].data() );
@@ -210,10 +216,11 @@ int main(int argc, char** argv) {
     solver_options.num_threads = 8;
     solver_options.num_linear_solver_threads = 8;
     solver_options.max_num_iterations = 1000;
+    solver_options.use_nonmonotonic_steps = true;
 
     // solver_options.trust_region_strategy_type = ceres::DOGLEG;
     // solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
-    // solver_options.linear_solver_type = ceres::DENSE_SCHUR;
+    // solver_options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     // solver_options.check_gradients = true;
 
     ceres::Solver::Summary summary;

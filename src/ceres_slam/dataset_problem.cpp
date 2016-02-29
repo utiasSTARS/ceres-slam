@@ -79,6 +79,7 @@ const bool DatasetProblem::read_csv(std::string filename) {
         initial_light_dir << std::stod(tokens.at(0)),
                              std::stod(tokens.at(1)),
                              std::stod(tokens.at(2));
+        initial_light_dir.normalize();
         std::cerr << initial_light_dir << std::endl;
     } else {
         std::cerr << "Reading initial light position" << std::endl;
@@ -138,6 +139,24 @@ const bool DatasetProblem::read_csv(std::string filename) {
     state_indices_.push_back(t_indices);
     std::cerr << "found " << state_indices_.size()
               << " unique timestamps" << std::endl;
+
+    // Generate a list of observation indices for each feature
+    std::cerr << "Generating observation indices from feature IDs... ";
+    feature_indices_.resize(num_vertices);
+    std::vector<unsigned int> j_indices;
+
+    for(unsigned int j = 0; j < num_vertices; ++j) {
+        j_indices.clear();
+        for(unsigned int idx = 0; idx < vertex_ids.size(); idx++) {
+            if(vertex_ids.at(idx) == j) {
+                j_indices.push_back(idx);
+            }
+        }
+        feature_indices_.at(j) = j_indices;
+    }
+
+    std::cerr << "found " << feature_indices_.size()
+            << " unique features" << std::endl;
 
     file.close();
     return true;
@@ -210,6 +229,10 @@ const std::vector<unsigned int> DatasetProblem::obs_indices_at_state(int k) cons
     return state_indices_.at(k);
 }
 
+const std::vector<unsigned int> DatasetProblem::obs_indices_for_feature(int j) const {
+    return feature_indices_.at(j);
+}
+
 void DatasetProblem::compute_initial_guess() {
     std::vector<Point> pts_km1, pts_k;
     std::vector<Vector> normals_km1;
@@ -222,7 +245,7 @@ void DatasetProblem::compute_initial_guess() {
 
     // Initialize the material (assuming everything is the same material)
     material = std::make_shared< Material<double> >(
-        Material<double>::PhongParams(0., 0., 0.) );
+        Material<double>::PhongParams(0., 0., 10.) );
 
     // Iterate over all poses
     for(unsigned int k = 1; k < num_states; ++k) {
@@ -285,7 +308,7 @@ void DatasetProblem::compute_initial_guess() {
         std::vector<unsigned int> inlier_idx
             = point_cloud_aligner.compute_transformation_and_inliers(
                                     T_k_km1, pts_km1, pts_k, camera, 400, 9);
-        //
+
         // std::cout <<"Best inlier set has " << inlier_idx.size()
         //               << " elements" << std::endl;
         // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
@@ -317,7 +340,19 @@ void DatasetProblem::compute_initial_guess() {
                 map_vertices[ j_km1[i] ].position() = vertex_position;
                 map_vertices[ j_km1[i] ].normal() = vertex_normal;
                 map_vertices[ j_km1[i] ].material() = material;
-                map_vertices[ j_km1[i] ].texture() = intensities_km1[i];
+
+                // Diffuse initialization
+                // Option 1: use the first observed intensity
+                // map_vertices[ j_km1[i] ].texture() = intensities_km1[i];
+                // Option 2: use the minimum observed intensity
+                // Option 3: use the median observed intensity
+                std::vector<double> ints;
+                for(unsigned int idx : obs_indices_for_feature(j_km1[i]) ) {
+                    ints.push_back(int_list.at(idx));
+                }
+                std::nth_element(ints.begin(),
+                                 ints.begin() + ints.size()/2, ints.end() );
+                map_vertices[ j_km1[i] ].texture() = ints.at(ints.size()/2);
 
                 // Set the initialization flag to true for this vertex
                 initialized_vertex[ j_km1[i] ] = true;
