@@ -26,7 +26,7 @@ using Camera = ceres_slam::DatasetProblem::Camera;
 int main(int argc, char** argv) {
     if(argc < 2) {
       std::cerr << "usage: dataset_ba <input_file> "
-                << "[--nolight | --dirlight]"
+                << "[--nolight | --dirlight] [--multistage]"
                 << std::endl;
       return EXIT_FAILURE;
     }
@@ -34,21 +34,28 @@ int main(int argc, char** argv) {
     // Defaults
     bool use_light = true;
     bool directional_light = false;
+    bool multi_stage = false;
 
     // Parse command line arguments
     std::string filename(argv[1]);
-    if(argc >= 3) {
-        std::string flag(argv[2]);
+    for(int a = 2; a < argc; ++a) {
+        std::string flag(argv[a]);
+
         if(flag == "--nolight") {
             use_light = false;
+            directional_light = false;
         }
         else if(flag == "--dirlight") {
             use_light = true;
             directional_light = true;
         }
+        else if(flag == "--multistage") {
+            multi_stage = true;
+            use_light = true;
+        }
         else {
             std::cerr << "usage: dataset_ba <input_file> "
-                      << "[--nolight/--dirlight]"
+                      << "[--nolight | --dirlight] [--multistage]"
                       << std::endl;
             return EXIT_FAILURE;
         }
@@ -110,11 +117,51 @@ int main(int argc, char** argv) {
                     stereo_cost, NULL,
                     dataset.poses[k].data(),
                     dataset.map_vertices[j].position().data() );
+            }
+        }
 
-                if(use_light) {
+        // Use local parameterization on SE(3)
+        problem.SetParameterization(dataset.poses[k].data(), se3_perturbation);
+    }
+
+    // Hold the first pose constant
+    problem.SetParameterBlockConstant(dataset.poses[0].data() );
+
+    // Set solver options
+    ceres::Solver::Options solver_options;
+    solver_options.minimizer_progress_to_stdout = true;
+    solver_options.num_threads = 8;
+    solver_options.num_linear_solver_threads = 8;
+    solver_options.max_num_iterations = 1000;
+    solver_options.use_nonmonotonic_steps = true;
+    solver_options.trust_region_strategy_type = ceres::DOGLEG;
+    solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
+    solver_options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    // solver_options.check_gradients = true;
+
+    // Create sumary container
+    ceres::Solver::Summary summary;
+
+    // Solve!
+    ///////////////////////////////////////////////////////////////////////
+    // Stage 1 - Optimize points and poses only, no lighting
+    if(multi_stage) {
+        std::cerr << "Solving stage 1: poses and points" << std::endl;
+        Solve(solver_options, &problem, &summary);
+        std::cout << summary.BriefReport() << std::endl;
+    }
+
+    // Add the lighting terms to the problem
+    if(use_light) {
+        for(unsigned int k = 0; k < dataset.num_states; ++k) {
+            for(unsigned int i : dataset.obs_indices_at_state(k) ) {
+                // Map point ID for this observation
+                unsigned int j = dataset.vertex_ids[i];
+
+                if(dataset.initialized_vertex[j]) {
                     if(directional_light) {
                         ceres::CostFunction* intensity_cost =
-                            ceres_slam::IntensityErrorDirectionalLightAutomatic::Create(
+                        ceres_slam::IntensityErrorDirectionalLightAutomatic::Create(
                                 dataset.int_list[i],
                                 int_stiffness);
                         // Add the intensity cost function to the problem
@@ -130,7 +177,7 @@ int main(int argc, char** argv) {
                     } else {
                         // Cost function for the intensity observation
                         ceres::CostFunction* intensity_cost =
-                            ceres_slam::IntensityErrorPointLightAutomatic::Create(
+                        ceres_slam::IntensityErrorPointLightAutomatic::Create(
                                 dataset.int_list[i],
                                 int_stiffness);
                         // Add the intensity cost function to the problem
@@ -160,11 +207,15 @@ int main(int argc, char** argv) {
                             ->phong_params().data(), 1, 1.);
                     problem.SetParameterLowerBound(
                         dataset.map_vertices[j].material()
-                            ->phong_params().data(), 2, 2.);
+                            ->phong_params().data(), 2, 1.);
 
                     // DEBUG: Hold material parameters constant
                     // problem.SetParameterBlockConstant(dataset.map_vertices[j]
                     //     .material()->phong_params().data() );
+
+                    // DEBUG: Hold texture constant
+                    // problem.SetParameterBlockConstant(dataset.map_vertices[j]
+                    //     .texture_ptr() );
 
                     // Set upper and lower bounds on texture values
                     problem.SetParameterLowerBound(
@@ -191,42 +242,59 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Use local parameterization on SE(3)
-        problem.SetParameterization(dataset.poses[k].data(), se3_perturbation);
-
         // Constrain light direction updates to stay on unit sphere
-        if(use_light && directional_light) {
+        if(directional_light) {
             problem.SetParameterization(dataset.light_dir.data(),
                                         unit_vector_perturbation);
         }
+
+        // DEBUG: Hold light position constant
+        // problem.SetParameterBlockConstant(dataset.light_pos.data() );
     }
 
-    // DEBUG: Hold light position constant
-    // if(use_light) {
-    //     problem.SetParameterBlockConstant(dataset.light_pos.data() );
-    // }
+    ///////////////////////////////////////////////////////////////////////
+    // Stage 2 - Optimize lighting only, hold poses and points constant
+    if(multi_stage) {
+        for(unsigned int k = 0; k < dataset.num_states; ++k) {
+            for(unsigned int i : dataset.obs_indices_at_state(k) ) {
+                // Map point ID for this observation
+                unsigned int j = dataset.vertex_ids[i];
 
-    // Hold the first pose constant
-    problem.SetParameterBlockConstant(dataset.poses[0].data() );
+                if(dataset.initialized_vertex[j] ) {
+                    problem.SetParameterBlockConstant(
+                        dataset.map_vertices[j].position().data() );
+                }
+            }
 
-    // Solve the problem
-    std::cerr << "Solving" << std::endl;
-    ceres::Solver::Options solver_options;
-    solver_options.minimizer_progress_to_stdout = true;
-    solver_options.num_threads = 8;
-    solver_options.num_linear_solver_threads = 8;
-    solver_options.max_num_iterations = 1000;
-    solver_options.use_nonmonotonic_steps = true;
+            problem.SetParameterBlockConstant(dataset.poses[k].data() );
+        }
 
-    // solver_options.trust_region_strategy_type = ceres::DOGLEG;
-    // solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
-    // solver_options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
-    // solver_options.check_gradients = true;
+        std::cerr << "Solving stage 2: lighting" << std::endl;
+        Solve(solver_options, &problem, &summary);
+        std::cout << summary.BriefReport() << std::endl;
 
-    ceres::Solver::Summary summary;
+        for(unsigned int k = 0; k < dataset.num_states; ++k) {
+            for(unsigned int i : dataset.obs_indices_at_state(k) ) {
+                // Map point ID for this observation
+                unsigned int j = dataset.vertex_ids[i];
+
+                if(dataset.initialized_vertex[j] ) {
+                    problem.SetParameterBlockVariable(
+                        dataset.map_vertices[j].position().data() );
+                }
+            }
+
+            if(k > 0) {
+                problem.SetParameterBlockConstant(dataset.poses[k].data() );
+            }
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////
+    // Stage 3 / Default option - Optimize lighting, poses, and points jointly
+    std::cerr << "Solving SLAM and lighting jointly" << std::endl;
     Solve(solver_options, &problem, &summary);
-
-    std::cout << summary.FullReport() << std::endl;
+    std::cout << summary.BriefReport() << std::endl;
 
     // Estimate covariance?
 
