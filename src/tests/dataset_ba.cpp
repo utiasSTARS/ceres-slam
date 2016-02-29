@@ -285,7 +285,7 @@ int main(int argc, char** argv) {
             }
 
             if(k > 0) {
-                problem.SetParameterBlockConstant(dataset.poses[k].data() );
+                problem.SetParameterBlockVariable(dataset.poses[k].data() );
             }
         }
     }
