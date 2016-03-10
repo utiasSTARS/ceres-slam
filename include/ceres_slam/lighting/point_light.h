@@ -15,7 +15,7 @@ namespace ceres_slam {
 //! A point light source model using Phong lighting
 template <typename Scalar>
 class PointLight {
-public:
+   public:
     //! Pointer type
     typedef std::shared_ptr<PointLight> Ptr;
     //! Const pointer type
@@ -37,17 +37,14 @@ public:
     //! Observation covariance matrix type
     typedef Scalar ColourCovariance;
     //! Observation Jacobian type
-    typedef Eigen::Matrix<Scalar, obs_dim,
-        Vertex::dim + Point::dim, Eigen::RowMajor> ColourJacobian;
+    typedef Eigen::Matrix<Scalar, obs_dim, Vertex::dim + Point::dim,
+                          Eigen::RowMajor> ColourJacobian;
 
     //! Default constructor
-    PointLight() :
-        position_(Point() ),
-        colour_(static_cast<Scalar>(1) ) { }
+    PointLight() : position_(Point()), colour_(static_cast<Scalar>(1)) {}
     //! Construct from position and colour
-    PointLight(Point& position, Colour& colour) :
-        position_(position),
-        colour_(colour) { }
+    PointLight(Point& position, Colour& colour)
+        : position_(position), colour_(colour) {}
 
     //! Return the position of the light(mutable)
     inline Point& position() { return position_; }
@@ -58,7 +55,6 @@ public:
     inline Colour& colour() { return colour_; }
     //! Return the colour of the light (const)
     inline const Colour& colour() const { return colour_; }
-
 
     //! Shade a 3D vertex using Phong lighting
     /*!
@@ -76,9 +72,8 @@ public:
               alpha: map point specular exponent (shininess/hardness)
               pL: light source position
     */
-    const Colour shade( const Vertex& vertex,
-                        const Vector& camera_position,
-                        ColourJacobian* jacobian_ptr=nullptr ) const {
+    const Colour shade(const Vertex& vertex, const Vector& camera_position,
+                       ColourJacobian* jacobian_ptr = nullptr) const {
         // Direction to light
         Vector light_vec = this->position() - vertex.position();
         Vector light_dir = light_vec;
@@ -89,36 +84,33 @@ public:
         Vector camera_dir = camera_vec;
         camera_dir.normalize();
 
-        return LightingModel::shade(vertex, light_dir,
-                                    camera_dir, this->colour() );
+        return LightingModel::shade(vertex, light_dir, camera_dir,
+                                    this->colour());
     }
 
     //! Convert to a string
     inline const std::string str() const {
         std::stringstream ss;
-        ss << this->position().str() << ","
-           << this->colour();
+        ss << this->position().str() << "," << this->colour();
         return ss.str();
     }
 
     //! Ostream operator for PointLight
-    friend std::ostream& operator<<( std::ostream& os,
-                                     const PointLight<Scalar>& l ) {
+    friend std::ostream& operator<<(std::ostream& os,
+                                    const PointLight<Scalar>& l) {
         os << "Point light source" << std::endl
            << "Position: " << l.position() << std::endl
            << "Colour: " << l.colour();
         return os;
-     }
+    }
 
-private:
+   private:
     //! Position of the light
     Point position_;
     //! Light colour (intensity)
     Colour colour_;
 };
 
+}  // namespace ceres_slam
 
-
-} // namespace ceres_slam
-
-#endif // CERES_SLAM_POINT_LIGHT_H_
+#endif  // CERES_SLAM_POINT_LIGHT_H_

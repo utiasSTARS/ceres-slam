@@ -11,25 +11,22 @@ namespace ceres_slam {
 
 //! Intensity error cost function for Ceres with automatic Jacobians
 class IntensityErrorDirectionalLightAutomatic {
-public:
+   public:
     //! Light source type
     typedef DirectionalLight<double> Light;
 
     //! Constructor with fixed model parameters
-    IntensityErrorDirectionalLightAutomatic(const Light::Colour& colour,
-                            const Light::ColourCovariance& stiffness) :
-        colour_(colour),
-        stiffness_(stiffness) { }
+    IntensityErrorDirectionalLightAutomatic(
+        const Light::Colour &colour, const Light::ColourCovariance &stiffness)
+        : colour_(colour), stiffness_(stiffness) {}
 
     //! Templated evaluator operator for use with ceres::Jet
     template <typename T>
-    bool operator()(const T* const T_c_g_ceres,
-                    const T* const pt_g_ceres,
-                    const T* const normal_g_ceres,
-                    const T* const phong_params_ceres,
-                    const T* const texture_ceres,
-                    const T* const lightdir_g_ceres,
-                    T* residuals_ceres) const {
+    bool operator()(const T *const T_c_g_ceres, const T *const pt_g_ceres,
+                    const T *const normal_g_ceres,
+                    const T *const phong_params_ceres,
+                    const T *const texture_ceres,
+                    const T *const lightdir_g_ceres, T *residuals_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
         typedef Point3D<T> PointT;
@@ -51,8 +48,8 @@ public:
         // std::cout << "pt_c: " << pt_c << std::endl;
 
         // Normal vector at the map point
-        Eigen::Map<const VectorT> normal_g(normal_g_ceres); // Global frame
-        VectorT normal_c = T_c_g * normal_g;                // Camera frame
+        Eigen::Map<const VectorT> normal_g(normal_g_ceres);  // Global frame
+        VectorT normal_c = T_c_g * normal_g;                 // Camera frame
 
         // std::cout << "normal_g: " << normal_g << std::endl;
         // std::cout << "normal_c: " << normal_c << std::endl;
@@ -85,9 +82,8 @@ public:
 
         // Compute the residuals
         // (no need to map to an eigen matrix yet since it's only 1D)
-        residuals_ceres[0] = static_cast<T>(stiffness_)
-                                * (predicted_colour
-                                    - static_cast<ColourT>(colour_) );
+        residuals_ceres[0] = static_cast<T>(stiffness_) *
+                             (predicted_colour - static_cast<ColourT>(colour_));
 
         // std::cout << "predicted_colour: " << predicted_colour << std::endl;
         // std::cout << "colour_: " << colour_ << std::endl;
@@ -98,30 +94,29 @@ public:
 
     //! Factory to hide the construction of the CostFunction object from
     //! the client code.
-    static ceres::CostFunction* Create(
-                                    const Light::Colour& colour,
-                                    const Light::ColourCovariance& stiffness) {
-        return( new ceres::AutoDiffCostFunction
-                    <IntensityErrorDirectionalLightAutomatic,
-                       1,  // Residual dimension
-                       12, // Compact SE(3) vehicle pose (3 trans + 9 rot)
-                       3,  // Map point position
-                       3,  // Map point normal
-                       3,  // Map point Phong parameters (ambient + specular)
-                       1,  // Map point texture (per-pixel diffuse)
-                       3>  // Light source direction
-                       (new IntensityErrorDirectionalLightAutomatic(colour,
-                                                              stiffness) ) );
+    static ceres::CostFunction *Create(
+        const Light::Colour &colour, const Light::ColourCovariance &stiffness) {
+        return (
+            new ceres::AutoDiffCostFunction<
+                IntensityErrorDirectionalLightAutomatic,
+                1,   // Residual dimension
+                12,  // Compact SE(3) vehicle pose (3 trans + 9 rot)
+                3,   // Map point position
+                3,   // Map point normal
+                3,   // Map point Phong parameters (ambient + specular)
+                1,   // Map point texture (per-pixel diffuse)
+                3>   // Light source direction
+            (new IntensityErrorDirectionalLightAutomatic(colour, stiffness)));
     }
 
-private:
+   private:
     //! Intensity observation
     Light::Colour colour_;
     //! Intensity stiffness matrix (inverse sqrt of covariance matrix)
     Light::ColourCovariance stiffness_;
 
-}; // class IntensityErrorDirectionalLightAutomatic
+};  // class IntensityErrorDirectionalLightAutomatic
 
-} // namespace ceres_slam
+}  // namespace ceres_slam
 
-#endif // CERES_SLAM_INTENSITY_ERROR_DIRECTIONAL_LIGHT_H_
+#endif  // CERES_SLAM_INTENSITY_ERROR_DIRECTIONAL_LIGHT_H_

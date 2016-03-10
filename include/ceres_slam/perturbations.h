@@ -9,11 +9,10 @@ namespace ceres_slam {
 
 //! SO(3) group perturbation via so(3) algebra
 class SO3Perturbation {
-public:
+   public:
     template <typename T>
-    bool operator()(const T* C_op_ceres,
-                    const T* psi_ceres,
-                    T* C_op_new_ceres) const {
+    bool operator()(const T *C_op_ceres, const T *psi_ceres,
+                    T *C_op_new_ceres) const {
         // Local typedefs for convenience
         typedef SO3Group<T> SO3T;
         typedef typename SO3T::TangentVector TangentVectorT;
@@ -33,22 +32,21 @@ public:
 
     //! Factory to hide the construction of the LocalParameterization object
     //! from the client code.
-    static ceres::LocalParameterization* Create() {
-        return(new ceres::AutoDiffLocalParameterization
-                <SO3Perturbation,
-                    9, // SO(3) matrix elements
-                    3> // so(3) tangent vector
-              );
+    static ceres::LocalParameterization *Create() {
+        return (new ceres::AutoDiffLocalParameterization<
+                SO3Perturbation,
+                9,  // SO(3) matrix elements
+                3>  // so(3) tangent vector
+                );
     }
-}; // class SO3Perturbation
+};  // class SO3Perturbation
 
 //! SE(3) group perturbation via se(3) algebra
 class SE3Perturbation {
-public:
+   public:
     template <typename T>
-    bool operator()(const T* T_op_ceres,
-                    const T* epsilon_ceres,
-                    T* T_op_new_ceres) const {
+    bool operator()(const T *T_op_ceres, const T *epsilon_ceres,
+                    T *T_op_new_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
         typedef typename SE3T::TangentVector TangentVectorT;
@@ -68,14 +66,14 @@ public:
 
     //! Factory to hide the construction of the LocalParameterization object
     //! from the client code.
-    static ceres::LocalParameterization* Create() {
-        return(new ceres::AutoDiffLocalParameterization
-                <SE3Perturbation,
-                    12, // Compact SE(3) (3 trans + 9 rot)
-                    6> // se(3) tangent vector
-              );
+    static ceres::LocalParameterization *Create() {
+        return (new ceres::AutoDiffLocalParameterization<
+                SE3Perturbation,
+                12,  // Compact SE(3) (3 trans + 9 rot)
+                6>   // se(3) tangent vector
+                );
     }
-}; // class SE3Perturbation
+};  // class SE3Perturbation
 
 //! Orthogonal perturbation of unit vector
 /*!
@@ -87,19 +85,17 @@ public:
     \f$ \delta_\perp = \delta - \frac{\delta \cdot x}{||x||^2} x \f$
 */
 class UnitVectorPerturbation {
-public:
+   public:
     template <typename T>
-    bool operator()(const T* x_ceres,
-                    const T* delta_ceres,
-                    T* x_plus_delta_ceres) const {
+    bool operator()(const T *x_ceres, const T *delta_ceres,
+                    T *x_plus_delta_ceres) const {
         typedef Vector3D<T> VectorT;
 
         Eigen::Map<const VectorT> x(x_ceres);
         Eigen::Map<const VectorT> delta(delta_ceres);
         Eigen::Map<VectorT> x_plus_delta(x_plus_delta_ceres);
 
-        VectorT delta_orthogonal = delta
-                                    - (delta.dot(x) / x.squaredNorm() ) * x;
+        VectorT delta_orthogonal = delta - (delta.dot(x) / x.squaredNorm()) * x;
 
         x_plus_delta = x + delta_orthogonal;
 
@@ -110,12 +106,12 @@ public:
 
     //! Factory to hide the construction of the LocalParameterization object
     //! from the client code.
-    static ceres::LocalParameterization* Create() {
-        return(new ceres::AutoDiffLocalParameterization
-                            <UnitVectorPerturbation, 3, 3> );
+    static ceres::LocalParameterization *Create() {
+        return (new ceres::AutoDiffLocalParameterization<UnitVectorPerturbation,
+                                                         3, 3>);
     }
-}; // class UnitVectorPerturbation
+};  // class UnitVectorPerturbation
 
-} // namespace ceres_slam
+}  // namespace ceres_slam
 
-#endif // CERES_SLAM_PERTURBATIONS_H_
+#endif  // CERES_SLAM_PERTURBATIONS_H_

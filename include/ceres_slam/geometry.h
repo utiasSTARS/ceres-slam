@@ -6,4 +6,4 @@
 #include <ceres_slam/geometry/so3group.h>
 #include <ceres_slam/geometry/se3group.h>
 
-#endif // CERES_SLAM_GEOMETRY_H_
+#endif  // CERES_SLAM_GEOMETRY_H_

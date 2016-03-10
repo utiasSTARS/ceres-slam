@@ -16,11 +16,9 @@ using Material = ceres_slam::Material<double>;
 
 int main() {
     SE3::TransformationMatrix T_1_w_matrix;
-    T_1_w_matrix <<
-    0.99979182, -0.02040391,  0.        , -0.9793879 ,
-    -0.00927144, -0.45430067, -0.89080017,  0.46357211,  0.01817581,
-    0.89061472, -0.45439527,  1.29193662,
-    0.        ,  0.        ,  0.        , 1.;
+    T_1_w_matrix << 0.99979182, -0.02040391, 0., -0.9793879, -0.00927144,
+        -0.45430067, -0.89080017, 0.46357211, 0.01817581, 0.89061472,
+        -0.45439527, 1.29193662, 0., 0., 0., 1.;
     SE3 T_1_w(T_1_w_matrix);
     Vector camera_position = Vector::Zero();
 
@@ -29,18 +27,18 @@ int main() {
     double t = 0.6;
 
     Point v28_p;
-    v28_p << 0.823015  ,  0.60803428,  0. ;
+    v28_p << 0.823015, 0.60803428, 0.;
     // v28_p = T_1_w * v28_p;
     Vector v28_n;
-    v28_n << 0.,0.,1.;
+    v28_n << 0., 0., 1.;
     // v28_n = T_1_w * v28_n;
     Vertex v28(v28_p, v28_n, m, t);
     Light::Colour v28_obs = 0.377606521;
 
     Vertex v245;
-    v245.position() << 0.08868649,  1.,  0.7597348;
+    v245.position() << 0.08868649, 1., 0.7597348;
     // v245.position() = T_1_w * v245.position();
-    v245.normal() << 0.,  -1.,  0.;
+    v245.normal() << 0., -1., 0.;
     // v245.normal() = T_1_w * v245.normal();
     v245.material() = m;
     v245.texture() = t;
@@ -58,13 +56,15 @@ int main() {
     std::cout << "v245: " << v245 << std::endl;
     // std::cout << "v245.str(): " << v245.str() << std::endl << std::endl;
 
-    std::cout << "camera_position: " << camera_position << std::endl << std::endl;
+    std::cout << "camera_position: " << camera_position << std::endl
+              << std::endl;
     std::cout << "l: " << l << std::endl;
     // std::cout << "l.str(): " << l.str() << std::endl << std::endl;
 
     std::cout << "l.shade(v28): " << l.shade(v28, camera_position, &l_jacobian)
               << std::endl;
-    std::cout << "l.shade(v245): " << l.shade(v245, camera_position) << std::endl;
+    std::cout << "l.shade(v245): " << l.shade(v245, camera_position)
+              << std::endl;
 
     // // Comment out Create function in intensity_error.h to use this code
     // std::cout << std::endl << "v28_err" << std::endl;

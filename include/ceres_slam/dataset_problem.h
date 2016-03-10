@@ -13,7 +13,7 @@ namespace ceres_slam {
 
 //! Class for reading simulated datasets from file
 class DatasetProblem {
-public:
+   public:
     //! Camera type
     typedef StereoCamera<double> Camera;
     //! SO(3) type
@@ -28,7 +28,7 @@ public:
     typedef Vertex3D<double> Vertex;
 
     //! Default constructor
-    DatasetProblem(bool dir_light = false) : directional_light(dir_light) { }
+    DatasetProblem(bool dir_light = false) : directional_light(dir_light) {}
 
     //! Camera model
     Camera::Ptr camera;
@@ -42,8 +42,6 @@ public:
 
     //! Camera poses in base frame (to be estimated)
     std::vector<SE3> poses;
-    //! First pose, either identity or given by ground truth
-    SE3 first_pose;
 
     //! Map vertices in base frame (to be estimated)
     std::vector<Vertex> map_vertices;
@@ -103,17 +101,17 @@ public:
 
     //! Generate initial guess for poses and map points
     //! using scalar-weighted point cloud alignment for stereo VO
-    void compute_initial_guess();
+    void compute_initial_guess(unsigned int k1 = 0, unsigned int k2 = 0);
 
-private:
+   private:
     //! List of lists of indices corresponding to each state index
-    std::vector<std::vector<unsigned int> > state_indices_;
+    std::vector<std::vector<unsigned int>> state_indices_;
 
     //! List of lists of indices corresponding to each feature index
-    std::vector<std::vector<unsigned int> > feature_indices_;
+    std::vector<std::vector<unsigned int>> feature_indices_;
 
-}; // class DatasetProblem
+};  // class DatasetProblem
 
-} // namespace ceres_slam
+}  // namespace ceres_slam
 
-#endif // CERES_SLAM_DATASET_PROBLEM_H_
+#endif  // CERES_SLAM_DATASET_PROBLEM_H_

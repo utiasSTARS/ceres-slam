@@ -18,7 +18,7 @@ namespace ceres_slam {
 //! Vertex object for use with shading
 template <typename Scalar>
 class Vertex3D {
-public:
+   public:
     //! Point type
     typedef Point3D<Scalar> Point;
     //! Vector type
@@ -31,20 +31,18 @@ public:
     static const int dim = Point::dim + Vector::dim + Material<Scalar>::dim;
 
     //! Default constructor
-    Vertex3D() :
-        position_(Point() ),
-        normal_(Vector() ),
-        material_ptr_(nullptr),
-        texture_(Texture(0.) ) { }
+    Vertex3D()
+        : position_(Point()),
+          normal_(Vector()),
+          material_ptr_(nullptr),
+          texture_(Texture(0.)) {}
     //! Construct from position, normal, and phong parameters
-    Vertex3D(const Point& position,
-             const Vector& normal,
-             const MaterialPtr material,
-             const Texture texture) :
-        position_(position),
-        normal_(normal),
-        material_ptr_(material),
-        texture_(texture) { }
+    Vertex3D(const Point& position, const Vector& normal,
+             const MaterialPtr material, const Texture texture)
+        : position_(position),
+          normal_(normal),
+          material_ptr_(material),
+          texture_(texture) {}
 
     //! Return the position of the vertex (mutable)
     inline Point& position() { return position_; }
@@ -71,16 +69,15 @@ public:
     //! Convert to a string
     inline const std::string str() const {
         std::stringstream ss;
-        ss << this->position().str() << ","
-           << this->normal().str() << ","
+        ss << this->position().str() << "," << this->normal().str() << ","
            << this->material()->phong_params().format(CommaInitFmt) << ","
            << this->texture();
         return ss.str();
     }
 
     //! Ostream operator for vertices
-    friend std::ostream& operator<<( std::ostream& os,
-                                     const Vertex3D<Scalar>& v ) {
+    friend std::ostream& operator<<(std::ostream& os,
+                                    const Vertex3D<Scalar>& v) {
         os << "Vertex" << std::endl
            << "Position: " << v.position() << std::endl
            << "Normal: " << v.normal() << std::endl
@@ -88,7 +85,8 @@ public:
            << "Texture: " << v.texture();
         return os;
     }
-private:
+
+   private:
     //! Vertex position
     Point position_;
     //! Vertex surface normal
@@ -99,6 +97,6 @@ private:
     Texture texture_;
 };
 
-} // namespace ceres_slam
+}  // namespace ceres_slam
 
-#endif // CERES_SLAM_GEOMETRY_VERTEX3D_H_
+#endif  // CERES_SLAM_GEOMETRY_VERTEX3D_H_

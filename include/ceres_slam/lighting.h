@@ -7,4 +7,4 @@
 #include <ceres_slam/lighting/point_light.h>
 #include <ceres_slam/lighting/directional_light.h>
 
-#endif // CERES_SLAM_LIGHTING_H_
+#endif  // CERES_SLAM_LIGHTING_H_

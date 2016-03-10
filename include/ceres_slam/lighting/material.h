@@ -9,7 +9,7 @@ namespace ceres_slam {
 //! Material definition with Phong reflectance
 template <typename Scalar>
 class Material {
-public:
+   public:
     //! Pointer type
     typedef std::shared_ptr<Material> Ptr;
     //! Const pointer type
@@ -22,9 +22,9 @@ public:
     typedef Eigen::Matrix<Scalar, 1, dim, Eigen::RowMajor> PhongParams;
 
     //! Default constructor
-    Material() : Material(PhongParams::Zero()) { }
+    Material() : Material(PhongParams::Zero()) {}
     //! Construct from Phong parameter matrix
-    Material(PhongParams phong_params) : phong_params_(phong_params) { }
+    Material(PhongParams phong_params) : phong_params_(phong_params) {}
 
     //! Return the Phong parameter matrix (mutable)
     inline PhongParams& phong_params() { return phong_params_; }
@@ -47,15 +47,15 @@ public:
     inline const Colour& exponent() const { return phong_params_(2); }
 
     //! Ostream operator for materials
-    friend std::ostream& operator<<( std::ostream& os,
-                                     const Material<Scalar>& m ) {
+    friend std::ostream& operator<<(std::ostream& os,
+                                    const Material<Scalar>& m) {
         os << "Material" << std::endl
            << "Phong parameters: " << std::endl
            << m.phong_params();
         return os;
     }
 
-private:
+   private:
     //! Phong illumination parameters stored column-wise in a matrix.
     /*!
         phong_params_.col(0) is ambient,
@@ -64,6 +64,6 @@ private:
     PhongParams phong_params_;
 };
 
-} // namespace ceres_slam
+}  // namespace ceres_slam
 
-#endif // CERES_SLAM_MATERIAL_H_
+#endif  // CERES_SLAM_MATERIAL_H_

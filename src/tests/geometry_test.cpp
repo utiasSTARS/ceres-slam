@@ -13,8 +13,7 @@ using SO3 = ceres_slam::SO3Group<double>;
 using SE3 = ceres_slam::SE3Group<double>;
 
 void print_array(double* array, int n) {
-    for(int i = 0; i < n; ++i)
-        std::cout << *(array + i) << ", ";
+    for (int i = 0; i < n; ++i) std::cout << *(array + i) << ", ";
     std::cout << std::endl;
 }
 
@@ -134,10 +133,7 @@ int main() {
     std::cout << "T1: " << T1 << std::endl;
 
     SE3::TransformationMatrix T2_matrix;
-    T2_matrix << 0, -1, 0,  1,
-                 1,  0, 0, -1,
-                 0,  0, 1,  1,
-                 0,  0, 0,  1;
+    T2_matrix << 0, -1, 0, 1, 1, 0, 0, -1, 0, 0, 1, 1, 0, 0, 0, 1;
     SE3 T2(T2_matrix);
     std::cout << "T2: " << T2 << std::endl;
 
@@ -186,23 +182,32 @@ int main() {
     std::cout << "T6: " << T6 << std::endl;
     std::cout << "T6 * p6: " << T6 * p6 << std::endl;
 
-    SE3::TransformationMatrix T_0_w_matrix, T_1_0_ceres_matrix, T_1_w_ceres_matrix;
-    T_0_w_matrix << 1,-0,0,-1,0,-0.4472,-0.8944,0.4472,0,0.8944,-0.4472,1.342,0,0,0,1;
-    T_1_0_ceres_matrix << 0.9998,0.009125,-0.01825,0.04081,-0.009271,0.9999,-0.007961,0.0178,0.01818,0.008128,0.9998,-0.0349,0,0,0,1;
-    T_1_w_ceres_matrix << 0.9995,-0.02937,0.009072,-0.9472,-0.005199,-0.4525,-0.8918,0.4422,0.03029,0.8913,-0.4524,1.35,0,0,0,1;
+    SE3::TransformationMatrix T_0_w_matrix, T_1_0_ceres_matrix,
+        T_1_w_ceres_matrix;
+    T_0_w_matrix << 1, -0, 0, -1, 0, -0.4472, -0.8944, 0.4472, 0, 0.8944,
+        -0.4472, 1.342, 0, 0, 0, 1;
+    T_1_0_ceres_matrix << 0.9998, 0.009125, -0.01825, 0.04081, -0.009271,
+        0.9999, -0.007961, 0.0178, 0.01818, 0.008128, 0.9998, -0.0349, 0, 0, 0,
+        1;
+    T_1_w_ceres_matrix << 0.9995, -0.02937, 0.009072, -0.9472, -0.005199,
+        -0.4525, -0.8918, 0.4422, 0.03029, 0.8913, -0.4524, 1.35, 0, 0, 0, 1;
 
-    SO3 C_0_w(T_0_w_matrix.block<3,3>(0,0));
-    SO3 C_1_0(T_1_0_ceres_matrix.block<3,3>(0,0));
-    SO3 C_1_w(T_1_w_ceres_matrix.block<3,3>(0,0));
+    SO3 C_0_w(T_0_w_matrix.block<3, 3>(0, 0));
+    SO3 C_1_0(T_1_0_ceres_matrix.block<3, 3>(0, 0));
+    SO3 C_1_w(T_1_w_ceres_matrix.block<3, 3>(0, 0));
 
     std::cout << "C_0_w: " << C_0_w << std::endl;
     std::cout << "C_1_0: " << C_1_0 << std::endl;
     std::cout << "C_1_w: " << C_1_w << std::endl;
 
-    std::cout << "C_1_0.matrix() * C_0_w.matrix(): "
-              << std::endl << C_1_0.matrix() * C_0_w.matrix() << std::endl;
+    std::cout << "C_1_0.matrix() * C_0_w.matrix(): " << std::endl
+              << C_1_0.matrix() * C_0_w.matrix() << std::endl;
     std::cout << "C_1_0 * C_0_w: " << std::endl << C_1_0 * C_0_w << std::endl;
-    std::cout << "T_1_0_ceres_matrix.block<3,3>(0,0) * T_0_w_matrix.block<3,3>(0,0): " << std::endl << T_1_0_ceres_matrix.block<3,3>(0,0) * T_0_w_matrix.block<3,3>(0,0) << std::endl;
+    std::cout
+        << "T_1_0_ceres_matrix.block<3,3>(0,0) * T_0_w_matrix.block<3,3>(0,0): "
+        << std::endl
+        << T_1_0_ceres_matrix.block<3, 3>(0, 0) * T_0_w_matrix.block<3, 3>(0, 0)
+        << std::endl;
 
     SE3 T_0_w(T_0_w_matrix);
     SE3 T_1_0(T_1_0_ceres_matrix);
@@ -211,12 +216,14 @@ int main() {
     std::cout << "T_0_w: " << T_0_w << std::endl;
     std::cout << "T_1_0: " << T_1_0 << std::endl;
     std::cout << "T_1_w: " << T_1_w << std::endl;
-    std::cout << "T_1_0_ceres_matrix * T_0_w_matrix: "
-              << std::endl << T_1_0_ceres_matrix * T_0_w_matrix << std::endl;
+    std::cout << "T_1_0_ceres_matrix * T_0_w_matrix: " << std::endl
+              << T_1_0_ceres_matrix * T_0_w_matrix << std::endl;
     std::cout << "T_1_0 * T_0_w: " << std::endl << T_1_0 * T_0_w << std::endl;
 
-    std::cout << "T_1_w * T_1_w.inverse(): " << T_1_w * T_1_w.inverse() << std::endl;
-    std::cout << "T_1_w.inverse() * T_1_w: " << T_1_w.inverse() * T_1_w << std::endl;
+    std::cout << "T_1_w * T_1_w.inverse(): " << T_1_w * T_1_w.inverse()
+              << std::endl;
+    std::cout << "T_1_w.inverse() * T_1_w: " << T_1_w.inverse() * T_1_w
+              << std::endl;
 
     return EXIT_SUCCESS;
 }

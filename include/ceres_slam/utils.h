@@ -11,11 +11,15 @@ namespace ceres_slam {
 
 //! Templated version of fmax for use with ceres
 template <typename Scalar>
-Scalar fmax(Scalar a, Scalar b) { return ( (a >= b) ? a : b ); }
+Scalar fmax(Scalar a, Scalar b) {
+    return ((a >= b) ? a : b);
+}
 
 //! Templated version of fmin for use with ceres
 template <typename Scalar>
-Scalar fmin(Scalar a, Scalar b) { return ( (a <= b) ? a : b ); }
+Scalar fmin(Scalar a, Scalar b) {
+    return ((a <= b) ? a : b);
+}
 
 //! String formatting for Eigen file IO
 const Eigen::IOFormat CommaInitFmt(4, 1, ",", ",", "", "", "", "");
@@ -23,13 +27,12 @@ const Eigen::IOFormat CommaInitFmt(4, 1, ",", ",", "", "", "", "");
 //! Print an array given its address and size
 template <typename Scalar>
 void print_array(const Scalar* array, const int n) {
-    for(int i = 0; i < n; ++i)
-        std::cout << *(array + i) << std::endl;
+    for (int i = 0; i < n; ++i) std::cout << *(array + i) << std::endl;
 }
 
 //! Split a delimited string into a vector of tokens
 std::vector<std::string> split(const std::string str, const char del);
 
-} // namespace ceres_slam
+}  // namespace ceres_slam
 
-#endif // CERES_SLAM_UTILS_H_
+#endif  // CERES_SLAM_UTILS_H_
