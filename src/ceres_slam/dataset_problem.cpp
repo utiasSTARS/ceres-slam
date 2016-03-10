@@ -68,16 +68,16 @@ const bool DatasetProblem::read_csv(std::string filename) {
     if (directional_light) {
         std::cerr << "Reading initial light direction" << std::endl;
         tokens = reader.getLine();
-        initial_light_dir << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
+        light_dir << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
             std::stod(tokens.at(2));
-        initial_light_dir.normalize();
-        std::cerr << initial_light_dir << std::endl;
+        light_dir.normalize();
+        std::cerr << light_dir << std::endl;
     } else {
         std::cerr << "Reading initial light position" << std::endl;
         tokens = reader.getLine();
-        initial_light_pos << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
+        light_pos << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
             std::stod(tokens.at(2));
-        std::cerr << initial_light_pos << std::endl;
+        std::cerr << light_pos << std::endl;
     }
 
     // Read first ground truth pose
@@ -228,12 +228,19 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
     std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
 
+    if (k1 >= k2) {
+        k1 = 0;
+        k2 = num_states;
+    }
+
+    // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
+
     // Initialize the material (assuming everything is the same material)
     material = std::make_shared<Material<double>>(
         Material<double>::PhongParams(0., 0., 10.));
 
     // Iterate over all poses
-    for (unsigned int k = 1; k < num_states; ++k) {
+    for (unsigned int k = k1 + 1; k < k2; ++k) {
         pts_km1.clear();
         pts_k.clear();
         normals_km1.clear();
@@ -305,14 +312,6 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
 
         // Compound the transformation estimate onto the previous one
         poses[k] = T_k_km1 * poses[k - 1];
-
-        // Initialize the light source to something close to ground truth.
-        // Need to figure out a way to do this in general.
-        if (directional_light) {
-            light_dir = initial_light_dir;
-        } else {
-            light_pos = initial_light_pos;
-        }
 
         // If the map point does not have an initial guess already,
         // initialize it

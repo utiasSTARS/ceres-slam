@@ -54,12 +54,8 @@ class DatasetProblem {
     bool directional_light;
     //! Light source position in base frame (to be estimated)
     Point light_pos;
-    //! Noisy initial guess for light source position (temporary)
-    Point initial_light_pos;
     //! Light source position in base frame (to be estimated)
     Vector light_dir;
-    //! Noisy initial guess for light source position (temporary)
-    Vector initial_light_dir;
 
     //! Material (just one for now, to be estimated)
     Material<double>::Ptr material;

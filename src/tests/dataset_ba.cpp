@@ -23,56 +23,12 @@ using Point = ceres_slam::DatasetProblem::Point;
 using Vector = ceres_slam::DatasetProblem::Vector;
 using Camera = ceres_slam::DatasetProblem::Camera;
 
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        std::cerr << "usage: dataset_ba <input_file> "
-                  << "[--nolight | --dirlight] [--multistage]" << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    // Defaults
-    bool use_light = true;
-    bool directional_light = false;
-    bool multi_stage = false;
-
-    // Parse command line arguments
-    std::string filename(argv[1]);
-    for (int a = 2; a < argc; ++a) {
-        std::string flag(argv[a]);
-
-        if (flag == "--nolight") {
-            use_light = false;
-            directional_light = false;
-        } else if (flag == "--dirlight") {
-            use_light = true;
-            directional_light = true;
-        } else if (flag == "--multistage") {
-            multi_stage = true;
-            use_light = true;
-        } else {
-            std::cerr << "usage: dataset_ba <input_file> "
-                      << "[--nolight | --dirlight] [--multistage]" << std::endl;
-            return EXIT_FAILURE;
-        }
-    }
-
-    // Read dataset from file
-    ceres_slam::DatasetProblem dataset(directional_light);
-    if (!dataset.read_csv(filename)) {
-        return EXIT_FAILURE;
-    }
-
-    // Compute initial guess
-    std::cerr << "Computing VO initial guess" << std::endl;
-    dataset.compute_initial_guess();
-
-    // Output the initial guess to a CSV file for comparison
-    std::vector<std::string> tokens;
-    tokens = ceres_slam::split(filename, '.');
-    dataset.write_csv(tokens.at(0) + "_initial.csv");
-
+void solveWindow(ceres_slam::DatasetProblem &dataset, unsigned int k1,
+                 unsigned int k2, bool use_light, bool directional_light,
+                 bool multi_stage) {
     // Build the problem
-    std::cerr << "Building problem" << std::endl;
+    std::cerr << "Working on interval [" << k1 << "," << k2 << ")" << std::endl;
+
     ceres::Problem problem;
 
     // Compute the stiffness matrix to apply to the residuals
@@ -95,7 +51,7 @@ int main(int argc, char **argv) {
         ceres_slam::UnitVectorPerturbation::Create();
 
     // Add observations and cost functions
-    for (unsigned int k = 0; k < dataset.num_states; ++k) {
+    for (unsigned int k = k1; k < k2; ++k) {
         for (unsigned int i : dataset.obs_indices_at_state(k)) {
             // Map point ID for this observation
             unsigned int j = dataset.vertex_ids[i];
@@ -118,11 +74,11 @@ int main(int argc, char **argv) {
     }
 
     // Hold the first pose constant
-    problem.SetParameterBlockConstant(dataset.poses[0].data());
+    problem.SetParameterBlockConstant(dataset.poses[k1].data());
 
     // Set solver options
     ceres::Solver::Options solver_options;
-    solver_options.minimizer_progress_to_stdout = true;
+    solver_options.minimizer_progress_to_stdout = false;
     solver_options.num_threads = 8;
     solver_options.num_linear_solver_threads = 8;
     solver_options.max_num_iterations = 1000;
@@ -135,18 +91,17 @@ int main(int argc, char **argv) {
     // Create sumary container
     ceres::Solver::Summary summary;
 
-    // Solve!
     ///////////////////////////////////////////////////////////////////////
     // Stage 1 - Optimize points and poses only, no lighting
     if (multi_stage) {
         std::cerr << "Solving stage 1: poses and points" << std::endl;
         Solve(solver_options, &problem, &summary);
-        std::cout << summary.BriefReport() << std::endl;
+        std::cout << summary.BriefReport() << std::endl << std::endl;
     }
 
     // Add the lighting terms to the problem
     if (use_light) {
-        for (unsigned int k = 0; k < dataset.num_states; ++k) {
+        for (unsigned int k = k1; k < k2; ++k) {
             for (unsigned int i : dataset.obs_indices_at_state(k)) {
                 // Map point ID for this observation
                 unsigned int j = dataset.vertex_ids[i];
@@ -256,7 +211,7 @@ int main(int argc, char **argv) {
     ///////////////////////////////////////////////////////////////////////
     // Stage 2 - Optimize lighting only, hold poses and points constant
     if (multi_stage) {
-        for (unsigned int k = 0; k < dataset.num_states; ++k) {
+        for (unsigned int k = k1; k < k2; ++k) {
             for (unsigned int i : dataset.obs_indices_at_state(k)) {
                 // Map point ID for this observation
                 unsigned int j = dataset.vertex_ids[i];
@@ -272,9 +227,9 @@ int main(int argc, char **argv) {
 
         std::cerr << "Solving stage 2: lighting" << std::endl;
         Solve(solver_options, &problem, &summary);
-        std::cout << summary.BriefReport() << std::endl;
+        std::cout << summary.BriefReport() << std::endl << std::endl;
 
-        for (unsigned int k = 0; k < dataset.num_states; ++k) {
+        for (unsigned int k = k1; k < k2; ++k) {
             for (unsigned int i : dataset.obs_indices_at_state(k)) {
                 // Map point ID for this observation
                 unsigned int j = dataset.vertex_ids[i];
@@ -285,7 +240,7 @@ int main(int argc, char **argv) {
                 }
             }
 
-            if (k > 0) {
+            if (k > k1) {
                 problem.SetParameterBlockVariable(dataset.poses[k].data());
             }
         }
@@ -295,9 +250,82 @@ int main(int argc, char **argv) {
     // Stage 3 / Default option - Optimize lighting, poses, and points jointly
     std::cerr << "Solving SLAM and lighting jointly" << std::endl;
     Solve(solver_options, &problem, &summary);
-    std::cout << summary.BriefReport() << std::endl;
+    std::cout << summary.BriefReport() << std::endl << std::endl;
 
     // Estimate covariance?
+}
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        std::cerr << "usage: dataset_ba <input_file> "
+                  << "[--nolight | --dirlight]  [--window N] [--multistage]"
+                  << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    // Defaults
+    bool use_light = true;
+    bool directional_light = false;
+    bool multi_stage = false;
+    bool use_window = false;
+    unsigned int window_size = 0;
+
+    // Parse command line arguments
+    std::string filename(argv[1]);
+    for (int a = 2; a < argc; ++a) {
+        std::string flag(argv[a]);
+
+        if (flag == "--nolight") {
+            use_light = false;
+            directional_light = false;
+        } else if (flag == "--dirlight") {
+            use_light = true;
+            directional_light = true;
+        } else if (flag == "--multistage") {
+            multi_stage = true;
+            use_light = true;
+        } else if (flag == "--window" && argc > a + 1) {
+            use_window = true;
+            window_size = std::atoi(argv[a + 1]);
+            ++a;
+        } else {
+            std::cerr << "usage: dataset_ba <input_file> "
+                      << "[--nolight | --dirlight] [--window N] [--multistage]"
+                      << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
+
+    // Read dataset from file
+    ceres_slam::DatasetProblem dataset(directional_light);
+    if (!dataset.read_csv(filename)) {
+        return EXIT_FAILURE;
+    }
+
+    // Compute initial guess
+    std::cerr << "Computing VO initial guess" << std::endl;
+    dataset.compute_initial_guess();
+
+    // Output the initial guess to a CSV file for comparison
+    std::vector<std::string> tokens;
+    tokens = ceres_slam::split(filename, '.');
+    dataset.write_csv(tokens.at(0) + "_initial.csv");
+
+    // Do sliding window BA
+    if (!use_window) {
+        window_size = dataset.num_states;
+    }
+
+    for (unsigned int k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
+        unsigned int k2 = fmin(k1 + window_size, dataset.num_states);
+        // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
+        if (k1 > 0) {
+            dataset.compute_initial_guess(k2 - 1, k2);
+        } else {
+            dataset.compute_initial_guess(k1, k2);
+        }
+        solveWindow(dataset, k1, k2, use_light, directional_light, multi_stage);
+    }
 
     // Output optimized state to file
     std::cerr << "Outputting to file " << std::endl;
