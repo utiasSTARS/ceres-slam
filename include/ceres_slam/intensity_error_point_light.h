@@ -36,6 +36,7 @@ class IntensityErrorPointLightAutomatic {
         typedef typename LightT::Colour ColourT;
         typedef Material<T> MaterialT;
         typedef typename MaterialT::PhongParams PhongParamsT;
+        typedef Texture<T> TextureT;
 
         // Camera pose in the global frame
         Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
@@ -61,7 +62,9 @@ class IntensityErrorPointLightAutomatic {
         // std::cout << "material: " << *material << std::endl;
 
         // Vertex in the camera frame for shading
-        VertexT vertex_c(pt_c, normal_c, material, *texture_ceres);
+        typename TextureT::Ptr texture =
+            std::make_shared<TextureT>(*texture_ceres);
+        VertexT vertex_c(pt_c, normal_c, material, texture);
         // std::cout << "vertex_c: " << vertex_c << std::endl;
 
         // Light source position

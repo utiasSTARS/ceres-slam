@@ -70,7 +70,7 @@ class PhongModel {
             return Colour(static_cast<Scalar>(0));
         }
 
-        return vertex.texture() * light_dir_dot_normal;
+        return vertex.texture()->col() * light_dir_dot_normal;
     }
 
     //! Shade the specular component of the Phong model

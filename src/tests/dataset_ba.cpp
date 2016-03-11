@@ -120,7 +120,7 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, unsigned int k1,
                                 .material()
                                 ->phong_params()
                                 .data(),
-                            dataset.map_vertices[j].texture_ptr(),
+                            dataset.map_vertices[j].texture()->data(),
                             dataset.light_dir.data());
                     } else {
                         // Cost function for the intensity observation
@@ -136,7 +136,7 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, unsigned int k1,
                                 .material()
                                 ->phong_params()
                                 .data(),
-                            dataset.map_vertices[j].texture_ptr(),
+                            dataset.map_vertices[j].texture()->data(),
                             dataset.light_pos.data());
                     }
 
@@ -173,13 +173,13 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, unsigned int k1,
 
                     // DEBUG: Hold texture constant
                     // problem.SetParameterBlockConstant(dataset.map_vertices[j]
-                    //     .texture_ptr() );
+                    //     .texture()->data() );
 
                     // Set upper and lower bounds on texture values
                     problem.SetParameterLowerBound(
-                        dataset.map_vertices[j].texture_ptr(), 0, 0.);
+                        dataset.map_vertices[j].texture()->data(), 0, 0.);
                     problem.SetParameterUpperBound(
-                        dataset.map_vertices[j].texture_ptr(), 0, 1.);
+                        dataset.map_vertices[j].texture()->data(), 0, 1.);
 
                     // Cost function for the normal observation
                     ceres::CostFunction *normal_cost =

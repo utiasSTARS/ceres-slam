@@ -39,6 +39,8 @@ class DatasetProblem {
     unsigned int num_states;
     //! Number of map points to optimize
     unsigned int num_vertices;
+    //! Number of materials to optimize
+    unsigned int num_materials;
 
     //! Camera poses in base frame (to be estimated)
     std::vector<SE3> poses;
@@ -49,6 +51,8 @@ class DatasetProblem {
     std::vector<unsigned int> vertex_ids;
     //! True if map vertex j has been initialized
     std::vector<bool> initialized_vertex;
+    //! Map vertex material IDs in stereo_obs_list
+    std::vector<unsigned int> material_ids;
 
     //! Use directional light?
     bool directional_light;
@@ -57,8 +61,10 @@ class DatasetProblem {
     //! Light source position in base frame (to be estimated)
     Vector light_dir;
 
-    //! Material (just one for now, to be estimated)
-    Material<double>::Ptr material;
+    //! Materials (to be estimated)
+    std::vector<Material<double>::Ptr> materials;
+    //! Textures (to be estimated)
+    std::vector<Texture<double>::Ptr> textures;
 
     //! List of stereo observations
     std::vector<Camera::Observation> stereo_obs_list;
@@ -95,6 +101,9 @@ class DatasetProblem {
     //! Return list of indices corresponding to a specified feature index
     const std::vector<unsigned int> obs_indices_for_feature(int j) const;
 
+    //! Return list of indices corresponding to a specified material ID
+    const std::vector<unsigned int> obs_indices_for_material(int m) const;
+
     //! Generate initial guess for poses and map points
     //! using scalar-weighted point cloud alignment for stereo VO
     void compute_initial_guess(unsigned int k1 = 0, unsigned int k2 = 0);
@@ -105,6 +114,9 @@ class DatasetProblem {
 
     //! List of lists of indices corresponding to each feature index
     std::vector<std::vector<unsigned int>> feature_indices_;
+
+    //! List of lists of indices corresponding to each material index
+    std::vector<std::vector<unsigned int>> material_indices_;
 
 };  // class DatasetProblem
 

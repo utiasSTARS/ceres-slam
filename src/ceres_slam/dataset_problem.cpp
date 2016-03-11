@@ -29,8 +29,11 @@ const bool DatasetProblem::read_csv(std::string filename) {
     tokens = reader.getLine();
     num_states = std::stoi(tokens.at(0));
     num_vertices = std::stoi(tokens.at(1));
+    num_materials = std::stoi(tokens.at(2));
     poses.resize(num_states);
     map_vertices.resize(num_vertices);
+    materials.resize(num_materials);
+    textures.resize(num_materials);
     for (unsigned int j = 0; j < num_vertices; ++j) {
         initialized_vertex.push_back(false);
     }
@@ -101,13 +104,15 @@ const bool DatasetProblem::read_csv(std::string filename) {
         t.push_back(std::stod(tokens.at(0)));
         unsigned int j = std::stoi(tokens.at(1));
         vertex_ids.push_back(j);
-        double u = std::stod(tokens.at(2));
-        double v = std::stod(tokens.at(3));
-        double d = std::stod(tokens.at(4));
+        unsigned int mat_id = std::stoi(tokens.at(2));
+        material_ids.push_back(mat_id);
+        double u = std::stod(tokens.at(3));
+        double v = std::stod(tokens.at(4));
+        double d = std::stod(tokens.at(5));
         stereo_obs_list.push_back(Camera::Observation(u, v, d));
-        int_list.push_back(std::stod(tokens.at(5)));
-        normal_obs << std::stod(tokens.at(6)), std::stod(tokens.at(7)),
-            std::stod(tokens.at(8));
+        int_list.push_back(std::stod(tokens.at(6)));
+        normal_obs << std::stod(tokens.at(7)), std::stod(tokens.at(8)),
+            std::stod(tokens.at(9));
         normal_obs_list.push_back(normal_obs);
     }
     std::cerr << "read " << stereo_obs_list.size() << " observations"
@@ -144,6 +149,24 @@ const bool DatasetProblem::read_csv(std::string filename) {
     }
 
     std::cerr << "found " << feature_indices_.size() << " unique features"
+              << std::endl;
+
+    // Generate a list of observation indices for each feature
+    std::cerr << "Generating observation indices from material IDs... ";
+    material_indices_.resize(num_materials);
+    std::vector<unsigned int> m_indices;
+
+    for (unsigned int m = 0; m < num_materials; ++m) {
+        m_indices.clear();
+        for (unsigned int idx = 0; idx < material_ids.size(); idx++) {
+            if (material_ids.at(idx) == m) {
+                m_indices.push_back(idx);
+            }
+        }
+        material_indices_.at(m) = m_indices;
+    }
+
+    std::cerr << "found " << material_indices_.size() << " unique materials"
               << std::endl;
 
     return true;
@@ -221,6 +244,11 @@ const std::vector<unsigned int> DatasetProblem::obs_indices_for_feature(
     return feature_indices_.at(j);
 }
 
+const std::vector<unsigned int> DatasetProblem::obs_indices_for_material(
+    int m) const {
+    return material_indices_.at(m);
+}
+
 void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
     std::vector<Point> pts_km1, pts_k;
     std::vector<Vector> normals_km1;
@@ -235,9 +263,20 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
 
     // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
 
-    // Initialize the material (assuming everything is the same material)
-    material = std::make_shared<Material<double>>(
-        Material<double>::PhongParams(0., 0., 10.));
+    // Initialize materials
+    for (unsigned int m = 0; m < materials.size(); ++m) {
+        materials[m] = std::make_shared<Material<double>>(
+            Material<double>::PhongParams(0., 0., 1.));
+
+        std::vector<double> ints;
+        for (unsigned int idx : obs_indices_for_material(m)) {
+            ints.push_back(int_list.at(idx));
+        }
+        std::nth_element(ints.begin(), ints.begin() + ints.size() / 2,
+                         ints.end());
+        textures[m] =
+            std::make_shared<Texture<double>>(ints.at(ints.size() / 2));
+    }
 
     // Iterate over all poses
     for (unsigned int k = k1 + 1; k < k2; ++k) {
@@ -328,20 +367,22 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
                 // Create the vertex object
                 map_vertices[j_km1[i]].position() = vertex_position;
                 map_vertices[j_km1[i]].normal() = vertex_normal;
-                map_vertices[j_km1[i]].material() = material;
+                map_vertices[j_km1[i]].material() = materials[material_ids[i]];
+                map_vertices[j_km1[i]].texture() = textures[material_ids[i]];
 
                 // Diffuse initialization
                 // Option 1: use the first observed intensity
                 // map_vertices[ j_km1[i] ].texture() = intensities_km1[i];
                 // Option 2: use the minimum observed intensity
                 // Option 3: use the median observed intensity
-                std::vector<double> ints;
-                for (unsigned int idx : obs_indices_for_feature(j_km1[i])) {
-                    ints.push_back(int_list.at(idx));
-                }
-                std::nth_element(ints.begin(), ints.begin() + ints.size() / 2,
-                                 ints.end());
-                map_vertices[j_km1[i]].texture() = ints.at(ints.size() / 2);
+                // std::vector<double> ints;
+                // for (unsigned int idx : obs_indices_for_feature(j_km1[i])) {
+                //     ints.push_back(int_list.at(idx));
+                // }
+                // std::nth_element(ints.begin(), ints.begin() + ints.size() /
+                // 2,
+                //                  ints.end());
+                // map_vertices[j_km1[i]].texture() = ints.at(ints.size() / 2);
 
                 // Set the initialization flag to true for this vertex
                 initialized_vertex[j_km1[i]] = true;

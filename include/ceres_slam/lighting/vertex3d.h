@@ -12,6 +12,7 @@
 #include <ceres_slam/geometry.h>
 
 #include "material.h"
+#include "texture.h"
 
 namespace ceres_slam {
 
@@ -26,7 +27,7 @@ class Vertex3D {
     //! Material pointer type
     typedef typename Material<Scalar>::Ptr MaterialPtr;
     //! Texture type
-    typedef Scalar Texture;
+    typedef typename Texture<Scalar>::Ptr TexturePtr;
     //! Vertex dimension
     static const int dim = Point::dim + Vector::dim + Material<Scalar>::dim;
 
@@ -35,14 +36,14 @@ class Vertex3D {
         : position_(Point()),
           normal_(Vector()),
           material_ptr_(nullptr),
-          texture_(Texture(0.)) {}
+          texture_ptr_(nullptr) {}
     //! Construct from position, normal, and phong parameters
     Vertex3D(const Point& position, const Vector& normal,
-             const MaterialPtr material, const Texture texture)
+             const MaterialPtr material, const TexturePtr texture)
         : position_(position),
           normal_(normal),
           material_ptr_(material),
-          texture_(texture) {}
+          texture_ptr_(texture) {}
 
     //! Return the position of the vertex (mutable)
     inline Point& position() { return position_; }
@@ -60,18 +61,16 @@ class Vertex3D {
     inline const MaterialPtr& material() const { return material_ptr_; }
 
     //! Return the diffuse texture at the vertex (mutable)
-    inline Texture& texture() { return texture_; }
+    inline TexturePtr& texture() { return texture_ptr_; }
     //! Return the diffuse texture at the vertex (const)
-    inline const Texture& texture() const { return texture_; }
-    //! Return a pointer to the diffuse texture
-    inline Texture* texture_ptr() { return &texture_; }
+    inline const TexturePtr& texture() const { return texture_ptr_; }
 
     //! Convert to a string
     inline const std::string str() const {
         std::stringstream ss;
         ss << this->position().str() << "," << this->normal().str() << ","
            << this->material()->phong_params().format(CommaInitFmt) << ","
-           << this->texture();
+           << this->texture()->col();
         return ss.str();
     }
 
@@ -82,7 +81,7 @@ class Vertex3D {
            << "Position: " << v.position() << std::endl
            << "Normal: " << v.normal() << std::endl
            << "Material: " << *(v.material()) << std::endl
-           << "Texture: " << v.texture();
+           << "Texture: " << v.texture()->col();
         return os;
     }
 
@@ -94,7 +93,7 @@ class Vertex3D {
     //! Vertex material
     MaterialPtr material_ptr_;
     //! Vertex texture
-    Texture texture_;
+    TexturePtr texture_ptr_;
 };
 
 }  // namespace ceres_slam

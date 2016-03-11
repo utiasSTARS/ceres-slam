@@ -13,6 +13,7 @@ using SE3 = ceres_slam::SE3Group<double>;
 using Vertex = ceres_slam::Vertex3D<double>;
 using Light = ceres_slam::PointLight<double>;
 using Material = ceres_slam::Material<double>;
+using Texture = ceres_slam::Texture<double>;
 
 int main() {
     SE3::TransformationMatrix T_1_w_matrix;
@@ -24,7 +25,7 @@ int main() {
 
     Material::Ptr m = std::make_shared<Material>();
     m->phong_params() = Material::PhongParams(0.1, 0.3, 10.);
-    double t = 0.6;
+    Texture::Ptr t = std::make_shared<Texture>(0.6);
 
     Point v28_p;
     v28_p << 0.823015, 0.60803428, 0.;
