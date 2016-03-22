@@ -28,18 +28,15 @@ const bool DatasetProblem::read_csv(std::string filename) {
     std::cerr << "Reading metadata... ";
     tokens = reader.getLine();
     num_states = std::stoi(tokens.at(0));
-    num_vertices = std::stoi(tokens.at(1));
-    num_materials = std::stoi(tokens.at(2));
+    num_points = std::stoi(tokens.at(1));
     poses.resize(num_states);
-    map_vertices.resize(num_vertices);
-    materials.resize(num_materials);
-    textures.resize(num_materials);
-    for (unsigned int j = 0; j < num_vertices; ++j) {
-        initialized_vertex.push_back(false);
+    map_points.resize(num_points);
+    for (unsigned int j = 0; j < num_points; ++j) {
+        initialized_point.push_back(false);
     }
 
     std::cerr << "expecting " << num_states << " states"
-              << " and " << num_vertices << " points" << std::endl;
+              << " and " << num_points << " points" << std::endl;
 
     // Read camera intrinsics
     std::cerr << "Reading camera intrinsics" << std::endl;
@@ -57,31 +54,8 @@ const bool DatasetProblem::read_csv(std::string filename) {
     tokens = reader.getLine();
     stereo_obs_var << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
         std::stod(tokens.at(2));
-    normal_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
-        std::stod(tokens.at(5));
-    int_var = std::stod(tokens.at(6));
     std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
               << std::endl;
-    std::cerr << "Normal observation variance: " << normal_obs_var.transpose()
-              << std::endl;
-    std::cerr << "Intensity variance: " << int_var << std::endl;
-
-    // Read the initial light position/direction
-    // Need to find a better way of initializing this in the future
-    if (directional_light) {
-        std::cerr << "Reading initial light direction" << std::endl;
-        tokens = reader.getLine();
-        light_dir << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
-            std::stod(tokens.at(2));
-        light_dir.normalize();
-        std::cerr << light_dir << std::endl;
-    } else {
-        std::cerr << "Reading initial light position" << std::endl;
-        tokens = reader.getLine();
-        light_pos << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
-            std::stod(tokens.at(2));
-        std::cerr << light_pos << std::endl;
-    }
 
     // Read first ground truth pose
     std::cerr << "Reading first ground truth pose" << std::endl;
@@ -101,47 +75,41 @@ const bool DatasetProblem::read_csv(std::string filename) {
     Vector normal_obs;
     while (!reader.atEOF()) {
         tokens = reader.getLine();
-        t.push_back(std::stod(tokens.at(0)));
+        k.push_back(std::stod(tokens.at(0)));
         unsigned int j = std::stoi(tokens.at(1));
-        vertex_ids.push_back(j);
-        unsigned int mat_id = std::stoi(tokens.at(2));
-        material_ids.push_back(mat_id);
-        double u = std::stod(tokens.at(3));
-        double v = std::stod(tokens.at(4));
-        double d = std::stod(tokens.at(5));
+        point_ids.push_back(j);
+        double u = std::stod(tokens.at(2));
+        double v = std::stod(tokens.at(3));
+        double d = std::stod(tokens.at(4));
         stereo_obs_list.push_back(Camera::Observation(u, v, d));
-        int_list.push_back(std::stod(tokens.at(6)));
-        normal_obs << std::stod(tokens.at(7)), std::stod(tokens.at(8)),
-            std::stod(tokens.at(9));
-        normal_obs_list.push_back(normal_obs);
     }
     std::cerr << "read " << stereo_obs_list.size() << " observations"
               << std::endl;
 
     // Generate a list of observation indices for each state
-    std::cerr << "Generating observation indices from timestamps... ";
-    std::vector<unsigned int> t_indices;
-    t_indices.push_back(0);
-    for (unsigned int idx = 1; idx < t.size(); ++idx) {
-        if (t.at(idx) != t.at(idx - 1)) {
-            state_indices_.push_back(t_indices);
-            t_indices.clear();
+    std::cerr << "Generating observation indices for each state... ";
+    std::vector<unsigned int> k_indices;
+    k_indices.push_back(0);
+    for (unsigned int idx = 1; idx < k.size(); ++idx) {
+        if (k.at(idx) != k.at(idx - 1)) {
+            state_indices_.push_back(k_indices);
+            k_indices.clear();
         }
-        t_indices.push_back(idx);
+        k_indices.push_back(idx);
     }
-    state_indices_.push_back(t_indices);
-    std::cerr << "found " << state_indices_.size() << " unique timestamps"
+    state_indices_.push_back(k_indices);
+    std::cerr << "found " << state_indices_.size() << " unique states"
               << std::endl;
 
     // Generate a list of observation indices for each feature
-    std::cerr << "Generating observation indices from feature IDs... ";
-    feature_indices_.resize(num_vertices);
+    std::cerr << "Generating observation indices for each feature... ";
+    feature_indices_.resize(num_points);
     std::vector<unsigned int> j_indices;
 
-    for (unsigned int j = 0; j < num_vertices; ++j) {
+    for (unsigned int j = 0; j < num_points; ++j) {
         j_indices.clear();
-        for (unsigned int idx = 0; idx < vertex_ids.size(); idx++) {
-            if (vertex_ids.at(idx) == j) {
+        for (unsigned int idx = 0; idx < point_ids.size(); idx++) {
+            if (point_ids.at(idx) == j) {
                 j_indices.push_back(idx);
             }
         }
@@ -151,24 +119,6 @@ const bool DatasetProblem::read_csv(std::string filename) {
     std::cerr << "found " << feature_indices_.size() << " unique features"
               << std::endl;
 
-    // Generate a list of observation indices for each feature
-    std::cerr << "Generating observation indices from material IDs... ";
-    material_indices_.resize(num_materials);
-    std::vector<unsigned int> m_indices;
-
-    for (unsigned int m = 0; m < num_materials; ++m) {
-        m_indices.clear();
-        for (unsigned int idx = 0; idx < material_ids.size(); idx++) {
-            if (material_ids.at(idx) == m) {
-                m_indices.push_back(idx);
-            }
-        }
-        material_indices_.at(m) = m_indices;
-    }
-
-    std::cerr << "found " << material_indices_.size() << " unique materials"
-              << std::endl;
-
     return true;
 }
 
@@ -176,12 +126,10 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     std::vector<std::string> tokens = split(filename, '.');
     std::string filename_poses = tokens.at(0) + "_poses.csv";
     std::string filename_map = tokens.at(0) + "_map.csv";
-    std::string filename_lights = tokens.at(0) + "_lights.csv";
 
     // Open files
     std::ofstream pose_file(filename_poses);
     std::ofstream map_file(filename_map);
-    std::ofstream light_file(filename_lights);
 
     // Quit if you can't open the files
     if (!pose_file.is_open()) {
@@ -191,11 +139,6 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     }
     if (!map_file.is_open()) {
         std::cerr << "Error: Couldn't open file " << filename_map << std::endl;
-        return false;
-    }
-    if (!light_file.is_open()) {
-        std::cerr << "Error: Couldn't open file " << filename_lights
-                  << std::endl;
         return false;
     }
 
@@ -208,51 +151,33 @@ const bool DatasetProblem::write_csv(std::string filename) const {
         pose_file << T.str() << std::endl;
     }
 
-    // Convert initialized vertices to CSV entries
-    map_file << "point_id, x, y, z, nx, ny, nz, ka, ks, exponent, kd"
-             << std::endl;
-    for (unsigned int j = 0; j < map_vertices.size(); ++j) {
-        if (initialized_vertex[j]) {
-            map_file << j << "," << map_vertices[j].str() << std::endl;
+    // Convert initialized points to CSV entries
+    map_file << "point_id, x, y, z" << std::endl;
+    for (unsigned int j = 0; j < map_points.size(); ++j) {
+        if (initialized_point[j]) {
+            map_file << j << "," << map_points[j].str() << std::endl;
         }
-    }
-
-    // Convert light position/direction to CSV entries
-    if (directional_light) {
-        light_file << "i, j, k" << std::endl;
-        light_file << light_dir.str() << std::endl;
-    } else {
-        light_file << "x, y, z" << std::endl;
-        light_file << light_pos.str() << std::endl;
     }
 
     // Close files
     pose_file.close();
     map_file.close();
-    light_file.close();
 
     return true;
 }
 
 const std::vector<unsigned int> DatasetProblem::obs_indices_at_state(
-    int k) const {
+    unsigned int k) const {
     return state_indices_.at(k);
 }
 
 const std::vector<unsigned int> DatasetProblem::obs_indices_for_feature(
-    int j) const {
+    unsigned int j) const {
     return feature_indices_.at(j);
-}
-
-const std::vector<unsigned int> DatasetProblem::obs_indices_for_material(
-    int m) const {
-    return material_indices_.at(m);
 }
 
 void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
     std::vector<Point> pts_km1, pts_k;
-    std::vector<Vector> normals_km1;
-    std::vector<double> intensities_km1;
     std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
 
@@ -263,27 +188,10 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
 
     // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
 
-    // Initialize materials
-    for (unsigned int m = 0; m < materials.size(); ++m) {
-        materials[m] = std::make_shared<Material<double>>(
-            Material<double>::PhongParams(0., 0., 1.));
-
-        std::vector<double> ints;
-        for (unsigned int idx : obs_indices_for_material(m)) {
-            ints.push_back(int_list.at(idx));
-        }
-        std::nth_element(ints.begin(), ints.begin() + ints.size() / 2,
-                         ints.end());
-        textures[m] =
-            std::make_shared<Texture<double>>(ints.at(ints.size() / 2));
-    }
-
     // Iterate over all poses
     for (unsigned int k = k1 + 1; k < k2; ++k) {
         pts_km1.clear();
         pts_k.clear();
-        normals_km1.clear();
-        intensities_km1.clear();
         j_km1.clear();
         j_k.clear();
         idx_km1 = obs_indices_at_state(k - 1);
@@ -291,10 +199,10 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
 
         // Find point IDs for both poses
         for (unsigned int i : idx_km1) {
-            j_km1.push_back(vertex_ids[i]);
+            j_km1.push_back(point_ids[i]);
         }
         for (unsigned int i : idx_k) {
-            j_k.push_back(vertex_ids[i]);
+            j_k.push_back(point_ids[i]);
         }
 
         // Find reciprocal point matches and delete unmatched indices
@@ -316,12 +224,6 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
         // Triangulate map points from each pose
         for (unsigned int i : idx_km1) {
             pts_km1.push_back(camera->triangulate(stereo_obs_list[i]));
-            // Also store the observed normals corresponding to each
-            // point in case we need to use them as an initial guess
-            normals_km1.push_back(normal_obs_list[i]);
-
-            // Store the intensities of each observed point as well
-            intensities_km1.push_back(int_list[i]);
         }
         for (unsigned int i : idx_k) {
             pts_k.push_back(camera->triangulate(stereo_obs_list[i]));
@@ -355,37 +257,16 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
         // If the map point does not have an initial guess already,
         // initialize it
         for (unsigned int i : inlier_idx) {
-            if (!initialized_vertex[j_km1[i]]) {
+            if (!initialized_point[j_km1[i]] || reinitialize_points_) {
                 // Initialize the position with the guess from the
                 // first point cloud, transformed into the base frame
-                Point vertex_position = poses[k - 1].inverse() * pts_km1[i];
+                Point point_position = poses[k - 1].inverse() * pts_km1[i];
 
-                // Initialize the normal with the guess from the
-                // first point cloud, transformed into the base frame
-                Vector vertex_normal = poses[k - 1].inverse() * normals_km1[i];
+                // Create the point object
+                map_points[j_km1[i]] = point_position;
 
-                // Create the vertex object
-                map_vertices[j_km1[i]].position() = vertex_position;
-                map_vertices[j_km1[i]].normal() = vertex_normal;
-                map_vertices[j_km1[i]].material() = materials[material_ids[i]];
-                map_vertices[j_km1[i]].texture() = textures[material_ids[i]];
-
-                // Diffuse initialization
-                // Option 1: use the first observed intensity
-                // map_vertices[ j_km1[i] ].texture() = intensities_km1[i];
-                // Option 2: use the minimum observed intensity
-                // Option 3: use the median observed intensity
-                // std::vector<double> ints;
-                // for (unsigned int idx : obs_indices_for_feature(j_km1[i])) {
-                //     ints.push_back(int_list.at(idx));
-                // }
-                // std::nth_element(ints.begin(), ints.begin() + ints.size() /
-                // 2,
-                //                  ints.end());
-                // map_vertices[j_km1[i]].texture() = ints.at(ints.size() / 2);
-
-                // Set the initialization flag to true for this vertex
-                initialized_vertex[j_km1[i]] = true;
+                // Set the initialization flag to true for this point
+                initialized_point[j_km1[i]] = true;
             }
         }
     }

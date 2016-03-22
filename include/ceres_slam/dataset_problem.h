@@ -24,71 +24,47 @@ class DatasetProblem {
     typedef Point3D<double> Point;
     //! Vector type
     typedef Vector3D<double> Vector;
-    //! Vertex type
-    typedef Vertex3D<double> Vertex;
 
     //! Default constructor
-    DatasetProblem(bool dir_light = false) : directional_light(dir_light) {}
+    DatasetProblem(bool reinitialize_points = true)
+        : reinitialize_points_(reinitialize_points) {}
 
     //! Camera model
     Camera::Ptr camera;
 
-    //! Timestamps (measured)
-    std::vector<double> t;
+    //! Pose ID
+    std::vector<unsigned int> k;
     //! Number of states to optimize
     unsigned int num_states;
     //! Number of map points to optimize
-    unsigned int num_vertices;
-    //! Number of materials to optimize
-    unsigned int num_materials;
+    unsigned int num_points;
 
     //! Camera poses in base frame (to be estimated)
     std::vector<SE3> poses;
 
-    //! Map vertices in base frame (to be estimated)
-    std::vector<Vertex> map_vertices;
-    //! Map vertex IDs in stereo_obs_list
-    std::vector<unsigned int> vertex_ids;
-    //! True if map vertex j has been initialized
-    std::vector<bool> initialized_vertex;
-    //! Map vertex material IDs in stereo_obs_list
+    //! Map points in base frame (to be estimated)
+    std::vector<Point> map_points;
+    //! Map point IDs in stereo_obs_list
+    std::vector<unsigned int> point_ids;
+    //! True if map point j has been initialized
+    std::vector<bool> initialized_point;
+    //! Map point material IDs in stereo_obs_list
     std::vector<unsigned int> material_ids;
-
-    //! Use directional light?
-    bool directional_light;
-    //! Light source position in base frame (to be estimated)
-    Point light_pos;
-    //! Light source position in base frame (to be estimated)
-    Vector light_dir;
-
-    //! Materials (to be estimated)
-    std::vector<Material<double>::Ptr> materials;
-    //! Textures (to be estimated)
-    std::vector<Texture<double>::Ptr> textures;
 
     //! List of stereo observations
     std::vector<Camera::Observation> stereo_obs_list;
     //! Variance of stereo observations
     Camera::ObservationVariance stereo_obs_var;
-    //! List of observation intensities
-    std::vector<double> int_list;
-    //! Variance of observation intensities
-    double int_var;
-    //! List of normal observations
-    std::vector<Vector> normal_obs_list;
-    //! Variance of normal observations
-    Vector::Variance normal_obs_var;
 
     //! Read dataset from a CSV file
     /*!
-        Assuming first row is num_states, num_vertices,
+        Assuming first row is num_states, num_points,
         second row is intrinsics,
-        and remaining rows are observations of the form [t,j,u,v,d,I]
-        where t: timestamp
+        and remaining rows are observations of the form [k,j,u,v,d]
+        where k: pose index
               j: point index
               (u,v): left image coordinates
               d: disparity
-              I: intensity
     */
     const bool read_csv(const std::string filename);
 
@@ -96,13 +72,11 @@ class DatasetProblem {
     const bool write_csv(const std::string filename) const;
 
     //! Return list of indices corresponding to a specified state index
-    const std::vector<unsigned int> obs_indices_at_state(int k) const;
+    const std::vector<unsigned int> obs_indices_at_state(unsigned int k) const;
 
     //! Return list of indices corresponding to a specified feature index
-    const std::vector<unsigned int> obs_indices_for_feature(int j) const;
-
-    //! Return list of indices corresponding to a specified material ID
-    const std::vector<unsigned int> obs_indices_for_material(int m) const;
+    const std::vector<unsigned int> obs_indices_for_feature(
+        unsigned int j) const;
 
     //! Generate initial guess for poses and map points
     //! using scalar-weighted point cloud alignment for stereo VO
@@ -111,12 +85,11 @@ class DatasetProblem {
    private:
     //! List of lists of indices corresponding to each state index
     std::vector<std::vector<unsigned int>> state_indices_;
-
     //! List of lists of indices corresponding to each feature index
     std::vector<std::vector<unsigned int>> feature_indices_;
-
-    //! List of lists of indices corresponding to each material index
-    std::vector<std::vector<unsigned int>> material_indices_;
+    //! Should we reinitialize re-observed points when computing the initial
+    //! guess?
+    bool reinitialize_points_;
 
 };  // class DatasetProblem
 

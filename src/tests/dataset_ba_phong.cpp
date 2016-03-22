@@ -8,7 +8,7 @@
 #include <ceres_slam/utils.h>
 #include <ceres_slam/geometry.h>
 #include <ceres_slam/lighting.h>
-#include <ceres_slam/dataset_problem.h>
+#include <ceres_slam/dataset_problem_phong.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/stereo_reprojection_error.h>
 #include <ceres_slam/intensity_error_point_light.h>
@@ -18,12 +18,12 @@
 
 #include <Eigen/Eigenvalues>
 
-using SE3 = ceres_slam::DatasetProblem::SE3;
-using Point = ceres_slam::DatasetProblem::Point;
-using Vector = ceres_slam::DatasetProblem::Vector;
-using Camera = ceres_slam::DatasetProblem::Camera;
+using SE3 = ceres_slam::DatasetProblemPhong::SE3;
+using Point = ceres_slam::DatasetProblemPhong::Point;
+using Vector = ceres_slam::DatasetProblemPhong::Vector;
+using Camera = ceres_slam::DatasetProblemPhong::Camera;
 
-void solveWindow(ceres_slam::DatasetProblem &dataset, unsigned int k1,
+void solveWindow(ceres_slam::DatasetProblemPhong &dataset, unsigned int k1,
                  unsigned int k2, bool use_light, bool directional_light,
                  bool multi_stage) {
     // Build the problem
@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
     }
 
     // Read dataset from file
-    ceres_slam::DatasetProblem dataset(directional_light);
+    ceres_slam::DatasetProblemPhong dataset(directional_light);
     if (!dataset.read_csv(filename)) {
         return EXIT_FAILURE;
     }

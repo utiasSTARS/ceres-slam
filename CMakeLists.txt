@@ -74,8 +74,11 @@ target_link_libraries(geometry_test ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 add_executable(light_test src/tests/light_test.cpp)
 target_link_libraries(light_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
-add_executable(dataset_ba src/tests/dataset_ba.cpp)
-target_link_libraries(dataset_ba ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+add_executable(dataset_vo src/tests/dataset_vo.cpp)
+target_link_libraries(dataset_vo ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+
+add_executable(dataset_ba_phong src/tests/dataset_ba_phong.cpp)
+target_link_libraries(dataset_ba_phong ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
 # add_custom_target(docs ALL
 # 	COMMAND "doxygen" "doxygen.config"
