@@ -156,7 +156,7 @@ class SparseStereoOdometryNode {
 
         int y_thresh = 5;  // Max diff in y-coordinate of matched features [px]
 
-        for (unsigned int i = 0; i < stereo_matches.size(); ++i) {
+        for (uint i = 0; i < stereo_matches.size(); ++i) {
             left_idx = stereo_matches[i].queryIdx;
             right_idx = stereo_matches[i].trainIdx;
 
@@ -196,7 +196,7 @@ class SparseStereoOdometryNode {
 
             ceres_slam::StereoCamera::Observation temp_obs;
 
-            for (unsigned int i = 0; i < vo_matches.size(); ++i) {
+            for (uint i = 0; i < vo_matches.size(); ++i) {
                 prev_idx = vo_matches[i].queryIdx;
                 curr_idx = vo_matches[i].trainIdx;
 
@@ -217,7 +217,7 @@ class SparseStereoOdometryNode {
 
             // Filter outliers and generate initial guess with RANSAC
             Eigen::Affine3d T_curr_prev;
-            std::vector<unsigned int> inlier_idx =
+            std::vector<uint> inlier_idx =
                 doRANSAC(prev_pts, curr_pts, T_curr_prev);
 
             std::vector<ceres_slam::StereoCamera::Observation> prev_inlier_obs,
@@ -225,7 +225,7 @@ class SparseStereoOdometryNode {
             std::vector<ceres_slam::StereoCamera::Point> prev_inlier_pts,
                 curr_inlier_pts;
 
-            for (unsigned int i = 0; i < inlier_idx.size(); ++i) {
+            for (uint i = 0; i < inlier_idx.size(); ++i) {
                 prev_inlier_obs.push_back(prev_obs[inlier_idx[i]]);
                 curr_inlier_obs.push_back(curr_obs[inlier_idx[i]]);
 
@@ -265,7 +265,7 @@ class SparseStereoOdometryNode {
             curr_trans[1] = t_curr_prev(1);
             curr_trans[2] = t_curr_prev(2);
 
-            for (unsigned int i = 0; i < inlier_idx.size(); ++i) {
+            for (uint i = 0; i < inlier_idx.size(); ++i) {
                 // Add residual block for the previous frame observation
                 ceres::CostFunction* prev_stereo_cost =
                     ceres_slam::StereoReprojectionError::Create(

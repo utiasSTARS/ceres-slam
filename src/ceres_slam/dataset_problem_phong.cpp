@@ -34,7 +34,7 @@ const bool DatasetProblemPhong::read_csv(std::string filename) {
     map_vertices.resize(num_vertices);
     materials.resize(num_materials);
     textures.resize(num_materials);
-    for (unsigned int j = 0; j < num_vertices; ++j) {
+    for (uint j = 0; j < num_vertices; ++j) {
         initialized_vertex.push_back(false);
     }
 
@@ -102,9 +102,9 @@ const bool DatasetProblemPhong::read_csv(std::string filename) {
     while (!reader.atEOF()) {
         tokens = reader.getLine();
         t.push_back(std::stod(tokens.at(0)));
-        unsigned int j = std::stoi(tokens.at(1));
+        uint j = std::stoi(tokens.at(1));
         vertex_ids.push_back(j);
-        unsigned int mat_id = std::stoi(tokens.at(2));
+        uint mat_id = std::stoi(tokens.at(2));
         material_ids.push_back(mat_id);
         double u = std::stod(tokens.at(3));
         double v = std::stod(tokens.at(4));
@@ -120,9 +120,9 @@ const bool DatasetProblemPhong::read_csv(std::string filename) {
 
     // Generate a list of observation indices for each state
     std::cerr << "Generating observation indices from timestamps... ";
-    std::vector<unsigned int> t_indices;
+    std::vector<uint> t_indices;
     t_indices.push_back(0);
-    for (unsigned int idx = 1; idx < t.size(); ++idx) {
+    for (uint idx = 1; idx < t.size(); ++idx) {
         if (t.at(idx) != t.at(idx - 1)) {
             state_indices_.push_back(t_indices);
             t_indices.clear();
@@ -136,11 +136,11 @@ const bool DatasetProblemPhong::read_csv(std::string filename) {
     // Generate a list of observation indices for each feature
     std::cerr << "Generating observation indices from feature IDs... ";
     feature_indices_.resize(num_vertices);
-    std::vector<unsigned int> j_indices;
+    std::vector<uint> j_indices;
 
-    for (unsigned int j = 0; j < num_vertices; ++j) {
+    for (uint j = 0; j < num_vertices; ++j) {
         j_indices.clear();
-        for (unsigned int idx = 0; idx < vertex_ids.size(); idx++) {
+        for (uint idx = 0; idx < vertex_ids.size(); idx++) {
             if (vertex_ids.at(idx) == j) {
                 j_indices.push_back(idx);
             }
@@ -154,11 +154,11 @@ const bool DatasetProblemPhong::read_csv(std::string filename) {
     // Generate a list of observation indices for each feature
     std::cerr << "Generating observation indices from material IDs... ";
     material_indices_.resize(num_materials);
-    std::vector<unsigned int> m_indices;
+    std::vector<uint> m_indices;
 
-    for (unsigned int m = 0; m < num_materials; ++m) {
+    for (uint m = 0; m < num_materials; ++m) {
         m_indices.clear();
-        for (unsigned int idx = 0; idx < material_ids.size(); idx++) {
+        for (uint idx = 0; idx < material_ids.size(); idx++) {
             if (material_ids.at(idx) == m) {
                 m_indices.push_back(idx);
             }
@@ -211,7 +211,7 @@ const bool DatasetProblemPhong::write_csv(std::string filename) const {
     // Convert initialized vertices to CSV entries
     map_file << "point_id, x, y, z, nx, ny, nz, ka, ks, exponent, kd"
              << std::endl;
-    for (unsigned int j = 0; j < map_vertices.size(); ++j) {
+    for (uint j = 0; j < map_vertices.size(); ++j) {
         if (initialized_vertex[j]) {
             map_file << j << "," << map_vertices[j].str() << std::endl;
         }
@@ -234,27 +234,27 @@ const bool DatasetProblemPhong::write_csv(std::string filename) const {
     return true;
 }
 
-const std::vector<unsigned int> DatasetProblemPhong::obs_indices_at_state(
+const std::vector<uint> DatasetProblemPhong::obs_indices_at_state(
     int k) const {
     return state_indices_.at(k);
 }
 
-const std::vector<unsigned int> DatasetProblemPhong::obs_indices_for_feature(
+const std::vector<uint> DatasetProblemPhong::obs_indices_for_feature(
     int j) const {
     return feature_indices_.at(j);
 }
 
-const std::vector<unsigned int> DatasetProblemPhong::obs_indices_for_material(
+const std::vector<uint> DatasetProblemPhong::obs_indices_for_material(
     int m) const {
     return material_indices_.at(m);
 }
 
-void DatasetProblemPhong::compute_initial_guess(unsigned int k1,
-                                                unsigned int k2) {
+void DatasetProblemPhong::compute_initial_guess(uint k1,
+                                                uint k2) {
     std::vector<Point> pts_km1, pts_k;
     std::vector<Vector> normals_km1;
     std::vector<double> intensities_km1;
-    std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
+    std::vector<uint> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
 
     if (k1 >= k2) {
@@ -265,12 +265,12 @@ void DatasetProblemPhong::compute_initial_guess(unsigned int k1,
     // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
 
     // Initialize materials
-    for (unsigned int m = 0; m < materials.size(); ++m) {
+    for (uint m = 0; m < materials.size(); ++m) {
         materials[m] = std::make_shared<Material<double>>(
             Material<double>::PhongParams(0., 0., 1.));
 
         std::vector<double> ints;
-        for (unsigned int idx : obs_indices_for_material(m)) {
+        for (uint idx : obs_indices_for_material(m)) {
             ints.push_back(int_list.at(idx));
         }
         std::nth_element(ints.begin(), ints.begin() + ints.size() / 2,
@@ -280,7 +280,7 @@ void DatasetProblemPhong::compute_initial_guess(unsigned int k1,
     }
 
     // Iterate over all poses
-    for (unsigned int k = k1 + 1; k < k2; ++k) {
+    for (uint k = k1 + 1; k < k2; ++k) {
         pts_km1.clear();
         pts_k.clear();
         normals_km1.clear();
@@ -291,22 +291,22 @@ void DatasetProblemPhong::compute_initial_guess(unsigned int k1,
         idx_k = obs_indices_at_state(k);
 
         // Find point IDs for both poses
-        for (unsigned int i : idx_km1) {
+        for (uint i : idx_km1) {
             j_km1.push_back(vertex_ids[i]);
         }
-        for (unsigned int i : idx_k) {
+        for (uint i : idx_k) {
             j_k.push_back(vertex_ids[i]);
         }
 
         // Find reciprocal point matches and delete unmatched indices
-        for (unsigned int i = 0; i < j_km1.size(); ++i) {
+        for (uint i = 0; i < j_km1.size(); ++i) {
             if (std::find(j_k.begin(), j_k.end(), j_km1[i]) == j_k.end()) {
                 j_km1.erase(j_km1.begin() + i);
                 idx_km1.erase(idx_km1.begin() + i);
                 --i;
             }
         }
-        for (unsigned int i = 0; i < j_k.size(); ++i) {
+        for (uint i = 0; i < j_k.size(); ++i) {
             if (std::find(j_km1.begin(), j_km1.end(), j_k[i]) == j_km1.end()) {
                 j_k.erase(j_k.begin() + i);
                 idx_k.erase(idx_k.begin() + i);
@@ -315,7 +315,7 @@ void DatasetProblemPhong::compute_initial_guess(unsigned int k1,
         }
 
         // Triangulate map points from each pose
-        for (unsigned int i : idx_km1) {
+        for (uint i : idx_km1) {
             pts_km1.push_back(camera->triangulate(stereo_obs_list[i]));
             // Also store the observed normals corresponding to each
             // point in case we need to use them as an initial guess
@@ -324,11 +324,11 @@ void DatasetProblemPhong::compute_initial_guess(unsigned int k1,
             // Store the intensities of each observed point as well
             intensities_km1.push_back(int_list[i]);
         }
-        for (unsigned int i : idx_k) {
+        for (uint i : idx_k) {
             pts_k.push_back(camera->triangulate(stereo_obs_list[i]));
         }
 
-        // for(unsigned int i = 0; i < j_km1.size(); ++i) {
+        // for(uint i = 0; i < j_km1.size(); ++i) {
         //     std::cout << "j_km1: " << j_km1[i] << " | j_k: " << j_k[i]
         //               << " | idx_km1: " << idx_km1[i] << " | idx_k: " <<
         //               idx_k[i]
@@ -342,7 +342,7 @@ void DatasetProblemPhong::compute_initial_guess(unsigned int k1,
         //           << " elements" << std::endl;
 
         SE3 T_k_km1;
-        std::vector<unsigned int> inlier_idx =
+        std::vector<uint> inlier_idx =
             point_cloud_aligner.compute_transformation_and_inliers(
                 T_k_km1, pts_km1, pts_k, camera, 400, 9);
 
@@ -355,7 +355,7 @@ void DatasetProblemPhong::compute_initial_guess(unsigned int k1,
 
         // If the map point does not have an initial guess already,
         // initialize it
-        for (unsigned int i : inlier_idx) {
+        for (uint i : inlier_idx) {
             if (!initialized_vertex[j_km1[i]]) {
                 // Initialize the position with the guess from the
                 // first point cloud, transformed into the base frame
@@ -377,7 +377,7 @@ void DatasetProblemPhong::compute_initial_guess(unsigned int k1,
                 // Option 2: use the minimum observed intensity
                 // Option 3: use the median observed intensity
                 // std::vector<double> ints;
-                // for (unsigned int idx : obs_indices_for_feature(j_km1[i])) {
+                // for (uint idx : obs_indices_for_feature(j_km1[i])) {
                 //     ints.push_back(int_list.at(idx));
                 // }
                 // std::nth_element(ints.begin(), ints.begin() + ints.size() /

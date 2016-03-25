@@ -33,11 +33,11 @@ class DatasetProblem {
     Camera::Ptr camera;
 
     //! Pose ID
-    std::vector<unsigned int> k;
+    std::vector<uint> state_ids;
     //! Number of states to optimize
-    unsigned int num_states;
+    uint num_states;
     //! Number of map points to optimize
-    unsigned int num_points;
+    uint num_points;
 
     //! Camera poses in base frame (to be estimated)
     std::vector<SE3> poses;
@@ -45,16 +45,24 @@ class DatasetProblem {
     //! Map points in base frame (to be estimated)
     std::vector<Point> map_points;
     //! Map point IDs in stereo_obs_list
-    std::vector<unsigned int> point_ids;
+    std::vector<uint> point_ids;
     //! True if map point j has been initialized
     std::vector<bool> initialized_point;
     //! Map point material IDs in stereo_obs_list
-    std::vector<unsigned int> material_ids;
+    std::vector<uint> material_ids;
 
     //! List of stereo observations
     std::vector<Camera::Observation> stereo_obs_list;
     //! Variance of stereo observations
     Camera::ObservationVariance stereo_obs_var;
+    //! List of sun direction observations
+    std::vector<Vector> sun_obs_list;
+    //! Variance of sun direction observations
+    Vector::Variance sun_obs_var;
+    //! True if state k has a sun observation
+    std::vector<bool> state_has_sun_obs;
+    //! Sun direction in the global frame
+    Vector sun_dir_g;
 
     //! Read dataset from a CSV file
     /*!
@@ -72,21 +80,20 @@ class DatasetProblem {
     const bool write_csv(const std::string filename) const;
 
     //! Return list of indices corresponding to a specified state index
-    const std::vector<unsigned int> obs_indices_at_state(unsigned int k) const;
+    const std::vector<uint> obs_indices_at_state(uint k) const;
 
     //! Return list of indices corresponding to a specified feature index
-    const std::vector<unsigned int> obs_indices_for_feature(
-        unsigned int j) const;
+    const std::vector<uint> obs_indices_for_feature(uint j) const;
 
     //! Generate initial guess for poses and map points
     //! using scalar-weighted point cloud alignment for stereo VO
-    void compute_initial_guess(unsigned int k1 = 0, unsigned int k2 = 0);
+    void compute_initial_guess(uint k1 = 0, uint k2 = 0);
 
    private:
     //! List of lists of indices corresponding to each state index
-    std::vector<std::vector<unsigned int>> state_indices_;
+    std::vector<std::vector<uint>> state_indices_;
     //! List of lists of indices corresponding to each feature index
-    std::vector<std::vector<unsigned int>> feature_indices_;
+    std::vector<std::vector<uint>> feature_indices_;
     //! Should we reinitialize re-observed points when computing the initial
     //! guess?
     bool reinitialize_points_;

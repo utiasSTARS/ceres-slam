@@ -19,8 +19,8 @@ using Point = ceres_slam::DatasetProblem::Point;
 using Vector = ceres_slam::DatasetProblem::Vector;
 using Camera = ceres_slam::DatasetProblem::Camera;
 
-void solveWindow(ceres_slam::DatasetProblem &dataset, unsigned int k1,
-                 unsigned int k2) {
+void solveWindow(ceres_slam::DatasetProblem &dataset, uint k1,
+                 uint k2) {
     // Build the problem
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")" << std::endl;
 
@@ -37,10 +37,10 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, unsigned int k1,
         ceres_slam::SE3Perturbation::Create();
 
     // Add observations and cost functions
-    for (unsigned int k = k1; k < k2; ++k) {
-        for (unsigned int i : dataset.obs_indices_at_state(k)) {
+    for (uint k = k1; k < k2; ++k) {
+        for (uint i : dataset.obs_indices_at_state(k)) {
             // Map point ID for this observation
-            unsigned int j = dataset.point_ids[i];
+            uint j = dataset.point_ids[i];
             // Only optimize map points that have been initialized
             if (dataset.initialized_point[j]) {
                 // Cost function for the stereo observation
@@ -79,7 +79,6 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, unsigned int k1,
 
     ///////////////////////////////////////////////////////////////////////
     // Optimize!
-    std::cerr << "Solving poses and points" << std::endl;
     Solve(solver_options, &problem, &summary);
     std::cout << summary.BriefReport() << std::endl << std::endl;
 
@@ -95,7 +94,7 @@ int main(int argc, char **argv) {
     }
 
     // Defaults
-    unsigned int window_size = 2;
+    uint window_size = 2;
 
     // Parse command line arguments
     std::string filename(argv[1]);
@@ -126,8 +125,8 @@ int main(int argc, char **argv) {
     tokens = ceres_slam::split(filename, '.');
     dataset.write_csv(tokens.at(0) + "_initial.csv");
 
-    for (unsigned int k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
-        unsigned int k2 = fmin(k1 + window_size, dataset.num_states);
+    for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
+        uint k2 = fmin(k1 + window_size, dataset.num_states);
         // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
         if (k1 > 0) {
             dataset.compute_initial_guess(k2 - 1, k2);

@@ -23,8 +23,8 @@ using Point = ceres_slam::DatasetProblemPhong::Point;
 using Vector = ceres_slam::DatasetProblemPhong::Vector;
 using Camera = ceres_slam::DatasetProblemPhong::Camera;
 
-void solveWindow(ceres_slam::DatasetProblemPhong &dataset, unsigned int k1,
-                 unsigned int k2, bool use_light, bool directional_light,
+void solveWindow(ceres_slam::DatasetProblemPhong &dataset, uint k1,
+                 uint k2, bool use_light, bool directional_light,
                  bool multi_stage) {
     // Build the problem
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")" << std::endl;
@@ -51,10 +51,10 @@ void solveWindow(ceres_slam::DatasetProblemPhong &dataset, unsigned int k1,
         ceres_slam::UnitVectorPerturbation::Create();
 
     // Add observations and cost functions
-    for (unsigned int k = k1; k < k2; ++k) {
-        for (unsigned int i : dataset.obs_indices_at_state(k)) {
+    for (uint k = k1; k < k2; ++k) {
+        for (uint i : dataset.obs_indices_at_state(k)) {
             // Map point ID for this observation
-            unsigned int j = dataset.vertex_ids[i];
+            uint j = dataset.vertex_ids[i];
             // Only optimize map points that have been initialized
             if (dataset.initialized_vertex[j]) {
                 // Cost function for the stereo observation
@@ -101,10 +101,10 @@ void solveWindow(ceres_slam::DatasetProblemPhong &dataset, unsigned int k1,
 
     // Add the lighting terms to the problem
     if (use_light) {
-        for (unsigned int k = k1; k < k2; ++k) {
-            for (unsigned int i : dataset.obs_indices_at_state(k)) {
+        for (uint k = k1; k < k2; ++k) {
+            for (uint i : dataset.obs_indices_at_state(k)) {
                 // Map point ID for this observation
-                unsigned int j = dataset.vertex_ids[i];
+                uint j = dataset.vertex_ids[i];
 
                 if (dataset.initialized_vertex[j]) {
                     if (directional_light) {
@@ -211,10 +211,10 @@ void solveWindow(ceres_slam::DatasetProblemPhong &dataset, unsigned int k1,
     ///////////////////////////////////////////////////////////////////////
     // Stage 2 - Optimize lighting only, hold poses and points constant
     if (multi_stage) {
-        for (unsigned int k = k1; k < k2; ++k) {
-            for (unsigned int i : dataset.obs_indices_at_state(k)) {
+        for (uint k = k1; k < k2; ++k) {
+            for (uint i : dataset.obs_indices_at_state(k)) {
                 // Map point ID for this observation
-                unsigned int j = dataset.vertex_ids[i];
+                uint j = dataset.vertex_ids[i];
 
                 if (dataset.initialized_vertex[j]) {
                     problem.SetParameterBlockConstant(
@@ -229,10 +229,10 @@ void solveWindow(ceres_slam::DatasetProblemPhong &dataset, unsigned int k1,
         Solve(solver_options, &problem, &summary);
         std::cout << summary.BriefReport() << std::endl << std::endl;
 
-        for (unsigned int k = k1; k < k2; ++k) {
-            for (unsigned int i : dataset.obs_indices_at_state(k)) {
+        for (uint k = k1; k < k2; ++k) {
+            for (uint i : dataset.obs_indices_at_state(k)) {
                 // Map point ID for this observation
-                unsigned int j = dataset.vertex_ids[i];
+                uint j = dataset.vertex_ids[i];
 
                 if (dataset.initialized_vertex[j]) {
                     problem.SetParameterBlockVariable(
@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
     bool directional_light = false;
     bool multi_stage = false;
     bool use_window = false;
-    unsigned int window_size = 0;
+    uint window_size = 0;
 
     // Parse command line arguments
     std::string filename(argv[1]);
@@ -316,8 +316,8 @@ int main(int argc, char **argv) {
         window_size = dataset.num_states;
     }
 
-    for (unsigned int k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
-        unsigned int k2 = fmin(k1 + window_size, dataset.num_states);
+    for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
+        uint k2 = fmin(k1 + window_size, dataset.num_states);
         // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
         if (k1 > 0) {
             dataset.compute_initial_guess(k2 - 1, k2);

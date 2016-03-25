@@ -31,8 +31,13 @@ const bool DatasetProblem::read_csv(std::string filename) {
     num_points = std::stoi(tokens.at(1));
     poses.resize(num_states);
     map_points.resize(num_points);
-    for (unsigned int j = 0; j < num_points; ++j) {
+    for (uint j = 0; j < num_points; ++j) {
         initialized_point.push_back(false);
+    }
+
+    sun_obs_list.resize(num_states);
+    for (uint k = 0; k < num_states; ++k) {
+        state_has_sun_obs.push_back(false);
     }
 
     std::cerr << "expecting " << num_states << " states"
@@ -54,8 +59,12 @@ const bool DatasetProblem::read_csv(std::string filename) {
     tokens = reader.getLine();
     stereo_obs_var << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
         std::stod(tokens.at(2));
+    sun_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
+        std::stod(tokens.at(5));
     std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
-              << std::endl;
+              << std::endl
+              << "Sun direction observation variance: "
+              << sun_obs_var.transpose() << std::endl;
 
     // Read first ground truth pose
     std::cerr << "Reading first ground truth pose" << std::endl;
@@ -70,28 +79,42 @@ const bool DatasetProblem::read_csv(std::string filename) {
     poses[0] = SE3(T_0_g);
     std::cout << poses[0] << std::endl;
 
+    // Read ground truth sun direction in the global frame
+    std::cerr << "Reading ground truth sun direction... " << std::endl;
+    tokens = reader.getLine();
+    sun_dir_g << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
+        std::stod(tokens.at(2));
+    std::cerr << sun_dir_g << std::endl;
+
     // Read in the observations
     std::cerr << "Reading observation data... ";
-    Vector normal_obs;
     while (!reader.atEOF()) {
         tokens = reader.getLine();
-        k.push_back(std::stod(tokens.at(0)));
-        unsigned int j = std::stoi(tokens.at(1));
-        point_ids.push_back(j);
-        double u = std::stod(tokens.at(2));
-        double v = std::stod(tokens.at(3));
-        double d = std::stod(tokens.at(4));
-        stereo_obs_list.push_back(Camera::Observation(u, v, d));
+        uint k = std::stod(tokens.at(0));
+        if (tokens.size() > 4) {
+            // This is a stereo observation
+            state_ids.push_back(k);
+            point_ids.push_back(std::stoi(tokens.at(1)));
+            double u = std::stod(tokens.at(2));
+            double v = std::stod(tokens.at(3));
+            double d = std::stod(tokens.at(4));
+            stereo_obs_list.push_back(Camera::Observation(u, v, d));
+        } else {
+            // This is a sun direction observation
+            state_has_sun_obs.at(k) = true;
+            sun_obs_list.at(k) << std::stod(tokens.at(1)),
+                std::stod(tokens.at(2)), std::stod(tokens.at(3));
+        }
     }
-    std::cerr << "read " << stereo_obs_list.size() << " observations"
+    std::cerr << "read " << stereo_obs_list.size() << " stereo observations"
               << std::endl;
 
     // Generate a list of observation indices for each state
     std::cerr << "Generating observation indices for each state... ";
-    std::vector<unsigned int> k_indices;
+    std::vector<uint> k_indices;
     k_indices.push_back(0);
-    for (unsigned int idx = 1; idx < k.size(); ++idx) {
-        if (k.at(idx) != k.at(idx - 1)) {
+    for (uint idx = 1; idx < state_ids.size(); ++idx) {
+        if (state_ids.at(idx) != state_ids.at(idx - 1)) {
             state_indices_.push_back(k_indices);
             k_indices.clear();
         }
@@ -104,11 +127,11 @@ const bool DatasetProblem::read_csv(std::string filename) {
     // Generate a list of observation indices for each feature
     std::cerr << "Generating observation indices for each feature... ";
     feature_indices_.resize(num_points);
-    std::vector<unsigned int> j_indices;
+    std::vector<uint> j_indices;
 
-    for (unsigned int j = 0; j < num_points; ++j) {
+    for (uint j = 0; j < num_points; ++j) {
         j_indices.clear();
-        for (unsigned int idx = 0; idx < point_ids.size(); idx++) {
+        for (uint idx = 0; idx < point_ids.size(); idx++) {
             if (point_ids.at(idx) == j) {
                 j_indices.push_back(idx);
             }
@@ -153,7 +176,7 @@ const bool DatasetProblem::write_csv(std::string filename) const {
 
     // Convert initialized points to CSV entries
     map_file << "point_id, x, y, z" << std::endl;
-    for (unsigned int j = 0; j < map_points.size(); ++j) {
+    for (uint j = 0; j < map_points.size(); ++j) {
         if (initialized_point[j]) {
             map_file << j << "," << map_points[j].str() << std::endl;
         }
@@ -166,19 +189,17 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     return true;
 }
 
-const std::vector<unsigned int> DatasetProblem::obs_indices_at_state(
-    unsigned int k) const {
+const std::vector<uint> DatasetProblem::obs_indices_at_state(uint k) const {
     return state_indices_.at(k);
 }
 
-const std::vector<unsigned int> DatasetProblem::obs_indices_for_feature(
-    unsigned int j) const {
+const std::vector<uint> DatasetProblem::obs_indices_for_feature(uint j) const {
     return feature_indices_.at(j);
 }
 
-void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
+void DatasetProblem::compute_initial_guess(uint k1, uint k2) {
     std::vector<Point> pts_km1, pts_k;
-    std::vector<unsigned int> j_km1, j_k, idx_km1, idx_k;
+    std::vector<uint> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
 
     if (k1 >= k2) {
@@ -189,7 +210,7 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
     // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
 
     // Iterate over all poses
-    for (unsigned int k = k1 + 1; k < k2; ++k) {
+    for (uint k = k1 + 1; k < k2; ++k) {
         pts_km1.clear();
         pts_k.clear();
         j_km1.clear();
@@ -198,22 +219,22 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
         idx_k = obs_indices_at_state(k);
 
         // Find point IDs for both poses
-        for (unsigned int i : idx_km1) {
+        for (uint i : idx_km1) {
             j_km1.push_back(point_ids[i]);
         }
-        for (unsigned int i : idx_k) {
+        for (uint i : idx_k) {
             j_k.push_back(point_ids[i]);
         }
 
         // Find reciprocal point matches and delete unmatched indices
-        for (unsigned int i = 0; i < j_km1.size(); ++i) {
+        for (uint i = 0; i < j_km1.size(); ++i) {
             if (std::find(j_k.begin(), j_k.end(), j_km1[i]) == j_k.end()) {
                 j_km1.erase(j_km1.begin() + i);
                 idx_km1.erase(idx_km1.begin() + i);
                 --i;
             }
         }
-        for (unsigned int i = 0; i < j_k.size(); ++i) {
+        for (uint i = 0; i < j_k.size(); ++i) {
             if (std::find(j_km1.begin(), j_km1.end(), j_k[i]) == j_km1.end()) {
                 j_k.erase(j_k.begin() + i);
                 idx_k.erase(idx_k.begin() + i);
@@ -222,14 +243,14 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
         }
 
         // Triangulate map points from each pose
-        for (unsigned int i : idx_km1) {
+        for (uint i : idx_km1) {
             pts_km1.push_back(camera->triangulate(stereo_obs_list[i]));
         }
-        for (unsigned int i : idx_k) {
+        for (uint i : idx_k) {
             pts_k.push_back(camera->triangulate(stereo_obs_list[i]));
         }
 
-        // for(unsigned int i = 0; i < j_km1.size(); ++i) {
+        // for(uint i = 0; i < j_km1.size(); ++i) {
         //     std::cout << "j_km1: " << j_km1[i] << " | j_k: " << j_k[i]
         //               << " | idx_km1: " << idx_km1[i] << " | idx_k: " <<
         //               idx_k[i]
@@ -243,7 +264,7 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
         //           << " elements" << std::endl;
 
         SE3 T_k_km1;
-        std::vector<unsigned int> inlier_idx =
+        std::vector<uint> inlier_idx =
             point_cloud_aligner.compute_transformation_and_inliers(
                 T_k_km1, pts_km1, pts_k, camera, 400, 9);
 
@@ -256,7 +277,7 @@ void DatasetProblem::compute_initial_guess(unsigned int k1, unsigned int k2) {
 
         // If the map point does not have an initial guess already,
         // initialize it
-        for (unsigned int i : inlier_idx) {
+        for (uint i : inlier_idx) {
             if (!initialized_point[j_km1[i]] || reinitialize_points_) {
                 // Initialize the position with the guess from the
                 // first point cloud, transformed into the base frame

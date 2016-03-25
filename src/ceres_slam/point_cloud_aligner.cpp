@@ -34,7 +34,7 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
 
     // Compute W_1_0
     Eigen::Matrix3d W_1_0 = Eigen::Matrix3d::Zero();
-    for (unsigned int i = 0; i < pts_0.size(); ++i) {
+    for (uint i = 0; i < pts_0.size(); ++i) {
         W_1_0 += (pts_1[i] - p_1) * (pts_0[i] - p_0).transpose();
     }
     W_1_0 /= double(pts_0.size());
@@ -54,25 +54,25 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
     return SE3(r_1_0_1, C_1_0);
 }
 
-std::vector<unsigned int> PointCloudAligner::compute_transformation_and_inliers(
+std::vector<uint> PointCloudAligner::compute_transformation_and_inliers(
     SE3& T_1_0_out, const std::vector<PointCloudAligner::Point>& pts_0,
     const std::vector<PointCloudAligner::Point>& pts_1,
     const PointCloudAligner::Camera::ConstPtr camera,
-    const unsigned int num_iters, const double thresh) {
+    const uint num_iters, const double thresh) {
     // Uniformly distributed integers in [a,b], NOT [a,b)
     std::random_device rd;
     std::mt19937 rng(rd());
     rng.seed(42);  // for reproducibility
-    std::uniform_int_distribution<unsigned int> idx_selector(0,
+    std::uniform_int_distribution<uint> idx_selector(0,
                                                              pts_0.size() - 1);
-    unsigned int rand_idx[3];
+    uint rand_idx[3];
 
     std::vector<PointCloudAligner::Point> test_pts_0, test_pts_1;
-    std::vector<unsigned int> inlier_idx, best_inlier_idx;
+    std::vector<uint> inlier_idx, best_inlier_idx;
     PointCloudAligner::SE3 best_T_1_0;
 
     // 3-point RANSAC algorithm
-    for (unsigned int ransac_iter = 0; ransac_iter < num_iters; ++ransac_iter) {
+    for (uint ransac_iter = 0; ransac_iter < num_iters; ++ransac_iter) {
         // std::cout << "RANSAC iter = " << ransac_iter << std::endl;
         // Get 3 random, unique indices
         rand_idx[0] = idx_selector(rng);
@@ -87,7 +87,7 @@ std::vector<unsigned int> PointCloudAligner::compute_transformation_and_inliers(
         // Bundle test points
         test_pts_0.clear();
         test_pts_1.clear();
-        for (unsigned int i = 0; i < 3; ++i) {
+        for (uint i = 0; i < 3; ++i) {
             test_pts_0.push_back(pts_0[rand_idx[i]]);
             test_pts_1.push_back(pts_1[rand_idx[i]]);
         }
@@ -107,7 +107,7 @@ std::vector<unsigned int> PointCloudAligner::compute_transformation_and_inliers(
         // Classify points based on reprojection error, and get inlier indices
         double error;
         inlier_idx.clear();
-        for (unsigned int i = 0; i < pts_0.size(); ++i) {
+        for (uint i = 0; i < pts_0.size(); ++i) {
             error =
                 (camera->project(pts_1[i]) - camera->project(T_1_0 * pts_0[i]))
                     .squaredNorm();

@@ -33,10 +33,10 @@ class PointCloudAligner {
     //! Compute the transformation that aligns
     //! the origin cloud (pts_0) onto the destination cloud (pts_1)
     //! and return the indices of the inlier measurements
-    std::vector<unsigned int> compute_transformation_and_inliers(
+    std::vector<uint> compute_transformation_and_inliers(
         SE3 &T_1_0_out, const std::vector<Point> &pts_0,
         const std::vector<Point> &pts_1, const Camera::ConstPtr camera,
-        const unsigned int num_iters = 400, const double thresh = 25);
+        const uint num_iters = 400, const double thresh = 25);
 };
 
 }  // namespace ceres_slam

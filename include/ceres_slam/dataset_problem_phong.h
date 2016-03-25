@@ -37,11 +37,11 @@ class DatasetProblemPhong {
     //! Timestamps (measured)
     std::vector<double> t;
     //! Number of states to optimize
-    unsigned int num_states;
+    uint num_states;
     //! Number of map points to optimize
-    unsigned int num_vertices;
+    uint num_vertices;
     //! Number of materials to optimize
-    unsigned int num_materials;
+    uint num_materials;
 
     //! Camera poses in base frame (to be estimated)
     std::vector<SE3> poses;
@@ -49,11 +49,11 @@ class DatasetProblemPhong {
     //! Map vertices in base frame (to be estimated)
     std::vector<Vertex> map_vertices;
     //! Map vertex IDs in stereo_obs_list
-    std::vector<unsigned int> vertex_ids;
+    std::vector<uint> vertex_ids;
     //! True if map vertex j has been initialized
     std::vector<bool> initialized_vertex;
     //! Map vertex material IDs in stereo_obs_list
-    std::vector<unsigned int> material_ids;
+    std::vector<uint> material_ids;
 
     //! Use directional light?
     bool directional_light;
@@ -97,27 +97,27 @@ class DatasetProblemPhong {
     const bool write_csv(const std::string filename) const;
 
     //! Return list of indices corresponding to a specified state index
-    const std::vector<unsigned int> obs_indices_at_state(int k) const;
+    const std::vector<uint> obs_indices_at_state(int k) const;
 
     //! Return list of indices corresponding to a specified feature index
-    const std::vector<unsigned int> obs_indices_for_feature(int j) const;
+    const std::vector<uint> obs_indices_for_feature(int j) const;
 
     //! Return list of indices corresponding to a specified material ID
-    const std::vector<unsigned int> obs_indices_for_material(int m) const;
+    const std::vector<uint> obs_indices_for_material(int m) const;
 
     //! Generate initial guess for poses and map points
     //! using scalar-weighted point cloud alignment for stereo VO
-    void compute_initial_guess(unsigned int k1 = 0, unsigned int k2 = 0);
+    void compute_initial_guess(uint k1 = 0, uint k2 = 0);
 
    private:
     //! List of lists of indices corresponding to each state index
-    std::vector<std::vector<unsigned int>> state_indices_;
+    std::vector<std::vector<uint>> state_indices_;
 
     //! List of lists of indices corresponding to each feature index
-    std::vector<std::vector<unsigned int>> feature_indices_;
+    std::vector<std::vector<uint>> feature_indices_;
 
     //! List of lists of indices corresponding to each material index
-    std::vector<std::vector<unsigned int>> material_indices_;
+    std::vector<std::vector<uint>> material_indices_;
 
 };  // class DatasetProblemPhong
 
