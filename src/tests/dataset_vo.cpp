@@ -10,6 +10,7 @@
 #include <ceres_slam/dataset_problem.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/stereo_reprojection_error.h>
+#include <ceres_slam/sun_sensor_error.h>
 #include <ceres_slam/perturbations.h>
 
 #include <Eigen/Eigenvalues>
@@ -19,8 +20,8 @@ using Point = ceres_slam::DatasetProblem::Point;
 using Vector = ceres_slam::DatasetProblem::Vector;
 using Camera = ceres_slam::DatasetProblem::Camera;
 
-void solveWindow(ceres_slam::DatasetProblem &dataset, uint k1,
-                 uint k2) {
+void solveWindow(ceres_slam::DatasetProblem &dataset, uint k1, uint k2,
+                 bool use_sun) {
     // Build the problem
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")" << std::endl;
 
@@ -31,6 +32,10 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, uint k1,
         dataset.stereo_obs_var.asDiagonal());
     Camera::ObservationCovariance stereo_obs_stiffness =
         es_stereo.operatorInverseSqrt();
+
+    Eigen::SelfAdjointEigenSolver<Vector::Covariance> es_sun(
+        dataset.sun_obs_var.asDiagonal());
+    Vector::Covariance sun_obs_stiffness = es_sun.operatorInverseSqrt();
 
     // Set up local parameterizations
     ceres::LocalParameterization *se3_perturbation =
@@ -53,6 +58,17 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, uint k1,
                                          dataset.poses[k].data(),
                                          dataset.map_points[j].data());
             }
+        }
+
+        // Add sun sensor measurements if available
+        if (use_sun && dataset.state_has_sun_obs[k]) {
+            // Cost function for the sun observation
+            ceres::CostFunction *sun_cost =
+                ceres_slam::SunSensorErrorAutomatic::Create(
+                    dataset.sun_obs_list[k], dataset.sun_dir_g,
+                    sun_obs_stiffness);
+            // Add the sun sensor cost function to the problem
+            problem.AddResidualBlock(sun_cost, NULL, dataset.poses[k].data());
         }
 
         // Use local parameterization on SE(3)
@@ -86,7 +102,8 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, uint k1,
 }
 
 int main(int argc, char **argv) {
-    std::string usage_string("usage: dataset_vo <input_file> [--window N]");
+    std::string usage_string(
+        "usage: dataset_vo <input_file> [--usesun] [--window N]");
 
     if (argc < 2) {
         std::cerr << usage_string << std::endl;
@@ -95,6 +112,7 @@ int main(int argc, char **argv) {
 
     // Defaults
     uint window_size = 2;
+    bool use_sun = false;
 
     // Parse command line arguments
     std::string filename(argv[1]);
@@ -104,6 +122,8 @@ int main(int argc, char **argv) {
         if (flag == "--window" && argc > a + 1) {
             window_size = std::atoi(argv[a + 1]);
             ++a;
+        } else if (flag == "--usesun") {
+            use_sun = true;
         } else {
             std::cerr << usage_string << std::endl;
             return EXIT_FAILURE;
@@ -133,7 +153,7 @@ int main(int argc, char **argv) {
         } else {
             dataset.compute_initial_guess(k1, k2);
         }
-        solveWindow(dataset, k1, k2);
+        solveWindow(dataset, k1, k2, use_sun);
     }
 
     // Output optimized state to file

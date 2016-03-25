@@ -94,8 +94,7 @@ class DatasetProblem {
     std::vector<std::vector<uint>> state_indices_;
     //! List of lists of indices corresponding to each feature index
     std::vector<std::vector<uint>> feature_indices_;
-    //! Should we reinitialize re-observed points when computing the initial
-    //! guess?
+    //! Reinitialize re-observed points when computing the initial guess?
     bool reinitialize_points_;
 
 };  // class DatasetProblem
