@@ -103,7 +103,7 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, uint k1, uint k2,
 
 int main(int argc, char **argv) {
     std::string usage_string(
-        "usage: dataset_vo <input_file> [--usesun] [--window N]");
+        "usage: dataset_vo <input_file> [--window N]");
 
     if (argc < 2) {
         std::cerr << usage_string << std::endl;
@@ -112,7 +112,6 @@ int main(int argc, char **argv) {
 
     // Defaults
     uint window_size = 2;
-    bool use_sun = false;
 
     // Parse command line arguments
     std::string filename(argv[1]);
@@ -122,8 +121,6 @@ int main(int argc, char **argv) {
         if (flag == "--window" && argc > a + 1) {
             window_size = std::atoi(argv[a + 1]);
             ++a;
-        } else if (flag == "--usesun") {
-            use_sun = true;
         } else {
             std::cerr << usage_string << std::endl;
             return EXIT_FAILURE;
@@ -137,21 +134,26 @@ int main(int argc, char **argv) {
     }
 
     // Compute initial guess
-    std::cerr << "Computing VO initial guess" << std::endl;
-    dataset.compute_initial_guess();
+    std::cerr << "Computing VO without sun measurements" << std::endl;
+    for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
+        uint k2 = fmin(k1 + window_size, dataset.num_states);
+        // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
+        dataset.compute_initial_guess(k1, k2);
+        solveWindow(dataset, k1, k2, false);
+        dataset.reset_points();
+    }
 
     // Output the initial guess to a CSV file for comparison
     std::vector<std::string> tokens;
     tokens = ceres_slam::split(filename, '.');
     dataset.write_csv(tokens.at(0) + "_initial.csv");
 
-    dataset.reset_points();
-
+    std::cerr << "Computing VO with sun measurements" << std::endl;
     for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
         uint k2 = fmin(k1 + window_size, dataset.num_states);
         // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
         dataset.compute_initial_guess(k1, k2);
-        solveWindow(dataset, k1, k2, use_sun);
+        solveWindow(dataset, k1, k2, true);
         dataset.reset_points();
     }
 
