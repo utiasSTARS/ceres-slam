@@ -60,7 +60,10 @@ const bool DatasetProblem::read_csv(std::string filename) {
         std::stod(tokens.at(2));
     sun_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
         std::stod(tokens.at(5));
-    sun_obs_var *= 1e-12;
+
+    // stereo_obs_var *= 1e2;
+    // sun_obs_var /= 3.;
+
     std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
               << std::endl
               << "Sun direction observation variance: "

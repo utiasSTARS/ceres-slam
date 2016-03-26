@@ -137,13 +137,15 @@ int main(int argc, char **argv) {
     }
 
     // Compute initial guess
-    // std::cerr << "Computing VO initial guess" << std::endl;
-    // dataset.compute_initial_guess();
+    std::cerr << "Computing VO initial guess" << std::endl;
+    dataset.compute_initial_guess();
 
     // Output the initial guess to a CSV file for comparison
-    // std::vector<std::string> tokens;
-    // tokens = ceres_slam::split(filename, '.');
-    // dataset.write_csv(tokens.at(0) + "_initial.csv");
+    std::vector<std::string> tokens;
+    tokens = ceres_slam::split(filename, '.');
+    dataset.write_csv(tokens.at(0) + "_initial.csv");
+
+    dataset.reset_points();
 
     for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
         uint k2 = fmin(k1 + window_size, dataset.num_states);

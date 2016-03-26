@@ -19,7 +19,10 @@ class SunSensorErrorAutomatic {
                             const Vector::Covariance& stiffness)
         : observed_sun_dir_c_(observed_sun_dir_c),
           expected_sun_dir_g_(expected_sun_dir_g),
-          stiffness_(stiffness) {}
+          stiffness_(stiffness) {
+        observed_sun_dir_c_.normalize();
+        expected_sun_dir_g_.normalize();
+    }
 
     //! Templated evaluator operator for use with ceres::Jet
     template <typename T>
