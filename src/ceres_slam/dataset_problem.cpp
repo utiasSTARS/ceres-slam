@@ -31,9 +31,8 @@ const bool DatasetProblem::read_csv(std::string filename) {
     num_points = std::stoi(tokens.at(1));
     poses.resize(num_states);
     map_points.resize(num_points);
-    for (uint j = 0; j < num_points; ++j) {
-        initialized_point.push_back(false);
-    }
+    initialized_point.resize(num_points);
+    reset_points();
 
     sun_obs_list.resize(num_states);
     for (uint k = 0; k < num_states; ++k) {
@@ -61,6 +60,7 @@ const bool DatasetProblem::read_csv(std::string filename) {
         std::stod(tokens.at(2));
     sun_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
         std::stod(tokens.at(5));
+    sun_obs_var *= 1e-12;
     std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
               << std::endl
               << "Sun direction observation variance: "
@@ -197,6 +197,10 @@ const std::vector<uint> DatasetProblem::obs_indices_for_feature(uint j) const {
     return feature_indices_.at(j);
 }
 
+void DatasetProblem::reset_points() {
+    std::fill(initialized_point.begin(), initialized_point.end(), false);
+}
+
 void DatasetProblem::compute_initial_guess(uint k1, uint k2) {
     std::vector<Point> pts_km1, pts_k;
     std::vector<uint> j_km1, j_k, idx_km1, idx_k;
@@ -207,10 +211,10 @@ void DatasetProblem::compute_initial_guess(uint k1, uint k2) {
         k2 = num_states;
     }
 
-    // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
-
     // Iterate over all poses
     for (uint k = k1 + 1; k < k2; ++k) {
+        // std::cout << "k = " << k << std::endl;
+
         pts_km1.clear();
         pts_k.clear();
         j_km1.clear();
@@ -266,7 +270,7 @@ void DatasetProblem::compute_initial_guess(uint k1, uint k2) {
         SE3 T_k_km1;
         std::vector<uint> inlier_idx =
             point_cloud_aligner.compute_transformation_and_inliers(
-                T_k_km1, pts_km1, pts_k, camera, 400, 9);
+                T_k_km1, pts_km1, pts_k, camera, 400, 4.);
 
         // std::cout <<"Best inlier set has " << inlier_idx.size()
         //               << " elements" << std::endl;
@@ -278,7 +282,7 @@ void DatasetProblem::compute_initial_guess(uint k1, uint k2) {
         // If the map point does not have an initial guess already,
         // initialize it
         for (uint i : inlier_idx) {
-            if (!initialized_point[j_km1[i]] || reinitialize_points_) {
+            if (!initialized_point[j_km1[i]]) {
                 // Initialize the position with the guess from the
                 // first point cloud, transformed into the base frame
                 Point point_position = poses[k - 1].inverse() * pts_km1[i];

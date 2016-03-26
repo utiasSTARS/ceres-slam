@@ -85,9 +85,9 @@ void solveWindow(ceres_slam::DatasetProblem &dataset, uint k1, uint k2,
     solver_options.num_linear_solver_threads = 8;
     solver_options.max_num_iterations = 1000;
     solver_options.use_nonmonotonic_steps = true;
-    solver_options.trust_region_strategy_type = ceres::DOGLEG;
-    solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
-    solver_options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    // solver_options.trust_region_strategy_type = ceres::DOGLEG;
+    // solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
+    // solver_options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     // solver_options.check_gradients = true;
 
     // Create sumary container
@@ -137,23 +137,20 @@ int main(int argc, char **argv) {
     }
 
     // Compute initial guess
-    std::cerr << "Computing VO initial guess" << std::endl;
-    dataset.compute_initial_guess();
+    // std::cerr << "Computing VO initial guess" << std::endl;
+    // dataset.compute_initial_guess();
 
     // Output the initial guess to a CSV file for comparison
-    std::vector<std::string> tokens;
-    tokens = ceres_slam::split(filename, '.');
-    dataset.write_csv(tokens.at(0) + "_initial.csv");
+    // std::vector<std::string> tokens;
+    // tokens = ceres_slam::split(filename, '.');
+    // dataset.write_csv(tokens.at(0) + "_initial.csv");
 
     for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
         uint k2 = fmin(k1 + window_size, dataset.num_states);
         // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
-        if (k1 > 0) {
-            dataset.compute_initial_guess(k2 - 1, k2);
-        } else {
-            dataset.compute_initial_guess(k1, k2);
-        }
+        dataset.compute_initial_guess(k1, k2);
         solveWindow(dataset, k1, k2, use_sun);
+        dataset.reset_points();
     }
 
     // Output optimized state to file

@@ -26,8 +26,7 @@ class DatasetProblem {
     typedef Vector3D<double> Vector;
 
     //! Default constructor
-    DatasetProblem(bool reinitialize_points = true)
-        : reinitialize_points_(reinitialize_points) {}
+    DatasetProblem() {}
 
     //! Camera model
     Camera::Ptr camera;
@@ -85,6 +84,9 @@ class DatasetProblem {
     //! Return list of indices corresponding to a specified feature index
     const std::vector<uint> obs_indices_for_feature(uint j) const;
 
+    //! Reset initialization flags for all points
+    void reset_points();
+
     //! Generate initial guess for poses and map points
     //! using scalar-weighted point cloud alignment for stereo VO
     void compute_initial_guess(uint k1 = 0, uint k2 = 0);
@@ -94,8 +96,6 @@ class DatasetProblem {
     std::vector<std::vector<uint>> state_indices_;
     //! List of lists of indices corresponding to each feature index
     std::vector<std::vector<uint>> feature_indices_;
-    //! Reinitialize re-observed points when computing the initial guess?
-    bool reinitialize_points_;
 
 };  // class DatasetProblem
 
