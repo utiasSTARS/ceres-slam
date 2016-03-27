@@ -39,10 +39,18 @@ class SunSensorErrorAutomatic {
         VectorT expected_sun_dir_g = expected_sun_dir_g_.cast<T>();
         VectorT expected_sun_dir_c = T_c_g * expected_sun_dir_g;
 
+        // Do the casting here for convenience
+        VectorT observed_sun_dir_c = observed_sun_dir_c_.cast<T>();
+
         // Compute the residual
         Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
-        residuals = stiffness_.cast<T>() *
-                    (expected_sun_dir_c - observed_sun_dir_c_.cast<T>());
+
+        if (T(1) - expected_sun_dir_c.dot(observed_sun_dir_c) < T(0.1)) {
+            residuals = stiffness_.cast<T>() *
+                        (expected_sun_dir_c - observed_sun_dir_c);
+        } else {
+            residuals = ResidualVectorT::Zero();
+        }
 
         return true;
     }
