@@ -77,6 +77,9 @@ target_link_libraries(light_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIB
 add_executable(dataset_vo src/tests/dataset_vo.cpp)
 target_link_libraries(dataset_vo ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
+add_executable(dataset_vo_sun src/tests/dataset_vo_sun.cpp)
+target_link_libraries(dataset_vo_sun ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+
 add_executable(dataset_ba_phong src/tests/dataset_ba_phong.cpp)
 target_link_libraries(dataset_ba_phong ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 

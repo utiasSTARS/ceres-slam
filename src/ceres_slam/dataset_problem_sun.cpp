@@ -1,4 +1,4 @@
-#include <ceres_slam/dataset_problem.h>
+#include <ceres_slam/dataset_problem_sun.h>
 
 #include <iostream>
 #include <fstream>
@@ -13,7 +13,7 @@
 
 namespace ceres_slam {
 
-const bool DatasetProblem::read_csv(std::string filename) {
+const bool DatasetProblemSun::read_csv(std::string filename) {
     std::cerr << "Loading file " << filename << std::endl;
     CSVReader reader(filename);
 
@@ -34,6 +34,11 @@ const bool DatasetProblem::read_csv(std::string filename) {
     initialized_point.resize(num_points);
     reset_points();
 
+    sun_obs_list.resize(num_states);
+    for (uint k = 0; k < num_states; ++k) {
+        state_has_sun_obs.push_back(false);
+    }
+
     std::cerr << "expecting " << num_states << " states"
               << " and " << num_points << " points" << std::endl;
 
@@ -53,9 +58,16 @@ const bool DatasetProblem::read_csv(std::string filename) {
     tokens = reader.getLine();
     stereo_obs_var << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
         std::stod(tokens.at(2));
+    sun_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
+        std::stod(tokens.at(5));
+
+    // stereo_obs_var *= 1e2;
+    // sun_obs_var *= 3.;
 
     std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
-              << std::endl;
+              << std::endl
+              << "Sun direction observation variance: "
+              << sun_obs_var.transpose() << std::endl;
 
     // Read first ground truth pose
     std::cerr << "Reading first ground truth pose" << std::endl;
@@ -70,16 +82,32 @@ const bool DatasetProblem::read_csv(std::string filename) {
     poses[0] = SE3(T_0_g);
     std::cout << poses[0] << std::endl;
 
+    // Read ground truth sun direction in the global frame
+    std::cerr << "Reading ground truth sun direction... " << std::endl;
+    tokens = reader.getLine();
+    sun_dir_g << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
+        std::stod(tokens.at(2));
+    std::cerr << sun_dir_g << std::endl;
+
     // Read in the observations
     std::cerr << "Reading observation data... ";
     while (!reader.atEOF()) {
         tokens = reader.getLine();
-        state_ids.push_back(std::stoi(tokens.at(0)));
-        point_ids.push_back(std::stoi(tokens.at(1)));
-        double u = std::stod(tokens.at(2));
-        double v = std::stod(tokens.at(3));
-        double d = std::stod(tokens.at(4));
-        stereo_obs_list.push_back(Camera::Observation(u, v, d));
+        uint k = std::stod(tokens.at(0));
+        if (tokens.size() > 4) {
+            // This is a stereo observation
+            state_ids.push_back(k);
+            point_ids.push_back(std::stoi(tokens.at(1)));
+            double u = std::stod(tokens.at(2));
+            double v = std::stod(tokens.at(3));
+            double d = std::stod(tokens.at(4));
+            stereo_obs_list.push_back(Camera::Observation(u, v, d));
+        } else {
+            // This is a sun direction observation
+            state_has_sun_obs.at(k) = true;
+            sun_obs_list.at(k) << std::stod(tokens.at(1)),
+                std::stod(tokens.at(2)), std::stod(tokens.at(3));
+        }
     }
     std::cerr << "read " << stereo_obs_list.size() << " stereo observations"
               << std::endl;
@@ -120,7 +148,7 @@ const bool DatasetProblem::read_csv(std::string filename) {
     return true;
 }
 
-const bool DatasetProblem::write_csv(std::string filename) const {
+const bool DatasetProblemSun::write_csv(std::string filename) const {
     std::vector<std::string> tokens = split(filename, '.');
     std::string filename_poses = tokens.at(0) + "_poses.csv";
     std::string filename_map = tokens.at(0) + "_map.csv";
@@ -164,19 +192,19 @@ const bool DatasetProblem::write_csv(std::string filename) const {
     return true;
 }
 
-const std::vector<uint> DatasetProblem::obs_indices_at_state(uint k) const {
+const std::vector<uint> DatasetProblemSun::obs_indices_at_state(uint k) const {
     return state_indices_.at(k);
 }
 
-const std::vector<uint> DatasetProblem::obs_indices_for_feature(uint j) const {
+const std::vector<uint> DatasetProblemSun::obs_indices_for_feature(uint j) const {
     return feature_indices_.at(j);
 }
 
-void DatasetProblem::reset_points() {
+void DatasetProblemSun::reset_points() {
     std::fill(initialized_point.begin(), initialized_point.end(), false);
 }
 
-void DatasetProblem::compute_initial_guess(uint k1, uint k2) {
+void DatasetProblemSun::compute_initial_guess(uint k1, uint k2) {
     std::vector<Point> pts_km1, pts_k;
     std::vector<uint> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
@@ -260,7 +288,10 @@ void DatasetProblem::compute_initial_guess(uint k1, uint k2) {
             if (!initialized_point[j_km1[i]]) {
                 // Initialize the position with the guess from the
                 // first point cloud, transformed into the base frame
-                map_points[j_km1[i]] = poses[k - 1].inverse() * pts_km1[i];
+                Point point_position = poses[k - 1].inverse() * pts_km1[i];
+
+                // Create the point object
+                map_points[j_km1[i]] = point_position;
 
                 // Set the initialization flag to true for this point
                 initialized_point[j_km1[i]] = true;

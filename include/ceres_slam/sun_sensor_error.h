@@ -45,7 +45,7 @@ class SunSensorErrorAutomatic {
         // Compute the residual
         Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
 
-        if (T(1) - expected_sun_dir_c.dot(observed_sun_dir_c) < T(0.1)) {
+        if (T(1) - expected_sun_dir_c.dot(observed_sun_dir_c) < T(0.2)) {
             residuals = stiffness_.cast<T>() *
                         (expected_sun_dir_c - observed_sun_dir_c);
         } else {
