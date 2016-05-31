@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(ceres-slam)
+project(ceres_slam)
 
 # Set the build type. Options are:
 #  Coverage : w/ debug symbols, w/o optimization, w/ code-coverage
