@@ -1,7 +1,7 @@
 #ifndef CERES_SLAM_PHONG_H_
 #define CERES_SLAM_PHONG_H_
 
-#include <ceres_slam/geometry.h>
+#include <ceres_slam/geometry/geometry.h>
 
 #include "vertex3d.h"
 

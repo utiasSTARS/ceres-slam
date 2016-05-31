@@ -9,7 +9,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include <ceres_slam/utils.h>
+#include <ceres_slam/utils/utils.h>
 
 #include "point3d.h"
 #include "vector3d.h"

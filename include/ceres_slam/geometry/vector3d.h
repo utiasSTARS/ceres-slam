@@ -7,7 +7,7 @@
 
 #include <Eigen/Core>
 
-#include <ceres_slam/utils.h>
+#include <ceres_slam/utils/utils.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declarations

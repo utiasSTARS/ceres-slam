@@ -3,10 +3,10 @@
 
 #include <sensor_msgs/CameraInfo.h>
 
-#include <memory>
 #include <Eigen/Core>
+#include <memory>
 
-#include <ceres_slam/geometry.h>
+#include <ceres_slam/geometry/geometry.h>
 
 namespace ceres_slam {
 
@@ -47,14 +47,6 @@ class StereoCamera {
     StereoCamera(const Scalar fu, const Scalar fv, const Scalar cu,
                  const Scalar cv, const Scalar b)
         : fu_(fu), fv_(fv), cu_(cu), cv_(cv), b_(b) {}
-    //! Construct from ROS CameraInfo messages
-    StereoCamera(const sensor_msgs::CameraInfoConstPtr &left_camera_info,
-                 const sensor_msgs::CameraInfoConstPtr &right_camera_info)
-        : fu_(left_camera_info->P[0]),
-          fv_(left_camera_info->P[5]),
-          cu_(left_camera_info->P[2]),
-          cv_(left_camera_info->P[6]),
-          b_(-right_camera_info->P[3] / right_camera_info->P[0]) {}
 
     //! Cast to another scalar type (mutable)
     template <typename OtherScalar>

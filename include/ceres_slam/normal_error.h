@@ -3,7 +3,7 @@
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/geometry.h>
+#include <ceres_slam/geometry/geometry.h>
 
 namespace ceres_slam {
 

@@ -1,0 +1,8 @@
+prefix=/home/leeclement/osx_documents/ceres-slam/ros/devel
+
+Name: ceres_slam
+Description: Description of ceres_slam
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/leeclement/osx_documents/ceres-slam/ros/devel/lib 
+Requires: roscpp sensor_msgs image_transport cv_bridge message_filters

@@ -4,7 +4,7 @@
 #include <functional>
 #include <random>
 
-#include <ceres_slam/geometry.h>
+#include <ceres_slam/geometry/geometry.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/stereo_reprojection_error.h>
 #include <ceres_slam/point_cloud_aligner.h>

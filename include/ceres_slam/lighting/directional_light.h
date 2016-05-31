@@ -4,8 +4,8 @@
 #include <memory>
 #include <Eigen/Core>
 
-#include <ceres_slam/utils.h>
-#include <ceres_slam/geometry.h>
+#include <ceres_slam/utils/utils.h>
+#include <ceres_slam/geometry/geometry.h>
 
 #include "vertex3d.h"
 #include "phong.h"

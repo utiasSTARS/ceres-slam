@@ -1,8 +1,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <memory>
-#include <ceres_slam/geometry.h>
-#include <ceres_slam/lighting.h>
+#include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/lighting/lighting.h>
 #include <ceres_slam/intensity_error_point_light.h>
 
 // TODO: Rewrite this as a proper unit test

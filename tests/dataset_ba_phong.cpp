@@ -5,9 +5,9 @@
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/utils.h>
-#include <ceres_slam/geometry.h>
-#include <ceres_slam/lighting.h>
+#include <ceres_slam/utils/utils.h>
+#include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/lighting/lighting.h>
 #include <ceres_slam/dataset_problem_phong.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/stereo_reprojection_error.h>

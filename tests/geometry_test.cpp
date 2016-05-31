@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <Eigen/Core>
-#include <ceres_slam/geometry.h>
+#include <ceres_slam/geometry/geometry.h>
 
 const double PI = 3.14159265;
 

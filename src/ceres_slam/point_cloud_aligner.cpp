@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <ceres_slam/geometry.h>
+#include <ceres_slam/geometry/geometry.h>
 
 #include <Eigen/Eigenvalues>  // For SVD
 
@@ -11,9 +11,11 @@ namespace ceres_slam {
 PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
     const std::vector<Point>& pts_0, const std::vector<Point>& pts_1) {
     if (pts_0.size() != pts_1.size()) {
-        std::cerr << "Error in PointCloudAligner::compute_transformation -- "
-                  << "pts_0 and pts_1 are different sizes.";
-        return PointCloudAligner::SE3();
+        std::runtime_error("Error in PointCloudAligner::compute_transformation" " -- pts_0 and pts_1 are different sizes.");
+    }
+
+    if (pts_0.size() < 3 || pts_1.size() < 3) {
+        std::runtime_error("Error in PointCloudAligner::compute_transformation" " -- Need at least 3 inlier keypoint matches.");
     }
 
     // Compute the centroids p_0 and p_1 of each cloud

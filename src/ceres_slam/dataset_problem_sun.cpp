@@ -6,8 +6,8 @@
 #include <memory>
 #include <string>
 
-#include <ceres_slam/csv_reader.h>
-#include <ceres_slam/geometry.h>
+#include <ceres_slam/utils/csv_reader.h>
+#include <ceres_slam/geometry/geometry.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/point_cloud_aligner.h>
 
