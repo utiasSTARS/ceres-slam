@@ -1,15 +1,15 @@
 #include <ceres_slam/dataset_problem_phong.h>
 
-#include <iostream>
 #include <fstream>
-#include <vector>
+#include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
-#include <ceres_slam/utils/csv_reader.h>
 #include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/point_cloud_aligner.h>
+#include <ceres_slam/stereo_camera.h>
+#include <ceres_slam/utils/csv_reader.h>
 
 namespace ceres_slam {
 
@@ -234,8 +234,7 @@ const bool DatasetProblemPhong::write_csv(std::string filename) const {
     return true;
 }
 
-const std::vector<uint> DatasetProblemPhong::obs_indices_at_state(
-    int k) const {
+const std::vector<uint> DatasetProblemPhong::obs_indices_at_state(int k) const {
     return state_indices_.at(k);
 }
 
@@ -249,8 +248,7 @@ const std::vector<uint> DatasetProblemPhong::obs_indices_for_material(
     return material_indices_.at(m);
 }
 
-void DatasetProblemPhong::compute_initial_guess(uint k1,
-                                                uint k2) {
+void DatasetProblemPhong::compute_initial_guess(uint k1, uint k2) {
     std::vector<Point> pts_km1, pts_k;
     std::vector<Vector> normals_km1;
     std::vector<double> intensities_km1;

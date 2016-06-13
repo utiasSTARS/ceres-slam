@@ -1,10 +1,10 @@
 #ifndef CERES_SLAM_GEOMETRY_SO3GROUP_H_
 #define CERES_SLAM_GEOMETRY_SO3GROUP_H_
 
-#include <memory>
 #include <iostream>
-#include <string>
+#include <memory>
 #include <sstream>
+#include <string>
 
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>  // For SVD
@@ -386,7 +386,8 @@ class Map<ceres_slam::SO3Group<_Scalar>, _Options>
           Map<ceres_slam::SO3Group<_Scalar>, _Options> > {
     //! Base class definition
     typedef ceres_slam::SO3GroupBase<
-        Map<ceres_slam::SO3Group<_Scalar>, _Options> > Base;
+        Map<ceres_slam::SO3Group<_Scalar>, _Options> >
+        Base;
 
    public:
     //! Scalar type
@@ -435,7 +436,8 @@ class Map<const ceres_slam::SO3Group<_Scalar>, _Options>
           Map<const ceres_slam::SO3Group<_Scalar>, _Options> > {
     //! Base class definition
     typedef ceres_slam::SO3GroupBase<
-        Map<const ceres_slam::SO3Group<_Scalar>, _Options> > Base;
+        Map<const ceres_slam::SO3Group<_Scalar>, _Options> >
+        Base;
 
    public:
     //! Scalar type

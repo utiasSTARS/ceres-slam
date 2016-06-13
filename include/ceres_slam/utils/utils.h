@@ -1,9 +1,9 @@
 #ifndef CERES_SLAM_UTILS_H_
 #define CERES_SLAM_UTILS_H_
 
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include <Eigen/Core>
 

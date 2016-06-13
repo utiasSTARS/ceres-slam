@@ -1,14 +1,14 @@
 #ifndef CERES_SLAM_DIRECTIONAL_LIGHT_H_
 #define CERES_SLAM_DIRECTIONAL_LIGHT_H_
 
-#include <memory>
 #include <Eigen/Core>
+#include <memory>
 
-#include <ceres_slam/utils/utils.h>
 #include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/utils/utils.h>
 
-#include "vertex3d.h"
 #include "phong.h"
+#include "vertex3d.h"
 
 namespace ceres_slam {
 
@@ -38,7 +38,8 @@ class DirectionalLight {
     typedef Scalar ColourCovariance;
     //! Observation Jacobian type
     typedef Eigen::Matrix<Scalar, obs_dim, Vertex::dim + Point::dim,
-                          Eigen::RowMajor> ColourJacobian;
+                          Eigen::RowMajor>
+        ColourJacobian;
 
     //! Default constructor
     DirectionalLight()

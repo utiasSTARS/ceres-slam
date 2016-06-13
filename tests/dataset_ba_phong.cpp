@@ -1,20 +1,20 @@
 #include <cstdlib>
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/utils/utils.h>
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/lighting/lighting.h>
 #include <ceres_slam/dataset_problem_phong.h>
-#include <ceres_slam/stereo_camera.h>
-#include <ceres_slam/stereo_reprojection_error.h>
-#include <ceres_slam/intensity_error_point_light.h>
+#include <ceres_slam/geometry/geometry.h>
 #include <ceres_slam/intensity_error_directional_light.h>
+#include <ceres_slam/intensity_error_point_light.h>
+#include <ceres_slam/lighting/lighting.h>
 #include <ceres_slam/normal_error.h>
 #include <ceres_slam/perturbations.h>
+#include <ceres_slam/stereo_camera.h>
+#include <ceres_slam/stereo_reprojection_error.h>
+#include <ceres_slam/utils/utils.h>
 
 #include <Eigen/Eigenvalues>
 
@@ -23,9 +23,8 @@ using Point = ceres_slam::DatasetProblemPhong::Point;
 using Vector = ceres_slam::DatasetProblemPhong::Vector;
 using Camera = ceres_slam::DatasetProblemPhong::Camera;
 
-void solveWindow(ceres_slam::DatasetProblemPhong &dataset, uint k1,
-                 uint k2, bool use_light, bool directional_light,
-                 bool multi_stage) {
+void solveWindow(ceres_slam::DatasetProblemPhong &dataset, uint k1, uint k2,
+                 bool use_light, bool directional_light, bool multi_stage) {
     // Build the problem
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")" << std::endl;
 

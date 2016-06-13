@@ -1,9 +1,9 @@
 #ifndef CSV_READER_HPP_
 #define CSV_READER_HPP_
 
+#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include <string>
 #include <vector>
 

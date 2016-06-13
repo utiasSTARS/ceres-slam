@@ -1,10 +1,10 @@
 #ifndef CERES_SLAM_GEOMETRY_SE3GROUP_H_
 #define CERES_SLAM_GEOMETRY_SE3GROUP_H_
 
-#include <memory>
 #include <iostream>
-#include <string>
+#include <memory>
 #include <sstream>
+#include <string>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -12,8 +12,8 @@
 #include <ceres_slam/utils/utils.h>
 
 #include "point3d.h"
-#include "vector3d.h"
 #include "so3group.h"
+#include "vector3d.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -413,7 +413,8 @@ class Map<ceres_slam::SE3Group<_Scalar>, _Options>
           Map<ceres_slam::SE3Group<_Scalar>, _Options> > {
     //! Base class definition
     typedef ceres_slam::SE3GroupBase<
-        Map<ceres_slam::SE3Group<_Scalar>, _Options> > Base;
+        Map<ceres_slam::SE3Group<_Scalar>, _Options> >
+        Base;
 
    public:
     //! Scalar type
@@ -476,7 +477,8 @@ class Map<const ceres_slam::SE3Group<_Scalar>, _Options>
           Map<const ceres_slam::SE3Group<_Scalar>, _Options> > {
     //! Base class definition
     typedef ceres_slam::SE3GroupBase<
-        Map<const ceres_slam::SE3Group<_Scalar>, _Options> > Base;
+        Map<const ceres_slam::SE3Group<_Scalar>, _Options> >
+        Base;
 
    public:
     //! Scalar type

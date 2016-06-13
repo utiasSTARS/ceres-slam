@@ -2,8 +2,8 @@
 #define CERES_SLAM_GEOMETRY_VECTOR3D_H_
 
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
 
 #include <Eigen/Core>
 
@@ -70,8 +70,7 @@ class Vector3D : public Eigen::Matrix<_Scalar, 3, 1> {
 
     //! Constructor to construct Vector3D from Eigen expressions
     template <typename OtherDerived>
-    Vector3D(const Eigen::MatrixBase<OtherDerived>& other)
-        : Base(other) {}
+    Vector3D(const Eigen::MatrixBase<OtherDerived>& other) : Base(other) {}
 
     //! Assignment of Eigen expressions to Vector3D
     using Base::operator=;

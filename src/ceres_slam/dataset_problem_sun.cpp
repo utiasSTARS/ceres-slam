@@ -1,15 +1,15 @@
 #include <ceres_slam/dataset_problem_sun.h>
 
-#include <iostream>
 #include <fstream>
-#include <vector>
+#include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
-#include <ceres_slam/utils/csv_reader.h>
 #include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/point_cloud_aligner.h>
+#include <ceres_slam/stereo_camera.h>
+#include <ceres_slam/utils/csv_reader.h>
 
 namespace ceres_slam {
 
@@ -196,7 +196,8 @@ const std::vector<uint> DatasetProblemSun::obs_indices_at_state(uint k) const {
     return state_indices_.at(k);
 }
 
-const std::vector<uint> DatasetProblemSun::obs_indices_for_feature(uint j) const {
+const std::vector<uint> DatasetProblemSun::obs_indices_for_feature(
+    uint j) const {
     return feature_indices_.at(j);
 }
 

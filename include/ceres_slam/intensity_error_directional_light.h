@@ -3,9 +3,9 @@
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/utils/utils.h>
 #include <ceres_slam/geometry/geometry.h>
 #include <ceres_slam/lighting/lighting.h>
+#include <ceres_slam/utils/utils.h>
 
 namespace ceres_slam {
 

@@ -1,15 +1,15 @@
 #include <ceres_slam/dataset_problem.h>
 
-#include <iostream>
 #include <fstream>
-#include <vector>
+#include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
-#include <ceres_slam/utils/csv_reader.h>
 #include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/point_cloud_aligner.h>
+#include <ceres_slam/stereo_camera.h>
+#include <ceres_slam/utils/csv_reader.h>
 
 namespace ceres_slam {
 

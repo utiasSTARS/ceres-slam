@@ -1,5 +1,3 @@
-#include <fstream>
-
 #include <ceres/ceres.h>
 
 #include <Eigen/Dense>
@@ -9,6 +7,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/image_error.h>
+#include <ceres_slam/perturbations.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/utils/utils.h>
 
@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     double cu = 609.5593;
     double cv = 172.854;
     double b = 0.53715;
-    Camera stereo_camera(fu, fv, cu, cv, b);
+    Camera::Ptr stereo_camera = std::make_shared<Camera>(fu, fv, cu, cv, b);
 
     std::vector<Camera::Observation> obs_list;
     std::vector<Camera::Point> pts_list;
@@ -51,27 +51,39 @@ int main(int argc, char** argv) {
 
     cv::Mat disp0, disp0_for_plotting;
     sgbm(left0, right0, disp0);
-    disp0.convertTo(disp0, CV_32F, 1. / 16.);
-    disp0.convertTo(disp0_for_plotting, CV_8U, 255. / 64.);
+    disp0.convertTo(disp0, CV_64F, 1. / 16.);
 
-    cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
-    cv::imshow("Display", disp0_for_plotting);
-    cv::waitKey(0);
+    cv::Mat left0_gradx, left0_grady;
+    left0.convertTo(left0, CV_64F, 1. / 255.);
+    cv::Scharr(left0, left0_gradx, -1, 1, 0);
+    cv::Scharr(left0, left0_grady, -1, 0, 1);
 
-    std::cout << "Triangulating good points" << std::endl;
+    cv::Ptr<cv::Mat> left0_ptr(&left0);
+    cv::Ptr<cv::Mat> left1_ptr(&left1);
+    cv::Ptr<cv::Mat> left0_gradx_ptr(&left0_gradx);
+    cv::Ptr<cv::Mat> left0_grady_ptr(&left0_grady);
+
+    // disp0.convertTo(disp0_for_plotting, CV_8U, 255. / 64.);
+    // cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
+    // cv::imshow("Display", disp0_for_plotting);
+    // cv::waitKey(0);
+
+    ceres::Problem problem;
+    ceres::LocalParameterization* se3_perturbation =
+        ceres_slam::SE3Perturbation::Create();
+
     for (int v = 0; v < disp0.rows; ++v) {
-        const float* row_ptr = disp0.ptr<float>(v);
+        const double* row_ptr = disp0.ptr<double>(v);
         for (int u = 0; u < disp0.cols; ++u) {
-            float d = row_ptr[u];
+            double d = row_ptr[u];
             if (std::isfinite(d) && d > 0.) {
-                Camera::Observation obs(u, v, d);
-                obs_list.push_back(obs);
-                pts_list.push_back(stereo_camera.triangulate(obs));
+                ceres::CostFunction* image_cost =
+                    ceres_slam::ImageError::Create(
+                        stereo_camera, left0_ptr, left1_ptr, left0_gradx_ptr,
+                        left0_grady_ptr, (double)u, (double)v);
             }
         }
     }
-    std::cout << "Computed " << pts_list.size() << " valid points out of "
-              << disp0.rows * disp0.cols << " total points." << std::endl;
 
     return 0;
 }

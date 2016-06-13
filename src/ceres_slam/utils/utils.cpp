@@ -1,8 +1,8 @@
 #include <ceres_slam/utils/utils.h>
 
-#include <vector>
-#include <string>
 #include <sstream>
+#include <string>
+#include <vector>
 
 namespace ceres_slam {
 

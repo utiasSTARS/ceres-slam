@@ -4,18 +4,22 @@
 
 #include <ceres_slam/geometry/geometry.h>
 
-#include <Eigen/Eigenvalues>  // For SVD
+#include <Eigen/SVD>
 
 namespace ceres_slam {
 
 PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
     const std::vector<Point>& pts_0, const std::vector<Point>& pts_1) {
     if (pts_0.size() != pts_1.size()) {
-        std::runtime_error("Error in PointCloudAligner::compute_transformation" " -- pts_0 and pts_1 are different sizes.");
+        std::runtime_error(
+            "Error in PointCloudAligner::compute_transformation"
+            " -- pts_0 and pts_1 are different sizes.");
     }
 
     if (pts_0.size() < 3 || pts_1.size() < 3) {
-        std::runtime_error("Error in PointCloudAligner::compute_transformation" " -- Need at least 3 inlier keypoint matches.");
+        std::runtime_error(
+            "Error in PointCloudAligner::compute_transformation"
+            " -- Need at least 3 inlier keypoint matches.");
     }
 
     // Compute the centroids p_0 and p_1 of each cloud
@@ -59,14 +63,13 @@ PointCloudAligner::SE3 PointCloudAligner::compute_transformation(
 std::vector<uint> PointCloudAligner::compute_transformation_and_inliers(
     SE3& T_1_0_out, const std::vector<PointCloudAligner::Point>& pts_0,
     const std::vector<PointCloudAligner::Point>& pts_1,
-    const PointCloudAligner::Camera::ConstPtr camera,
-    const uint num_iters, const double thresh) {
+    const PointCloudAligner::Camera::ConstPtr camera, const uint num_iters,
+    const double thresh) {
     // Uniformly distributed integers in [a,b], NOT [a,b)
     std::random_device rd;
     std::mt19937 rng(rd());
     rng.seed(42);  // for reproducibility
-    std::uniform_int_distribution<uint> idx_selector(0,
-                                                             pts_0.size() - 1);
+    std::uniform_int_distribution<uint> idx_selector(0, pts_0.size() - 1);
     uint rand_idx[3];
 
     std::vector<PointCloudAligner::Point> test_pts_0, test_pts_1;

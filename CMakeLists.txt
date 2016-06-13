@@ -39,7 +39,7 @@ add_executable(light_test tests/light_test.cpp)
 target_link_libraries(light_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
 add_executable(dense_stereo_test tests/dense_stereo_test.cpp)
-target_link_libraries(dense_stereo_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(dense_stereo_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(dataset_vo tests/dataset_vo.cpp)
 target_link_libraries(dataset_vo ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})

@@ -1,15 +1,15 @@
 #ifndef CERES_SLAM_GEOMETRY_VERTEX3D_H_
 #define CERES_SLAM_GEOMETRY_VERTEX3D_H_
 
-#include <memory>
 #include <iostream>
-#include <string>
+#include <memory>
 #include <sstream>
+#include <string>
 
 #include <Eigen/Core>
 
-#include <ceres_slam/utils/utils.h>
 #include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/utils/utils.h>
 
 #include "material.h"
 #include "texture.h"

@@ -1,8 +1,8 @@
 #ifndef CERES_SLAM_MATERIAL_H_
 #define CERES_SLAM_MATERIAL_H_
 
-#include <memory>
 #include <Eigen/Core>
+#include <memory>
 
 namespace ceres_slam {
 

@@ -1,17 +1,17 @@
 #include <cstdlib>
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/utils/utils.h>
-#include <ceres_slam/geometry/geometry.h>
 #include <ceres_slam/dataset_problem_sun.h>
+#include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/perturbations.h>
 #include <ceres_slam/stereo_camera.h>
 #include <ceres_slam/stereo_reprojection_error.h>
 #include <ceres_slam/sun_sensor_error.h>
-#include <ceres_slam/perturbations.h>
+#include <ceres_slam/utils/utils.h>
 
 #include <Eigen/Eigenvalues>
 
@@ -102,8 +102,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 }
 
 int main(int argc, char **argv) {
-    std::string usage_string(
-        "usage: dataset_vo_sun <input_file> [--window N]");
+    std::string usage_string("usage: dataset_vo_sun <input_file> [--window N]");
 
     if (argc < 2) {
         std::cerr << usage_string << std::endl;

@@ -1,13 +1,13 @@
 #ifndef CERES_SLAM_DATASET_PROBLEM_PHONG_H_
 #define CERES_SLAM_DATASET_PROBLEM_PHONG_H_
 
-#include <vector>
-#include <string>
 #include <sstream>
+#include <string>
+#include <vector>
 
-#include <ceres_slam/stereo_camera.h>
-#include <ceres_slam/lighting/lighting.h>
 #include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/lighting/lighting.h>
+#include <ceres_slam/stereo_camera.h>
 
 namespace ceres_slam {
 

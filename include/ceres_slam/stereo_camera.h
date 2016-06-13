@@ -10,7 +10,7 @@
 
 namespace ceres_slam {
 
-//! A ROS-compatible Stereo camera model
+//! Stereo camera model
 template <typename Scalar>
 class StereoCamera {
    public:
