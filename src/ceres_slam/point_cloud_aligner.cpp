@@ -1,8 +1,8 @@
-#include <ceres_slam/point_cloud_aligner.h>
+#include <ceres_slam/point_cloud_aligner.hpp>
 
 #include <vector>
 
-#include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/geometry/geometry.hpp>
 
 #include <Eigen/SVD>
 

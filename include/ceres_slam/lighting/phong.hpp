@@ -1,9 +1,9 @@
 #ifndef CERES_SLAM_PHONG_H_
 #define CERES_SLAM_PHONG_H_
 
-#include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/geometry/geometry.hpp>
 
-#include "vertex3d.h"
+#include "vertex3d.hpp"
 
 namespace ceres_slam {
 

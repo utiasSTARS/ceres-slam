@@ -4,11 +4,11 @@
 #include <Eigen/Core>
 #include <memory>
 
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/utils/utils.h>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/utils/utils.hpp>
 
-#include "phong.h"
-#include "vertex3d.h"
+#include "phong.hpp"
+#include "vertex3d.hpp"
 
 namespace ceres_slam {
 

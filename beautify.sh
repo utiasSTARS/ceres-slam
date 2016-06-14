@@ -1,1 +1,1 @@
-find include src tests ros/src -iname *.h -o -iname *.cpp | xargs clang-format -i
+find include src tests ros/src -iname *.hpp -o -iname *.cpp | xargs clang-format -i

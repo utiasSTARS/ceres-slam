@@ -1,18 +1,18 @@
-#ifndef CERES_SLAM_DATASET_PROBLEM_H_
-#define CERES_SLAM_DATASET_PROBLEM_H_
+#ifndef CERES_SLAM_DATASET_PROBLEM_SUN_H_
+#define CERES_SLAM_DATASET_PROBLEM_SUN_H_
 
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/lighting/lighting.h>
-#include <ceres_slam/stereo_camera.h>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/lighting/lighting.hpp>
+#include <ceres_slam/stereo_camera.hpp>
 
 namespace ceres_slam {
 
 //! Class for reading simulated datasets from file
-class DatasetProblem {
+class DatasetProblemSun {
    public:
     //! Camera type
     typedef StereoCamera<double> Camera;
@@ -26,7 +26,7 @@ class DatasetProblem {
     typedef Vector3D<double> Vector;
 
     //! Default constructor
-    DatasetProblem() {}
+    DatasetProblemSun() {}
 
     //! Camera model
     Camera::Ptr camera;
@@ -47,11 +47,21 @@ class DatasetProblem {
     std::vector<uint> point_ids;
     //! True if map point j has been initialized
     std::vector<bool> initialized_point;
+    //! Map point material IDs in stereo_obs_list
+    std::vector<uint> material_ids;
 
     //! List of stereo observations
     std::vector<Camera::Observation> stereo_obs_list;
     //! Variance of stereo observations
     Camera::ObservationVariance stereo_obs_var;
+    //! List of sun direction observations
+    std::vector<Vector> sun_obs_list;
+    //! Variance of sun direction observations
+    Vector::Variance sun_obs_var;
+    //! True if state k has a sun observation
+    std::vector<bool> state_has_sun_obs;
+    //! Sun direction in the global frame
+    Vector sun_dir_g;
 
     //! Read dataset from a CSV file
     /*!
@@ -87,8 +97,8 @@ class DatasetProblem {
     //! List of lists of indices corresponding to each feature index
     std::vector<std::vector<uint>> feature_indices_;
 
-};  // class DatasetProblem
+};  // class DatasetProblemSun
 
 }  // namespace ceres_slam
 
-#endif  // CERES_SLAM_DATASET_PROBLEM_H_
+#endif  // CERES_SLAM_DATASET_PROBLEM_SUN_H_

@@ -4,28 +4,28 @@
 #include <memory>
 #include <random>
 
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/point_cloud_aligner.h>
-#include <ceres_slam/stereo_camera.h>
-#include <ceres_slam/stereo_reprojection_error.h>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/point_cloud_aligner.hpp>
+#include <ceres_slam/stereo_camera.hpp>
+#include <ceres_slam/stereo_reprojection_error.hpp>
 
 #include <ceres/ceres.h>
 
-#include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/Pose.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/image_encodings.h>
+#include <cv_bridge/cv_bridge.hpp>
+#include <geometry_msgs/Pose.hpp>
+#include <ros/ros.hpp>
+#include <sensor_msgs/Image.hpp>
+#include <sensor_msgs/image_encodings.hpp>
 
-#include <image_transport/subscriber_filter.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/sync_policies/approximate_time.h>
-#include <message_filters/sync_policies/exact_time.h>
-#include <message_filters/synchronizer.h>
+#include <image_transport/subscriber_filter.hpp>
+#include <message_filters/subscriber.hpp>
+#include <message_filters/sync_policies/approximate_time.hpp>
+#include <message_filters/sync_policies/exact_time.hpp>
+#include <message_filters/synchronizer.hpp>
 
-#include <tf/transform_broadcaster.h>
-#include <tf_conversions/tf_eigen.h>
 #include <Eigen/Geometry>
+#include <tf/transform_broadcaster.hpp>
+#include <tf_conversions/tf_eigen.hpp>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>

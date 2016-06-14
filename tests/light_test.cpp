@@ -1,6 +1,6 @@
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/intensity_error_point_light.h>
-#include <ceres_slam/lighting/lighting.h>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/intensity_error_point_light.hpp>
+#include <ceres_slam/lighting/lighting.hpp>
 #include <cstdlib>
 #include <iostream>
 #include <memory>

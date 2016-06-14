@@ -1,12 +1,10 @@
 #ifndef CERES_SLAM_STEREO_CAMERA_H_
 #define CERES_SLAM_STEREO_CAMERA_H_
 
-#include <sensor_msgs/CameraInfo.h>
-
 #include <Eigen/Core>
 #include <memory>
 
-#include <ceres_slam/geometry/geometry.h>
+#include <ceres_slam/geometry/geometry.hpp>
 
 namespace ceres_slam {
 

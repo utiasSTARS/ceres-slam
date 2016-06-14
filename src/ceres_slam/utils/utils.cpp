@@ -1,4 +1,4 @@
-#include <ceres_slam/utils/utils.h>
+#include <ceres_slam/utils/utils.hpp>
 
 #include <sstream>
 #include <string>

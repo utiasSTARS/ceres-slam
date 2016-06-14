@@ -5,16 +5,16 @@
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/dataset_problem_phong.h>
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/intensity_error_directional_light.h>
-#include <ceres_slam/intensity_error_point_light.h>
-#include <ceres_slam/lighting/lighting.h>
-#include <ceres_slam/normal_error.h>
-#include <ceres_slam/perturbations.h>
-#include <ceres_slam/stereo_camera.h>
-#include <ceres_slam/stereo_reprojection_error.h>
-#include <ceres_slam/utils/utils.h>
+#include <ceres_slam/dataset_problem_phong.hpp>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/intensity_error_directional_light.hpp>
+#include <ceres_slam/intensity_error_point_light.hpp>
+#include <ceres_slam/lighting/lighting.hpp>
+#include <ceres_slam/normal_error.hpp>
+#include <ceres_slam/perturbations.hpp>
+#include <ceres_slam/stereo_camera.hpp>
+#include <ceres_slam/stereo_reprojection_error.hpp>
+#include <ceres_slam/utils/utils.hpp>
 
 #include <Eigen/Eigenvalues>
 

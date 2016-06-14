@@ -7,12 +7,12 @@
 #include <string>
 
 #include <Eigen/Core>
-#include <Eigen/Eigenvalues>  // For SVD
+#include <Eigen/SVD>
 
-#include <ceres_slam/utils/utils.h>
+#include <ceres_slam/utils/utils.hpp>
 
-#include "point3d.h"
-#include "vector3d.h"
+#include "point3d.hpp"
+#include "vector3d.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declarations
@@ -79,9 +79,9 @@ class SO3GroupBase {
         TransformationMatrix;
     //! Adjoint transformation type
     typedef Eigen::Matrix<Scalar, dof, dof, Eigen::RowMajor> AdjointMatrix;
-    //! Transformed point Jacobian matrix
-    typedef Eigen::Matrix<Scalar, dim, dof, Eigen::RowMajor>
-        PerturbationJacobian;
+    //! Transformed coordinate Jacobian matrix w.r.t. transformation (3 x 9)
+    typedef Eigen::Matrix<Scalar, dim, dim * dim, Eigen::RowMajor>
+        TransformJacobian;
 
     //! Return a reference to the underlying matrix
     inline StorageType& matrix() {
@@ -142,12 +142,15 @@ class SO3GroupBase {
         transformation parameters
     */
     inline const Point transform(
-        const Point& p, PerturbationJacobian* jacobian_ptr = nullptr) const {
+        const Point& p, TransformJacobian* jacobian_ptr = nullptr) const {
         Point p_transformed = this->matrix() * p;
 
         if (jacobian_ptr != nullptr) {
-            PerturbationJacobian& jacobian = *jacobian_ptr;
-            jacobian = -wedge(p_transformed);
+            TransformJacobian& jacobian = *jacobian_ptr;
+            jacobian = TransformJacobian::Zero();
+            jacobian.block(0, 0, 1, 3) = p.transpose();
+            jacobian.block(1, 3, 1, 3) = p.transpose();
+            jacobian.block(2, 6, 1, 3) = p.transpose();
         }
 
         return p_transformed;
@@ -155,13 +158,13 @@ class SO3GroupBase {
     //! Transform a 3D point.
     inline const Point transform(
         const Eigen::Map<Point>& p,
-        PerturbationJacobian* jacobian_ptr = nullptr) const {
+        TransformJacobian* jacobian_ptr = nullptr) const {
         return transform(Point(p), jacobian_ptr);
     }
     //! Transform a 3D point.
     inline const Point transform(
         const Eigen::Map<const Point>& p,
-        PerturbationJacobian* jacobian_ptr = nullptr) const {
+        TransformJacobian* jacobian_ptr = nullptr) const {
         return transform(Point(p), jacobian_ptr);
     }
     //! Multiplication operator for group element and point
@@ -184,12 +187,15 @@ class SO3GroupBase {
         transformation parameters
     */
     inline const Vector transform(
-        const Vector& v, PerturbationJacobian* jacobian_ptr = nullptr) const {
+        const Vector& v, TransformJacobian* jacobian_ptr = nullptr) const {
         Vector v_transformed = this->matrix() * v;
 
         if (jacobian_ptr != nullptr) {
-            PerturbationJacobian& jacobian = *jacobian_ptr;
-            jacobian = -wedge(v_transformed);
+            TransformJacobian& jacobian = *jacobian_ptr;
+            jacobian = TransformJacobian::Zero();
+            jacobian.block(0, 0, 1, 3) = v.transpose();
+            jacobian.block(1, 3, 1, 3) = v.transpose();
+            jacobian.block(2, 6, 1, 3) = v.transpose();
         }
 
         return v_transformed;
@@ -197,13 +203,13 @@ class SO3GroupBase {
     //! Transform a 3D vector.
     inline const Vector transform(
         const Eigen::Map<Vector>& v,
-        PerturbationJacobian* jacobian_ptr = nullptr) const {
+        TransformJacobian* jacobian_ptr = nullptr) const {
         return transform(Vector(v), jacobian_ptr);
     }
     //! Transform a 3D vector.
     inline const Vector transform(
         const Eigen::Map<const Vector>& v,
-        PerturbationJacobian* jacobian_ptr = nullptr) const {
+        TransformJacobian* jacobian_ptr = nullptr) const {
         return transform(Vector(v), jacobian_ptr);
     }
     //! Multiplication operator for group element and vector
@@ -353,7 +359,7 @@ class SO3Group : public SO3GroupBase<SO3Group<_Scalar, _Options> > {
     //! Adjoint transformation type
     typedef typename Base::AdjointMatrix AdjointMatrix;
     //! Transformed point Jacobian matrix
-    typedef typename Base::PerturbationJacobian PerturbationJacobian;
+    typedef typename Base::TransformJacobian TransformJacobian;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -410,7 +416,7 @@ class Map<ceres_slam::SO3Group<_Scalar>, _Options>
     //! Adjoint transformation type
     typedef typename Base::AdjointMatrix AdjointMatrix;
     //! Transformed point Jacobian matrix
-    typedef typename Base::PerturbationJacobian PerturbationJacobian;
+    typedef typename Base::TransformJacobian TransformJacobian;
 
     // Inherit operators from base class
     using Base::operator=;
@@ -460,7 +466,7 @@ class Map<const ceres_slam::SO3Group<_Scalar>, _Options>
     //! Adjoint transformation type
     typedef typename Base::AdjointMatrix AdjointMatrix;
     //! Transformed point Jacobian matrix
-    typedef typename Base::PerturbationJacobian PerturbationJacobian;
+    typedef typename Base::TransformJacobian TransformJacobian;
 
     // Inherit operators from base class
     using Base::operator=;

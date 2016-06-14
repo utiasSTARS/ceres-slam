@@ -8,11 +8,11 @@
 
 #include <Eigen/Core>
 
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/utils/utils.h>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/utils/utils.hpp>
 
-#include "material.h"
-#include "texture.h"
+#include "material.hpp"
+#include "texture.hpp"
 
 namespace ceres_slam {
 

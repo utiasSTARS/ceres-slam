@@ -1,5 +1,5 @@
-#include <ceres_slam/geometry/geometry.h>
 #include <Eigen/Core>
+#include <ceres_slam/geometry/geometry.hpp>
 #include <cstdlib>
 #include <iostream>
 
@@ -70,6 +70,11 @@ int main() {
 
     SO3 C1;
     std::cout << "C1: " << C1 << std::endl;
+    double* C1_data_ptr = C1.data();
+    for (int i = 0; i < 9; ++i) {
+        std::cout << C1_data_ptr[i] << " ";
+    }
+    std::cout << "\n\n";
 
     SO3::TransformationMatrix C2_matrix;
     C2_matrix << 0, -1, 0, 1, 0, 0, 0, 0, 1;
@@ -121,8 +126,11 @@ int main() {
 
     const double C6_data[9] = {0, -1, 0, 1, 0, 0, 0, 0, 1};
     Eigen::Map<const SO3> C6(C6_data);
+    SO3::TransformJacobian C6p6_jac;
     std::cout << "C6: " << C6 << std::endl;
-    std::cout << "C6 * p6: " << C6 * p6 << std::endl;
+    std::cout << "C6.transform(p6): " << C6.transform(p6, &C6p6_jac)
+              << std::endl;
+    std::cout << C6p6_jac << std::endl;
 
     ///////////////////////////////////////////////////////////////////////////
     // SE(3) tests
@@ -131,6 +139,11 @@ int main() {
 
     SE3 T1;
     std::cout << "T1: " << T1 << std::endl;
+    double* T1_data_ptr = T1.data();
+    for (int i = 0; i < 12; ++i) {
+        std::cout << T1_data_ptr[i] << " ";
+    }
+    std::cout << "\n\n";
 
     SE3::TransformationMatrix T2_matrix;
     T2_matrix << 0, -1, 0, 1, 1, 0, 0, -1, 0, 0, 1, 1, 0, 0, 0, 1;
@@ -179,8 +192,11 @@ int main() {
 
     const double T6_data[12] = {1, -1, 1, 0, -1, 0, 1, 0, 0, 0, 0, 1};
     Eigen::Map<const SE3> T6(T6_data);
+    SE3::TransformJacobian T6p6_jac;
     std::cout << "T6: " << T6 << std::endl;
-    std::cout << "T6 * p6: " << T6 * p6 << std::endl;
+    std::cout << "T6.transform(p6): " << T6.transform(p6, &T6p6_jac)
+              << std::endl;
+    std::cout << T6p6_jac << std::endl;
 
     SE3::TransformationMatrix T_0_w_matrix, T_1_0_ceres_matrix,
         T_1_w_ceres_matrix;

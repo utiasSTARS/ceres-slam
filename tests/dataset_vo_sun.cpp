@@ -5,13 +5,13 @@
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/dataset_problem_sun.h>
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/perturbations.h>
-#include <ceres_slam/stereo_camera.h>
-#include <ceres_slam/stereo_reprojection_error.h>
-#include <ceres_slam/sun_sensor_error.h>
-#include <ceres_slam/utils/utils.h>
+#include <ceres_slam/dataset_problem_sun.hpp>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/perturbations.hpp>
+#include <ceres_slam/stereo_camera.hpp>
+#include <ceres_slam/stereo_reprojection_error.hpp>
+#include <ceres_slam/sun_sensor_error.hpp>
+#include <ceres_slam/utils/utils.hpp>
 
 #include <Eigen/Eigenvalues>
 

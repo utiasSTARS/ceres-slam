@@ -1,4 +1,4 @@
-#include <ceres_slam/dataset_problem_phong.h>
+#include <ceres_slam/dataset_problem_phong.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -6,10 +6,10 @@
 #include <string>
 #include <vector>
 
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/point_cloud_aligner.h>
-#include <ceres_slam/stereo_camera.h>
-#include <ceres_slam/utils/csv_reader.h>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/point_cloud_aligner.hpp>
+#include <ceres_slam/stereo_camera.hpp>
+#include <ceres_slam/utils/csv_reader.hpp>
 
 namespace ceres_slam {
 

@@ -3,8 +3,8 @@
 
 #include <vector>
 
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/stereo_camera.h>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/stereo_camera.hpp>
 
 namespace ceres_slam {
 

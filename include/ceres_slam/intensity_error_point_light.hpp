@@ -1,23 +1,23 @@
-#ifndef CERES_SLAM_INTENSITY_ERROR_DIRECTIONAL_LIGHT_H_
-#define CERES_SLAM_INTENSITY_ERROR_DIRECTIONAL_LIGHT_H_
+#ifndef CERES_SLAM_INTENSITY_ERROR_POINT_LIGHT_H_
+#define CERES_SLAM_INTENSITY_ERROR_POINT_LIGHT_H_
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/geometry/geometry.h>
-#include <ceres_slam/lighting/lighting.h>
-#include <ceres_slam/utils/utils.h>
+#include <ceres_slam/geometry/geometry.hpp>
+#include <ceres_slam/lighting/lighting.hpp>
+#include <ceres_slam/utils/utils.hpp>
 
 namespace ceres_slam {
 
 //! Intensity error cost function for Ceres with automatic Jacobians
-class IntensityErrorDirectionalLightAutomatic {
+class IntensityErrorPointLightAutomatic {
    public:
     //! Light source type
-    typedef DirectionalLight<double> Light;
+    typedef PointLight<double> Light;
 
     //! Constructor with fixed model parameters
-    IntensityErrorDirectionalLightAutomatic(
-        const Light::Colour &colour, const Light::ColourCovariance &stiffness)
+    IntensityErrorPointLightAutomatic(const Light::Colour &colour,
+                                      const Light::ColourCovariance &stiffness)
         : colour_(colour), stiffness_(stiffness) {}
 
     //! Templated evaluator operator for use with ceres::Jet
@@ -26,13 +26,13 @@ class IntensityErrorDirectionalLightAutomatic {
                     const T *const normal_g_ceres,
                     const T *const phong_params_ceres,
                     const T *const texture_ceres,
-                    const T *const lightdir_g_ceres, T *residuals_ceres) const {
+                    const T *const lightpos_g_ceres, T *residuals_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
         typedef Point3D<T> PointT;
         typedef Vector3D<T> VectorT;
         typedef Vertex3D<T> VertexT;
-        typedef DirectionalLight<T> LightT;
+        typedef PointLight<T> LightT;
         typedef typename LightT::Colour ColourT;
         typedef Material<T> MaterialT;
         typedef typename MaterialT::PhongParams PhongParamsT;
@@ -67,15 +67,15 @@ class IntensityErrorDirectionalLightAutomatic {
         VertexT vertex_c(pt_c, normal_c, material, texture);
         // std::cout << "vertex_c: " << vertex_c << std::endl;
 
-        // Light source direction
-        Eigen::Map<const VectorT> lightdir_g(lightdir_g_ceres);  // Global frame
-        VectorT lightdir_c = T_c_g * lightdir_g;                 // Camera frame
-        // std::cout << "lightdir_g: " << lightdir_g << std::endl;
-        // std::cout << "lightdir_c: " << lightdir_c << std::endl;
+        // Light source position
+        Eigen::Map<const PointT> lightpos_g(lightpos_g_ceres);  // Global frame
+        PointT lightpos_c = T_c_g * lightpos_g;                 // Camera frame
+        // std::cout << "lightpos_g: " << lightpos_g << std::endl;
+        // std::cout << "lightpos_c: " << lightpos_c << std::endl;
 
         // Light source model
         ColourT light_colour = static_cast<ColourT>(1);
-        LightT light(lightdir_c, light_colour);
+        LightT light(lightpos_c, light_colour);
         // std::cout << "light: " << light << std::endl;
 
         // Compute the predicted intensity at the vertex
@@ -99,17 +99,16 @@ class IntensityErrorDirectionalLightAutomatic {
     //! the client code.
     static ceres::CostFunction *Create(
         const Light::Colour &colour, const Light::ColourCovariance &stiffness) {
-        return (
-            new ceres::AutoDiffCostFunction<
-                IntensityErrorDirectionalLightAutomatic,
+        return (new ceres::AutoDiffCostFunction<
+                IntensityErrorPointLightAutomatic,
                 1,   // Residual dimension
                 12,  // Compact SE(3) vehicle pose (3 trans + 9 rot)
                 3,   // Map point position
                 3,   // Map point normal
                 3,   // Map point Phong parameters (ambient + specular)
                 1,   // Map point texture (per-pixel diffuse)
-                3>   // Light source direction
-            (new IntensityErrorDirectionalLightAutomatic(colour, stiffness)));
+                3>   // Light source position
+                (new IntensityErrorPointLightAutomatic(colour, stiffness)));
     }
 
    private:
@@ -118,8 +117,8 @@ class IntensityErrorDirectionalLightAutomatic {
     //! Intensity stiffness matrix (inverse sqrt of covariance matrix)
     Light::ColourCovariance stiffness_;
 
-};  // class IntensityErrorDirectionalLightAutomatic
+};  // class IntensityErrorPointLightAutomatic
 
 }  // namespace ceres_slam
 
-#endif  // CERES_SLAM_INTENSITY_ERROR_DIRECTIONAL_LIGHT_H_
+#endif  // CERES_SLAM_INTENSITY_ERROR_POINT_LIGHT_H_
