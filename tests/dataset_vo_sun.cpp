@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
     }
 
     // Defaults
-    uint window_size = 2;
+    uint window_size = 0;
 
     // Parse command line arguments
     std::string filename(argv[1]);
@@ -130,6 +130,11 @@ int main(int argc, char **argv) {
     ceres_slam::DatasetProblemSun dataset;
     if (!dataset.read_csv(filename)) {
         return EXIT_FAILURE;
+    }
+
+    // Special case: window_size == 0 means full batch
+    if (window_size == 0) {
+        window_size = dataset.num_states;
     }
 
     // Compute initial guess
