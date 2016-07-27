@@ -53,7 +53,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                 ceres::CostFunction *stereo_cost =
                     ceres_slam::StereoReprojectionErrorAutomatic::Create(
                         dataset.camera, dataset.stereo_obs_list[i],
-                        0.25*stereo_obs_stiffness);
+                        0.25 * stereo_obs_stiffness);
                 // Add the stereo cost function to the problem
                 problem.AddResidualBlock(stereo_cost, NULL,
                                          dataset.poses[k].data(),
@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
     }
 
     // Output optimized state to file
-    std::cerr << "Outputting to file " << std::endl;
+    std::cerr << "Outputting to file: " << filename << std::endl;
     dataset.write_csv(filename);
 
     return EXIT_SUCCESS;

@@ -54,10 +54,11 @@ class SunSensorErrorAutomatic {
         observed_xz_c << observed_sun_dir_c(0), observed_sun_dir_c(2);
         observed_xz_c.normalize();
 
-        double y_sig = 1. / stiffness_(1,1);
+        double y_sig = 1. / stiffness_(1, 1);
 
         if (T(1) - expected_xz_c.dot(observed_xz_c) < T(0.3) ||
-            fabs(observed_sun_dir_c(1) - expected_sun_dir_c(1)) > T(3. * y_sig)) {
+            fabs(observed_sun_dir_c(1) - expected_sun_dir_c(1)) >
+                T(3. * y_sig)) {
             residuals = stiffness_.cast<T>() *
                         (expected_sun_dir_c - observed_sun_dir_c);
         } else {
