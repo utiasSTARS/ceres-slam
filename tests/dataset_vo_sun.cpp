@@ -23,7 +23,8 @@ using Camera = ceres_slam::DatasetProblemSun::Camera;
 void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                  bool use_sun) {
     // Build the problem
-    std::cerr << "Working on interval [" << k1 << "," << k2 << ")" << std::endl;
+    std::cerr << "Working on interval [" << k1 << "," << k2 << ")/"
+              << dataset.num_states << ": ";
 
     ceres::Problem problem;
 
@@ -52,7 +53,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                 ceres::CostFunction *stereo_cost =
                     ceres_slam::StereoReprojectionErrorAutomatic::Create(
                         dataset.camera, dataset.stereo_obs_list[i],
-                        stereo_obs_stiffness);
+                        0.25*stereo_obs_stiffness);
                 // Add the stereo cost function to the problem
                 problem.AddResidualBlock(stereo_cost, NULL,
                                          dataset.poses[k].data(),
@@ -96,13 +97,14 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     ///////////////////////////////////////////////////////////////////////
     // Optimize!
     Solve(solver_options, &problem, &summary);
-    std::cout << summary.BriefReport() << std::endl << std::endl;
+    std::cout << summary.BriefReport() << std::endl;
 
     // Estimate covariance?
 }
 
 int main(int argc, char **argv) {
-    std::string usage_string("usage: dataset_vo_sun <input_file> [--window N]");
+    std::string usage_string(
+        "usage: dataset_vo_sun <input_file> [--window N=0]");
 
     if (argc < 2) {
         std::cerr << usage_string << std::endl;
@@ -111,6 +113,7 @@ int main(int argc, char **argv) {
 
     // Defaults
     uint window_size = 0;
+    bool sun_only = false;
 
     // Parse command line arguments
     std::string filename(argv[1]);
@@ -120,6 +123,8 @@ int main(int argc, char **argv) {
         if (flag == "--window" && argc > a + 1) {
             window_size = std::atoi(argv[a + 1]);
             ++a;
+        } else if (flag == "--sun-only") {
+            sun_only = true;
         } else {
             std::cerr << usage_string << std::endl;
             return EXIT_FAILURE;
@@ -138,19 +143,21 @@ int main(int argc, char **argv) {
     }
 
     // Compute initial guess
-    std::cerr << "Computing VO without sun measurements" << std::endl;
-    for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
-        uint k2 = fmin(k1 + window_size, dataset.num_states);
-        // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
-        dataset.compute_initial_guess(k1, k2);
-        solveWindow(dataset, k1, k2, false);
-        dataset.reset_points();
-    }
+    if (!sun_only) {
+        std::cerr << "Computing VO without sun measurements" << std::endl;
+        for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
+            uint k2 = fmin(k1 + window_size, dataset.num_states);
+            // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
+            dataset.compute_initial_guess(k1, k2);
+            solveWindow(dataset, k1, k2, false);
+            dataset.reset_points();
+        }
 
-    // Output the initial guess to a CSV file for comparison
-    std::vector<std::string> tokens;
-    tokens = ceres_slam::split(filename, '.');
-    dataset.write_csv(tokens.at(0) + "_initial.csv");
+        // Output the initial guess to a CSV file for comparison
+        std::vector<std::string> tokens;
+        tokens = ceres_slam::split(filename, '.');
+        dataset.write_csv(tokens.at(0) + "_initial.csv");
+    }
 
     std::cerr << "Computing VO with sun measurements" << std::endl;
     for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {

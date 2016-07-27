@@ -48,9 +48,19 @@ int main(int argc, char** argv) {
         return -1;
     }
 
+    // Resize
+    cv::pyrDown(left0, left0, cv::Size(left0.cols / 2, left0.rows / 2));
+    cv::pyrDown(right0, right0, cv::Size(right0.cols / 2, right0.rows / 2));
+    cv::pyrDown(left1, left1, cv::Size(left1.cols / 2, left1.rows / 2));
+    cv::pyrDown(right1, right1, cv::Size(right1.cols / 2, right1.rows / 2));
+    cv::pyrDown(left0, left0, cv::Size(left0.cols / 2, left0.rows / 2));
+    cv::pyrDown(right0, right0, cv::Size(right0.cols / 2, right0.rows / 2));
+    cv::pyrDown(left1, left1, cv::Size(left1.cols / 2, left1.rows / 2));
+    cv::pyrDown(right1, right1, cv::Size(right1.cols / 2, right1.rows / 2));
+
     cv::StereoSGBM sgbm(0, 64, 15);
 
-    cv::Mat disp0, disp0_for_plotting;
+    cv::Mat disp0;
     sgbm(left0, right0, disp0);
     disp0.convertTo(disp0, CV_64F, 1. / 16.);
 
@@ -58,8 +68,8 @@ int main(int argc, char** argv) {
     left0.convertTo(left0, CV_64F, 1. / 255.);
     left1.convertTo(left1, CV_64F, 1. / 255.);
     // TODO: CHANGE THIS BACK TO left0
-    cv::Scharr(left1, left0_gradx, -1, 1, 0);
-    cv::Scharr(left1, left0_grady, -1, 0, 1);
+    cv::Sobel(left0, left0_gradx, -1, 1, 0);
+    cv::Sobel(left0, left0_grady, -1, 0, 1);
 
     // std::cout << left0.at<double>(0,0) << std::endl;
 
@@ -68,9 +78,15 @@ int main(int argc, char** argv) {
     cv::Ptr<cv::Mat> left0_gradx_ptr(&left0_gradx);
     cv::Ptr<cv::Mat> left0_grady_ptr(&left0_grady);
 
+    // cv::Mat disp0_for_plotting, gradx_for_plotting, grady_for_plotting;
     // disp0.convertTo(disp0_for_plotting, CV_8U, 255. / 64.);
-    // cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
-    // cv::imshow("Display", disp0_for_plotting);
+    // left0_gradx.convertTo(gradx_for_plotting, CV_8U, 255.);
+    // left0_grady.convertTo(grady_for_plotting, CV_8U, 255.);
+    // cv::namedWindow("Display0", cv::WINDOW_AUTOSIZE);
+    // cv::namedWindow("Display1", cv::WINDOW_AUTOSIZE);
+    // // cv::imshow("Display", disp0_for_plotting);
+    // cv::imshow("Display0", gradx_for_plotting);
+    // cv::imshow("Display1", grady_for_plotting);
     // cv::waitKey(0);
 
     std::cout << "Initial estimate: " << transform_to_estimate << "\n";

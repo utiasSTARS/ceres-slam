@@ -21,6 +21,12 @@ Scalar fmin(Scalar a, Scalar b) {
     return ((a <= b) ? a : b);
 }
 
+//! Templated version of fabs for use with ceres
+template <typename Scalar>
+Scalar fabs(Scalar a) {
+    return ((a >= static_cast<Scalar>(0)) ? a : -a);
+}
+
 //! String formatting for Eigen file IO
 const Eigen::IOFormat CommaInitFmt(4, 1, ",", ",", "", "", "", "");
 

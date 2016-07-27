@@ -61,8 +61,8 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     sun_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
         std::stod(tokens.at(5));
 
-    // stereo_obs_var *= 1e2;
-    // sun_obs_var *= 3.;
+    // stereo_obs_var << 2.25, 2.25, 9.;
+    sun_obs_var << pow(0.18, 2.), pow(0.03, 2.), pow(0.16, 2.);
 
     std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
               << std::endl
@@ -112,38 +112,21 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     std::cerr << "read " << stereo_obs_list.size() << " stereo observations"
               << std::endl;
 
-    // Generate a list of observation indices for each state
-    std::cerr << "Generating observation indices for each state... ";
-    std::vector<uint> k_indices;
-    k_indices.push_back(0);
-    for (uint idx = 1; idx < state_ids.size(); ++idx) {
-        if (state_ids.at(idx) != state_ids.at(idx - 1)) {
-            state_indices_.push_back(k_indices);
-            k_indices.clear();
-        }
-        k_indices.push_back(idx);
-    }
-    state_indices_.push_back(k_indices);
-    std::cerr << "found " << state_indices_.size() << " unique states"
-              << std::endl;
-
-    // Generate a list of observation indices for each feature
-    std::cerr << "Generating observation indices for each feature... ";
+    // Generate lists of observation indices for each state and feature
+    std::cerr
+        << "Generating observation indices for each state and feature... ";
+    state_indices_.resize(num_states);
     feature_indices_.resize(num_points);
-    std::vector<uint> j_indices;
 
-    for (uint j = 0; j < num_points; ++j) {
-        j_indices.clear();
-        for (uint idx = 0; idx < point_ids.size(); idx++) {
-            if (point_ids.at(idx) == j) {
-                j_indices.push_back(idx);
-            }
-        }
-        feature_indices_.at(j) = j_indices;
+    for (uint idx = 0; idx < state_ids.size(); ++idx) {
+        uint k = state_ids.at(idx);
+        state_indices_.at(k).push_back(idx);
+
+        uint j = point_ids.at(idx);
+        feature_indices_.at(j).push_back(idx);
     }
 
-    std::cerr << "found " << feature_indices_.size() << " unique features"
-              << std::endl;
+    std::cerr << "done." << std::endl;
 
     return true;
 }

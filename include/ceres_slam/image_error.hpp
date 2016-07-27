@@ -69,12 +69,6 @@ class ImageError : public ceres::SizedCostFunction<
             double int_track = interpolate(track_img_, u_track, v_track);
             residuals[0] = int_track - int_ref;
 
-            // std::cout << "ref: ( " << u_ref_ << ", " << v_ref_ << ", " <<
-            // int_ref
-            // << " ) | " << "track: ( " << u_track << ", " << v_track << ", "
-            // <<
-            // int_track << " ) \n\n";
-
             // Compute the Jacobians if requested
             if (jacobians != NULL) {
                 // Jacobian w.r.t. image coordinates (1 x 2)
@@ -89,10 +83,11 @@ class ImageError : public ceres::SizedCostFunction<
                     de_by_dT =
                         de_by_du * proj_jac.block(0, 0, 2, 3) * trans_jac;
 
-                    // std::cout << "\n\n" << de_by_du << "\n\n" <<
-                    // proj_jac.block(0, 0, 2, 3) << "\n\n" << trans_jac <<
-                    // "\n\n"
-                    // << de_by_dT << "\n\n";
+                    // std::cout << "\n\n"
+                    //           << de_by_du << "\n\n"
+                    //           << proj_jac.block(0, 0, 2, 3) << "\n\n"
+                    //           << trans_jac << "\n\n"
+                    //           << de_by_dT << "\n\n";
                 }
 
                 // Jacobian w.r.t. d_ref (1 x 1)
@@ -101,7 +96,7 @@ class ImageError : public ceres::SizedCostFunction<
                 if (jacobians[1] != NULL) {
                     jacobians[1][0] = (de_by_du * proj_jac.block(0, 0, 2, 3) *
                                        T_track_ref.rotation().matrix() *
-                                       trans_jac.block(2, 0, 3, 1))(0);
+                                       tri_jac.block(2, 0, 3, 1))(0);
                 }
             }
         } else {
@@ -110,6 +105,10 @@ class ImageError : public ceres::SizedCostFunction<
             // However, if the cost function returns false during the initial
             // evaluation, the entire optimization fails because ceres won't
             // handle infeasible starts.
+            //
+            // Instead, just zero out the residual and jacobian so that the
+            // out-of-bounds measurement doesn't contribute to the cost
+            // function.
 
             // std::cout << "Residual evaluation failed due to out-of-bounds "
             //              "pixel coordinate: (u, v) = ("

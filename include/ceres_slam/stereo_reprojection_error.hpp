@@ -18,7 +18,10 @@ class StereoReprojectionErrorAutomatic {
     StereoReprojectionErrorAutomatic(
         const Camera::ConstPtr camera, const Camera::Observation& observation,
         const Camera::ObservationCovariance& stiffness)
-        : camera_(camera), observation_(observation), stiffness_(stiffness) {}
+        : camera_(camera), observation_(observation), stiffness_(stiffness) {
+        kitti_weight =
+            0.05 / (fabs(observation(0) - camera->cu()) / camera->cu() + 0.05);
+    }
 
     //! Templated evaluator operator for use with ceres::Jet
     template <typename T>
@@ -70,6 +73,8 @@ class StereoReprojectionErrorAutomatic {
     Camera::Observation observation_;
     //! Observation stiffness matrix (inverse sqrt of covariance matrix)
     Camera::ObservationCovariance stiffness_;
+    //! KITTI bias correction weight
+    double kitti_weight;
 
 };  // class StereoReprojectionErrorAutomatic
 
