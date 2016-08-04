@@ -9,12 +9,12 @@ namespace ceres_slam {
 
 //! Pose error cost function for Ceres with automatic Jacobians
 class PoseErrorAutomatic {
-public:
+   public:
     //! SE(3) type
     typedef SE3Group<double> SE3;
 
     //! Constructor
-    PoseErrorAutomatic(const SE3& T_k_0_ref) : T_k_0_ref_(T_k_0_ref) { };
+    PoseErrorAutomatic(const SE3& T_k_0_ref) : T_k_0_ref_(T_k_0_ref){};
 
     //! Templated evaluator operator for use with ceres::Jet
     template <typename T>
@@ -38,20 +38,20 @@ public:
     //! the client code.
     static ceres::CostFunction* Create(const SE3& T_k_0_ref) {
         return (new ceres::AutoDiffCostFunction<PoseErrorAutomatic,
-                                                6,  // Residual dimension
-                                                12> // Compact SE(3) pose
-                                                    // (3 trans + 9 rot)
+                                                6,   // Residual dimension
+                                                12>  // Compact SE(3) pose
+                                                     // (3 trans + 9 rot)
                 (new PoseErrorAutomatic(T_k_0_ref)));
     }
 
-private:
+   private:
     //! Reference pose as transformation from frame 0 to frame K
     SE3 T_k_0_ref_;
     //! 6x6 pose stiffness matrix (inverse sqrt of covariance matrix)
     SE3::AdjointMatrix stiffness_;
 
-}; // class PoseErrorAutomatic
+};  // class PoseErrorAutomatic
 
-} // namespace ceres_slam
+}  // namespace ceres_slam
 
 #endif /* end of include guard: CERES_SLAM_POSE_ERROR_HPP_ */

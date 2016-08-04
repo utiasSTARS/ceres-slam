@@ -8,6 +8,7 @@
 #include <ceres_slam/dataset_problem_sun.hpp>
 #include <ceres_slam/geometry/geometry.hpp>
 #include <ceres_slam/perturbations.hpp>
+#include <ceres_slam/pose_error.hpp>
 #include <ceres_slam/stereo_camera.hpp>
 #include <ceres_slam/stereo_reprojection_error.hpp>
 #include <ceres_slam/sun_sensor_error.hpp>
@@ -99,7 +100,27 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     Solve(solver_options, &problem, &summary);
     std::cout << summary.BriefReport() << std::endl;
 
-    // Estimate covariance?
+    // Estimate covariance for the second pose so we can use it as a
+    // prior in the next window
+    std::cout << "Estimating covariance" << std::endl;
+    ceres::Covariance::Options covariance_options;
+    // covariance_options.num_threads = solver_options.num_threads;
+    ceres::Covariance covariance(covariance_options);
+
+    std::vector<std::pair<const double *, const double *>> covar_blocks;
+    covar_blocks.push_back(std::make_pair(dataset.poses[k2 - 1].data(),
+                                          dataset.poses[k2 - 1].data()));
+
+    if (!covariance.Compute(covar_blocks, &problem)) {
+        std::cerr << "ERROR: Covariance computation failed!" << std::endl;
+    }
+
+    // Eigen::Matrix<double, 12, 12> k2_covar;
+    SE3::AdjointMatrix k2_covar;
+    covariance.GetCovarianceBlockInTangentSpace(dataset.poses[k2 - 1].data(),
+                                                dataset.poses[k2 - 1].data(),
+                                                k2_covar.data());
+    std::cout << k2_covar << std::endl;
 }
 
 int main(int argc, char **argv) {
