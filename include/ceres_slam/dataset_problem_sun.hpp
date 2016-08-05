@@ -40,6 +40,8 @@ class DatasetProblemSun {
 
     //! Camera poses in base frame (to be estimated)
     std::vector<SE3> poses;
+    //! Covariances of camera poses in base frame (to be estimated)
+    std::vector<SE3::AdjointMatrix> pose_covars;
 
     //! Map points in base frame (to be estimated)
     std::vector<Point> map_points;

@@ -14,7 +14,9 @@ class PoseErrorAutomatic {
     typedef SE3Group<double> SE3;
 
     //! Constructor
-    PoseErrorAutomatic(const SE3& T_k_0_ref) : T_k_0_ref_(T_k_0_ref){};
+    PoseErrorAutomatic(const SE3& T_k_0_ref,
+                       const SE3::AdjointMatrix& stiffness)
+        : T_0_k_ref_(T_k_0_ref.inverse()), stiffness_(stiffness){};
 
     //! Templated evaluator operator for use with ceres::Jet
     template <typename T>
@@ -28,25 +30,38 @@ class PoseErrorAutomatic {
         Eigen::Map<const SE3T> T_k_0(T_k_0_ceres);
         Eigen::Map<TangentVectorT> residuals(residuals_ceres);
 
-        SE3T T_residual = T_k_0.inverse() * T_k_0_ref_.cast<T>();
-        residuals = stiffness_.cast<T>() * SE3T::log(T_residual);
+        SE3T T_residual = T_k_0 * T_0_k_ref_.cast<T>();
+        residuals = SE3T::log(T_residual);
+
+        std::cout << "\nresiduals:\n";
+        for (uint i = 0; i < 6; ++i) {
+            std::cout << residuals_ceres[i] << std::endl;
+        }
+
+        residuals = stiffness_.cast<T>() * residuals;
+
+        std::cout << "stiffness * residuals:\n";
+        for (uint i = 0; i < 6; ++i) {
+            std::cout << residuals_ceres[i] << std::endl;
+        }
 
         return true;
     }
 
     //! Factory to hide the construction of the CostFunction object from
     //! the client code.
-    static ceres::CostFunction* Create(const SE3& T_k_0_ref) {
+    static ceres::CostFunction* Create(const SE3& T_k_0_ref,
+                                       const SE3::AdjointMatrix& stiffness) {
         return (new ceres::AutoDiffCostFunction<PoseErrorAutomatic,
                                                 6,   // Residual dimension
                                                 12>  // Compact SE(3) pose
                                                      // (3 trans + 9 rot)
-                (new PoseErrorAutomatic(T_k_0_ref)));
+                (new PoseErrorAutomatic(T_k_0_ref, stiffness)));
     }
 
    private:
-    //! Reference pose as transformation from frame 0 to frame K
-    SE3 T_k_0_ref_;
+    //! Reference pose as transformation from frame k to frame 0
+    SE3 T_0_k_ref_;
     //! 6x6 pose stiffness matrix (inverse sqrt of covariance matrix)
     SE3::AdjointMatrix stiffness_;
 

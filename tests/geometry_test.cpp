@@ -91,6 +91,10 @@ int main() {
     std::cout << "C2 * v1: " << C2 * v1 << std::endl;
 
     std::cout << "SO3::Identity(): " << SO3::Identity() << std::endl;
+    std::cout << "SO3::log(SO3::Identity()): " << SO3::log(SO3::Identity())
+              << std::endl;
+    std::cout << "SO3::exp(SO3::log(SO3::Identity())): "
+              << SO3::exp(SO3::log(SO3::Identity())) << std::endl;
 
     SO3::TangentVector phi1;
     phi1 << 1., 2., 3.;
@@ -162,6 +166,10 @@ int main() {
     std::cout << "T2 * v1: " << T2 * v1 << std::endl;
 
     std::cout << "SE3::Identity(): " << SE3::Identity() << std::endl;
+    std::cout << "SE3::log(SE3::Identity()): " << SE3::log(SE3::Identity())
+              << std::endl;
+    std::cout << "SE3::exp(SE3::log(SE3::Identity())): "
+              << SE3::exp(SE3::log(SE3::Identity())) << std::endl;
 
     SE3::TangentVector xi1;
     xi1 << 1., 2., 3., 4., 5., 6.;

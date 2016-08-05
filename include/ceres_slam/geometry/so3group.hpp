@@ -294,10 +294,13 @@ class SO3GroupBase {
         // std::endl;
 
         // Get the rotation angle from the trace of C
-        Scalar angle =
-            acos(static_cast<Scalar>(0.5) * C_normalized.matrix().trace() -
-                 static_cast<Scalar>(0.5));
-        // std::cerr << angle << std::endl;
+        Scalar cos_angle =
+            static_cast<Scalar>(0.5) * C_normalized.matrix().trace() -
+            static_cast<Scalar>(0.5);
+
+        Scalar angle = safe_acos(cos_angle);
+        // std::cerr << "cos(angle): " << cos_angle << std::endl;
+        // std::cerr << "angle: " << angle << std::endl;
 
         // If angle is close to zero, use first-order Taylor expansion
         if (angle <= std::numeric_limits<Scalar>::epsilon()) {

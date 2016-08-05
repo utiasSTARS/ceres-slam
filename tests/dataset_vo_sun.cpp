@@ -54,7 +54,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                 ceres::CostFunction *stereo_cost =
                     ceres_slam::StereoReprojectionErrorAutomatic::Create(
                         dataset.camera, dataset.stereo_obs_list[i],
-                        0.25 * stereo_obs_stiffness);
+                        stereo_obs_stiffness);
                 // Add the stereo cost function to the problem
                 problem.AddResidualBlock(stereo_cost, NULL,
                                          dataset.poses[k].data(),
@@ -72,19 +72,36 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
             // Add the sun sensor cost function to the problem
             problem.AddResidualBlock(sun_cost, NULL, dataset.poses[k].data());
         }
+    }
 
-        // Use local parameterization on SE(3)
+    // Hold the initial pose in the sequence constant
+    // problem.SetParameterBlockConstant(dataset.poses[k1].data());
+
+    // Add prior on the first pose in the current window based on the
+    // result from the previous window
+    Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
+        dataset.pose_covars[k1]);
+    SE3::AdjointMatrix pose_prior_stiffness = es_prior.operatorInverseSqrt();
+    // std::cout << "\nStiffness for k=" << k1 << "\n"
+    //           << pose_prior_stiffness << std::endl;
+    ceres::CostFunction *pose_prior_cost =
+        ceres_slam::PoseErrorAutomatic::Create(dataset.poses[k1],
+                                               pose_prior_stiffness);
+    problem.AddResidualBlock(pose_prior_cost, NULL, dataset.poses[k1].data());
+
+    // Use local parameterization on SE(3) for all poses
+    for (uint k = k1; k < k2; ++k) {
         problem.SetParameterization(dataset.poses[k].data(), se3_perturbation);
     }
 
-    // Hold the first pose constant
-    problem.SetParameterBlockConstant(dataset.poses[k1].data());
+    ///////////////////////////////////////////////////////////////////////
+    // Set up the solver and solve!
 
     // Set solver options
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = false;
-    solver_options.num_threads = 8;
-    solver_options.num_linear_solver_threads = 8;
+    solver_options.num_threads = 4;
+    solver_options.num_linear_solver_threads = 4;
     solver_options.max_num_iterations = 1000;
     solver_options.use_nonmonotonic_steps = true;
     // solver_options.trust_region_strategy_type = ceres::DOGLEG;
@@ -95,32 +112,37 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     // Create sumary container
     ceres::Solver::Summary summary;
 
-    ///////////////////////////////////////////////////////////////////////
     // Optimize!
     Solve(solver_options, &problem, &summary);
     std::cout << summary.BriefReport() << std::endl;
 
-    // Estimate covariance for the second pose so we can use it as a
-    // prior in the next window
+    ///////////////////////////////////////////////////////////////////////
+    // Estimate covariance for the second pose in the window so we can use
+    // it as a prior on the first pose in the next window
     std::cout << "Estimating covariance" << std::endl;
+
     ceres::Covariance::Options covariance_options;
-    // covariance_options.num_threads = solver_options.num_threads;
+    covariance_options.num_threads = solver_options.num_threads;
+    covariance_options.algorithm_type = ceres::DENSE_SVD;
+    // covariance_options.algorithm_type = ceres::SUITE_SPARSE_QR;
+    covariance_options.null_space_rank = -1;
+
     ceres::Covariance covariance(covariance_options);
 
     std::vector<std::pair<const double *, const double *>> covar_blocks;
-    covar_blocks.push_back(std::make_pair(dataset.poses[k2 - 1].data(),
-                                          dataset.poses[k2 - 1].data()));
+    covar_blocks.push_back(std::make_pair(dataset.poses[k1 + 1].data(),
+                                          dataset.poses[k1 + 1].data()));
 
     if (!covariance.Compute(covar_blocks, &problem)) {
         std::cerr << "ERROR: Covariance computation failed!" << std::endl;
+    } else {
+        covariance.GetCovarianceBlockInTangentSpace(
+            dataset.poses[k1 + 1].data(), dataset.poses[k1 + 1].data(),
+            dataset.pose_covars[k1 + 1].data());
     }
 
-    // Eigen::Matrix<double, 12, 12> k2_covar;
-    SE3::AdjointMatrix k2_covar;
-    covariance.GetCovarianceBlockInTangentSpace(dataset.poses[k2 - 1].data(),
-                                                dataset.poses[k2 - 1].data(),
-                                                k2_covar.data());
-    std::cout << k2_covar << std::endl;
+    std::cout << "\nCovariance for k=" << k1 + 1 << "\n"
+              << dataset.pose_covars[k1 + 1] << std::endl;
 }
 
 int main(int argc, char **argv) {

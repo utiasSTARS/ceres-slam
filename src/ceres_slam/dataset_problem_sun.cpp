@@ -30,6 +30,7 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     num_states = std::stoi(tokens.at(0));
     num_points = std::stoi(tokens.at(1));
     poses.resize(num_states);
+    pose_covars.resize(num_states);
     map_points.resize(num_points);
     initialized_point.resize(num_points);
     reset_points();
@@ -81,6 +82,11 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     // First pose is either identity, or the first ground truth pose
     poses[0] = SE3(T_0_g);
     std::cout << poses[0] << std::endl;
+
+    // Set first ground truth pose covariance to something small
+    std::cerr << "Setting first ground truth pose covariance" << std::endl;
+    pose_covars[0] = 1e-6 * SE3::AdjointMatrix::Identity();
+    std::cout << pose_covars[0] << std::endl;
 
     // Read ground truth sun direction in the global frame
     std::cerr << "Reading ground truth sun direction... " << std::endl;

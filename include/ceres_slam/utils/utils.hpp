@@ -27,6 +27,15 @@ Scalar fabs(Scalar a) {
     return ((a >= static_cast<Scalar>(0)) ? a : -a);
 }
 
+//! Hack to fix occasional acos(x) domain errors due to rounding when x
+//! is close to +/- 1
+template <typename Scalar>
+Scalar safe_acos(Scalar x) {
+    x = (x < static_cast<Scalar>(-1.)) ? static_cast<Scalar>(-1.) : x;
+    x = (x > static_cast<Scalar>(1.)) ? static_cast<Scalar>(1.) : x;
+    return acos(x);
+}
+
 //! String formatting for Eigen file IO
 const Eigen::IOFormat CommaInitFmt(4, 1, ",", ",", "", "", "", "");
 
