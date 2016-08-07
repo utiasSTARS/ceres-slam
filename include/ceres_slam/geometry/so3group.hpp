@@ -293,29 +293,33 @@ class SO3GroupBase {
         // std::cout << "C_normalized" << std::endl << C_normalized <<
         // std::endl;
 
-        // Get the rotation angle from the trace of C
-        Scalar cos_angle =
-            static_cast<Scalar>(0.5) * C_normalized.matrix().trace() -
-            static_cast<Scalar>(0.5);
-
-        Scalar angle = safe_acos(cos_angle);
-        // std::cerr << "cos(angle): " << cos_angle << std::endl;
-        // std::cerr << "angle: " << angle << std::endl;
-
-        // If angle is close to zero, use first-order Taylor expansion
-        if (angle <= std::numeric_limits<Scalar>::epsilon()) {
-            return vee(C_normalized.matrix() -
-                       TransformationMatrix::Identity());
-        }
-
-        // Compute the normalized axis
+        // The rotation axis (not unit-length) is given by
         TangentVector axis;
         axis(0) = C_normalized.matrix()(2, 1) - C_normalized.matrix()(1, 2);
         axis(1) = C_normalized.matrix()(0, 2) - C_normalized.matrix()(2, 0);
         axis(2) = C_normalized.matrix()(1, 0) - C_normalized.matrix()(0, 1);
-        axis /= (static_cast<Scalar>(2) * sin(angle));
 
-        return angle * axis;
+        // The sine of the rotation angle is half the norm of the axis
+        Scalar sin_angle = static_cast<Scalar>(0.5) * axis.norm();
+
+        // The cosine of the rotation angle is the trace of C
+        Scalar cos_angle =
+            static_cast<Scalar>(0.5) *
+            (C_normalized.matrix().trace() - static_cast<Scalar>(1.));
+
+        Scalar angle = atan2(sin_angle, cos_angle);
+        // std::cerr << "sin(angle): " << sin_angle << std::endl;
+        // std::cerr << "cos(angle): " << cos_angle << std::endl;
+        // std::cerr << "angle: " << angle << std::endl;
+
+        // If angle is close to zero, use first-order Taylor expansion
+        if (abs(angle) <= std::numeric_limits<Scalar>::epsilon()) {
+            return vee(C_normalized.matrix() -
+                       TransformationMatrix::Identity());
+        }
+
+        // Otherwise normalize the axis and return the axis-angle vector
+        return static_cast<Scalar>(0.5) * angle * axis / sin_angle;
     }
 
     //! Convert to a string

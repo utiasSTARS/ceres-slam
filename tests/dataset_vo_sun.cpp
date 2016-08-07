@@ -27,6 +27,9 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")/"
               << dataset.num_states << ": ";
 
+    std::cout << "\n\nCovariance for k=" << k1 << "\n"
+              << dataset.pose_covars[k1] << std::endl;
+
     ceres::Problem problem;
 
     // Compute the stiffness matrix to apply to the residuals
@@ -82,8 +85,10 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
         dataset.pose_covars[k1]);
     SE3::AdjointMatrix pose_prior_stiffness = es_prior.operatorInverseSqrt();
+
     // std::cout << "\nStiffness for k=" << k1 << "\n"
     //           << pose_prior_stiffness << std::endl;
+
     ceres::CostFunction *pose_prior_cost =
         ceres_slam::PoseErrorAutomatic::Create(dataset.poses[k1],
                                                pose_prior_stiffness);
@@ -100,13 +105,13 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     // Set solver options
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = false;
-    solver_options.num_threads = 4;
-    solver_options.num_linear_solver_threads = 4;
+    solver_options.num_threads = 8;
+    solver_options.num_linear_solver_threads = 8;
     solver_options.max_num_iterations = 1000;
     solver_options.use_nonmonotonic_steps = true;
-    // solver_options.trust_region_strategy_type = ceres::DOGLEG;
-    // solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
-    // solver_options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    solver_options.trust_region_strategy_type = ceres::DOGLEG;
+    solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
+    solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
     // solver_options.check_gradients = true;
 
     // Create sumary container
@@ -119,13 +124,13 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     ///////////////////////////////////////////////////////////////////////
     // Estimate covariance for the second pose in the window so we can use
     // it as a prior on the first pose in the next window
-    std::cout << "Estimating covariance" << std::endl;
+    // std::cout << "Estimating covariance" << std::endl;
 
     ceres::Covariance::Options covariance_options;
     covariance_options.num_threads = solver_options.num_threads;
-    covariance_options.algorithm_type = ceres::DENSE_SVD;
-    // covariance_options.algorithm_type = ceres::SUITE_SPARSE_QR;
-    covariance_options.null_space_rank = -1;
+    // covariance_options.algorithm_type = ceres::DENSE_SVD;
+    covariance_options.algorithm_type = ceres::SUITE_SPARSE_QR;
+    // covariance_options.null_space_rank = -1;
 
     ceres::Covariance covariance(covariance_options);
 
@@ -134,15 +139,15 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                                           dataset.poses[k1 + 1].data()));
 
     if (!covariance.Compute(covar_blocks, &problem)) {
-        std::cerr << "ERROR: Covariance computation failed!" << std::endl;
+        std::cout << "WARNING: Covariance computation failed! "
+                  << "Using previous state covariance." << std::endl;
+        dataset.pose_covars[k1 + 1] = dataset.pose_covars[k1];
     } else {
         covariance.GetCovarianceBlockInTangentSpace(
             dataset.poses[k1 + 1].data(), dataset.poses[k1 + 1].data(),
             dataset.pose_covars[k1 + 1].data());
+        // dataset.pose_covars[k1 + 1] = 1e-2 * SE3::AdjointMatrix::Identity();
     }
-
-    std::cout << "\nCovariance for k=" << k1 + 1 << "\n"
-              << dataset.pose_covars[k1 + 1] << std::endl;
 }
 
 int main(int argc, char **argv) {

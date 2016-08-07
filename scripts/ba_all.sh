@@ -28,7 +28,7 @@ CNNFILES=(
 "${HOMEDIR}/osx_desktop/datasets/2011_10_03/2011_10_03_drive_0027_sync/2011_10_03_drive_0027_sync_viso2_cnn.csv"
 )
 
-for ((i=0; i<1; ++i));
+for ((i=2; i<3; ++i));
 # for ((i=0; i<${#OLDFILES[@]}; ++i));
 do
     :

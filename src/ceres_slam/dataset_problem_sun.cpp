@@ -62,8 +62,8 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     sun_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
         std::stod(tokens.at(5));
 
-    // stereo_obs_var << 2.25, 2.25, 9.;
-    sun_obs_var << pow(0.07, 2.), pow(0.02, 2.), pow(0.07, 2.);
+    stereo_obs_var << 1., 1., 1.;
+    sun_obs_var << pow(0.18, 2.), pow(0.03, 2.), pow(0.16, 2.);
 
     std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
               << std::endl
@@ -86,7 +86,7 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     // Set first ground truth pose covariance to something small
     std::cerr << "Setting first ground truth pose covariance" << std::endl;
     pose_covars[0] = 1e-6 * SE3::AdjointMatrix::Identity();
-    std::cout << pose_covars[0] << std::endl;
+    std::cout << "Initial covariance:\n" << pose_covars[0] << std::endl;
 
     // Read ground truth sun direction in the global frame
     std::cerr << "Reading ground truth sun direction... " << std::endl;

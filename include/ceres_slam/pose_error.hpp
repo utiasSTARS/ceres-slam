@@ -33,17 +33,17 @@ class PoseErrorAutomatic {
         SE3T T_residual = T_k_0 * T_0_k_ref_.cast<T>();
         residuals = SE3T::log(T_residual);
 
-        std::cout << "\nresiduals:\n";
-        for (uint i = 0; i < 6; ++i) {
-            std::cout << residuals_ceres[i] << std::endl;
-        }
+        // std::cout << "\nresiduals:\n";
+        // for (uint i = 0; i < 6; ++i) {
+        //     std::cout << residuals_ceres[i] << std::endl;
+        // }
 
         residuals = stiffness_.cast<T>() * residuals;
 
-        std::cout << "stiffness * residuals:\n";
-        for (uint i = 0; i < 6; ++i) {
-            std::cout << residuals_ceres[i] << std::endl;
-        }
+        // std::cout << "\nstiffness * residuals:\n";
+        // for (uint i = 0; i < 6; ++i) {
+        //     std::cout << residuals_ceres[i] << std::endl;
+        // }
 
         return true;
     }
