@@ -50,6 +50,9 @@ target_link_libraries(dataset_vo_sun ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN
 add_executable(dataset_ba_phong tests/dataset_ba_phong.cpp)
 target_link_libraries(dataset_ba_phong ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
+add_executable(blowup_test tests/blowup_test.cpp)
+target_link_libraries(blowup_test ${PROJECT_NAME} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+
 # add_custom_target(docs ALL
 # 	COMMAND "doxygen" "doxygen.config"
 # 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

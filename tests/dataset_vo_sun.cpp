@@ -84,6 +84,9 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     // result from the previous window
     Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
         dataset.pose_covars[k1]);
+    // Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
+    //     1e-2 * SE3::AdjointMatrix::Identity());
+
     SE3::AdjointMatrix pose_prior_stiffness = es_prior.operatorInverseSqrt();
 
     // std::cout << "\nStiffness for k=" << k1 << "\n"
@@ -146,7 +149,14 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
         covariance.GetCovarianceBlockInTangentSpace(
             dataset.poses[k1 + 1].data(), dataset.poses[k1 + 1].data(),
             dataset.pose_covars[k1 + 1].data());
-        // dataset.pose_covars[k1 + 1] = 1e-2 * SE3::AdjointMatrix::Identity();
+    }
+
+    Eigen::LLT<SE3::AdjointMatrix> llt_of_covar(dataset.pose_covars[k1 + 1]);
+    if (llt_of_covar.info() == Eigen::NumericalIssue) {
+        std::cout
+            << "WARNING: Covariance matrix is not positive semi-definite! "
+            << "Using previous state covariance." << std::endl;
+        dataset.pose_covars[k1 + 1] = dataset.pose_covars[k1];
     }
 }
 

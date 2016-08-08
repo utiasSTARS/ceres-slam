@@ -116,6 +116,8 @@ class SO3GroupBase {
     }
 
     //! Normalize the underlying matrix to ensure it is a valid rotation
+    //! NOTE: Normalization does not play well with ceres autodiff!
+    //! The Jacobian information gets lost during the Eigen SVD computation
     inline void normalize() {
         Eigen::JacobiSVD<TransformationMatrix> svd(
             this->matrix(), Eigen::ComputeThinU | Eigen::ComputeThinV);
@@ -131,7 +133,9 @@ class SO3GroupBase {
     inline const SO3Group<Scalar> operator*(
         const SO3Group<Scalar>& other) const {
         SO3Group<Scalar> result(this->matrix() * other.matrix());
-        result.normalize();
+        // NOTE: Normalization does not play well with ceres autodiff!
+        // The Jacobian information gets lost during the Eigen SVD computation
+        // result.normalize();
         return result;
     }
 
@@ -287,8 +291,10 @@ class SO3GroupBase {
     */
     inline static const TangentVector log(const SO3Group<Scalar>& C) {
         // Normalize C to ensure it is a valid rotation matrix
+        // NOTE: Normalization does not play well with ceres autodiff!
+        // The Jacobian information gets lost during the Eigen SVD computation
         SO3Group<Scalar> C_normalized = C;
-        C_normalized.normalize();
+        // C_normalized.normalize();
         // std::cout << "C" << std::endl << C << std::endl;
         // std::cout << "C_normalized" << std::endl << C_normalized <<
         // std::endl;
@@ -308,14 +314,27 @@ class SO3GroupBase {
             (C_normalized.matrix().trace() - static_cast<Scalar>(1.));
 
         Scalar angle = atan2(sin_angle, cos_angle);
-        // std::cerr << "sin(angle): " << sin_angle << std::endl;
-        // std::cerr << "cos(angle): " << cos_angle << std::endl;
-        // std::cerr << "angle: " << angle << std::endl;
+        // std::cout << "sin(angle): " << sin_angle << std::endl;
+        // std::cout << "cos(angle): " << cos_angle << std::endl;
+        // std::cout << "angle: " << angle << std::endl;
 
         // If angle is close to zero, use first-order Taylor expansion
         if (abs(angle) <= std::numeric_limits<Scalar>::epsilon()) {
-            return vee(C_normalized.matrix() -
-                       TransformationMatrix::Identity());
+            TransformationMatrix Phi =
+                C_normalized.matrix() - TransformationMatrix::Identity();
+            TangentVector phi = vee(Phi);
+
+            // std::cout << "Phi:\n";
+            // for (uint i = 0; i < 9; ++i) {
+            //     std::cout << Phi.data()[i] << "\n";
+            // }
+            //
+            // std::cout << "phi:\n";
+            // for (uint i = 0; i < 3; ++i) {
+            //     std::cout << phi.data()[i] << "\n";
+            // }
+
+            return phi;
         }
 
         // Otherwise normalize the axis and return the axis-angle vector
