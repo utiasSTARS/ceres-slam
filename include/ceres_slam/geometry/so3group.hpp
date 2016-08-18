@@ -115,6 +115,12 @@ class SO3GroupBase {
         return SO3Group<Scalar>(this->matrix().transpose());
     }
 
+    //! Return the adjoint matrix associated with the transformation
+    inline const AdjointMatrix adjoint() const {
+        // The adjoint of a rotation matrix is just the rotation matrix
+        return this->matrix();
+    }
+
     //! Normalize the underlying matrix to ensure it is a valid rotation
     //! NOTE: Normalization does not play well with ceres autodiff!
     //! The Jacobian information gets lost during the Eigen SVD computation

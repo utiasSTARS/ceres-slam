@@ -156,6 +156,18 @@ class SE3GroupBase {
         return result;
     }
 
+    //! Return the adjoint matrix associated with the transformation
+    inline const AdjointMatrix adjoint() const {
+        AdjointMatrix ad;
+        ad.block(0, 0, 3, 3) = this->rotation().matrix();
+        ad.block(0, 3, 3, 3) =
+            SO3::wedge(this->translation()) * this->rotation().matrix();
+        ad.block(3, 0, 3, 3) = SO3::TransformationMatrix::Zero();
+        ad.block(3, 3, 3, 3) = this->rotation().matrix();
+
+        return ad;
+    }
+
     //! Normalize the underlying matrix to ensure it is a valid transformation
     inline void normalize() { this->rotation().normalize(); }
 

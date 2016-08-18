@@ -79,10 +79,10 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 
     // Add prior on the first pose in the current window based on the
     // result from the previous window
-    Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
-        dataset.pose_covars[k1]);
     // Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
-    //     1e-2 * SE3::AdjointMatrix::Identity());
+    //     dataset.pose_covars[k1]);
+    Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
+        1e-6 * SE3::AdjointMatrix::Identity());
 
     SE3::AdjointMatrix pose_prior_stiffness = es_prior.operatorInverseSqrt();
 
@@ -112,7 +112,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     solver_options.trust_region_strategy_type = ceres::DOGLEG;
     solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
     solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
-    solver_options.check_gradients = true;
+    // solver_options.check_gradients = true;
 
     // Create sumary container
     ceres::Solver::Summary summary;
