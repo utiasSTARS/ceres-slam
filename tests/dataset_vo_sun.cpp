@@ -27,9 +27,6 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")/"
               << dataset.num_states << ": ";
 
-    std::cout << "\n\nCovariance for k=" << k1 << "\n"
-              << dataset.pose_covars[k1] << std::endl;
-
     ceres::Problem problem;
 
     // Compute the stiffness matrix to apply to the residuals
@@ -57,7 +54,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                 ceres::CostFunction *stereo_cost =
                     ceres_slam::StereoReprojectionErrorAutomatic::Create(
                         dataset.camera, dataset.stereo_obs_list[i],
-                        stereo_obs_stiffness);
+                        0.25 * stereo_obs_stiffness);
                 // Add the stereo cost function to the problem
                 problem.AddResidualBlock(stereo_cost, NULL,
                                          dataset.poses[k].data(),
@@ -115,7 +112,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     solver_options.trust_region_strategy_type = ceres::DOGLEG;
     solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
     solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
-    // solver_options.check_gradients = true;
+    solver_options.check_gradients = true;
 
     // Create sumary container
     ceres::Solver::Summary summary;
@@ -151,13 +148,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
             dataset.pose_covars[k1 + 1].data());
     }
 
-    Eigen::LLT<SE3::AdjointMatrix> llt_of_covar(dataset.pose_covars[k1 + 1]);
-    if (llt_of_covar.info() == Eigen::NumericalIssue) {
-        std::cout
-            << "WARNING: Covariance matrix is not positive semi-definite! "
-            << "Using previous state covariance." << std::endl;
-        dataset.pose_covars[k1 + 1] = dataset.pose_covars[k1];
-    }
+    // std::cout << "Covariance for k=" << k1 + 1 << "\n"
+    //           << dataset.pose_covars[k1 + 1] << "\n\n";
 }
 
 int main(int argc, char **argv) {

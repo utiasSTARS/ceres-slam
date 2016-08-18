@@ -25,21 +25,10 @@ class PoseErrorAutomatic {
         typedef SE3Group<T> SE3T;
         typedef typename SE3T::TangentVector TangentVectorT;
 
-        // std::cout << "T_k_0:\n";
-        // for (uint i = 0; i < 12; ++i) {
-        //     std::cout << T_k_0_ceres[i] << "\n";
-        // }
-
         // The error between two SE(3) poses A and B is the vector from
         // A to B in the tangent space of A (or vice versa)
         Eigen::Map<const SE3T> T_k_0(T_k_0_ceres);
         Eigen::Map<TangentVectorT> residuals(residuals_ceres);
-
-        // SE3T T_ref = T_k_0_ref_.cast<T>();
-        // std::cout << "T_ref:\n";
-        // for (uint i = 0; i < 12; ++i) {
-        //     std::cout << T_ref.data()[i] << "\n";
-        // }
 
         SE3T T_residual = T_k_0_ref_.cast<T>() * T_k_0.inverse();
 

@@ -62,8 +62,9 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     sun_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
         std::stod(tokens.at(5));
 
-    stereo_obs_var << 1., 1., 1.;
-    sun_obs_var << pow(0.18, 2.), pow(0.03, 2.), pow(0.16, 2.);
+    // stereo_obs_var << 2.25, 2.25, 9.;
+    // sun_obs_var << pow(1., 2.), pow(1e3, 2.), pow(1., 2.);
+    // sun_obs_var << pow(0.11, 2.), pow(0.1, 2.), pow(0.15, 2.);
 
     std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
               << std::endl

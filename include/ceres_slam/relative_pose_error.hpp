@@ -34,19 +34,7 @@ class RelativePoseErrorAutomatic {
 
         SE3T T_1_2_est = T_1_0 * T_2_0.inverse();
         SE3T T_residual = T_2_1_ref_.cast<T>() * T_1_2_est.inverse();
-        residuals = SE3T::log(T_residual);
-
-        // std::cout << "\nresiduals:\n";
-        // for (uint i = 0; i < 6; ++i) {
-        //     std::cout << residuals_ceres[i] << std::endl;
-        // }
-
-        residuals = stiffness_.cast<T>() * residuals;
-
-        // std::cout << "\nstiffness * residuals:\n";
-        // for (uint i = 0; i < 6; ++i) {
-        //     std::cout << residuals_ceres[i] << std::endl;
-        // }
+        residuals = stiffness_.cast<T>() * SE3T::log(T_residual);
 
         return true;
     }
@@ -72,4 +60,4 @@ class RelativePoseErrorAutomatic {
 
 }  // namespace ceres_slam
 
-#endif /* end of include guard: CERES_SLAM_POSE_ERROR_HPP_ */
+#endif /* end of include guard: CERES_SLAM_RELATIVE_POSE_ERROR_HPP_ */

@@ -56,14 +56,22 @@ class SunSensorErrorAutomatic {
 
         double y_sig = 1. / stiffness_(1, 1);
 
-        if (T(1) - expected_xz_c.dot(observed_xz_c) < T(0.3) ||
-            fabs(observed_sun_dir_c(1) - expected_sun_dir_c(1)) >
+        if (T(1) - expected_xz_c.dot(observed_xz_c) < T(0.3) &&
+            fabs(expected_sun_dir_c(1) - observed_sun_dir_c(1)) <
                 T(3. * y_sig)) {
+            expected_sun_dir_c(0) = expected_xz_c(0);
+            expected_sun_dir_c(1) = T(0.);
+            expected_sun_dir_c(2) = expected_xz_c(1);
             residuals = stiffness_.cast<T>() *
                         (expected_sun_dir_c - observed_sun_dir_c);
         } else {
             residuals = ResidualVectorT::Zero();
         }
+
+        // std::cout << "residuals:\n";
+        // for (uint i = 0; i < 3; ++i) {
+        //     std::cout << residuals[i] << "\n";
+        // }
 
         return true;
     }
