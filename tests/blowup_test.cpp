@@ -17,19 +17,25 @@ int main() {
     uint num_poses = 10;
 
     std::vector<SE3> T_k_0;
-    std::vector<SE3::AdjointMatrix> covars;
+    std::vector<SE3::AdjointMatrix> covars, manual_covars;
 
     T_k_0.resize(num_poses);
     covars.resize(num_poses);
+    manual_covars.resize(num_poses);
 
     T_k_0[0] = SE3::Identity();
     covars[0] = 1e-6 * SE3::AdjointMatrix::Identity();
+    manual_covars[0] = 1e-6 * SE3::AdjointMatrix::Identity();
 
     SE3 meas = SE3::Identity();
     meas.translation()(0) = 0.1;
     SE3::AdjointMatrix meas_covar = 1e-2 * SE3::AdjointMatrix::Identity();
     Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_meas(meas_covar);
     SE3::AdjointMatrix meas_stiffness = es_meas.operatorInverseSqrt();
+
+    std::cout << "\nInitial ceres covariance for k=0 \n" << covars[0] << "\n";
+    std::cout << "\nInitial manual covariance for k=0 \n"
+              << manual_covars[0] << "\n";
 
     for (uint k1 = 0; k1 < num_poses - 1; ++k1) {
         ///////////////////////////////////////////////////////////////////////
@@ -108,7 +114,14 @@ int main() {
                 T_k_0[k2].data(), T_k_0[k2].data(), covars[k2].data());
         }
 
-        std::cout << "\nCovariance for k=" << k2 << "\n" << covars[k2] << "\n";
+        manual_covars[k2] =
+            meas_covar +
+            meas.adjoint() * manual_covars[k1] * meas.adjoint().transpose();
+
+        std::cout << "\nCeres covariance for k=" << k2 << "\n"
+                  << covars[k2] << "\n";
+        std::cout << "\nManual covariance for k=" << k2 << "\n"
+                  << manual_covars[k2] << "\n\n";
     }
 
     std::cout << "Done.\n";

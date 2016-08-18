@@ -33,7 +33,7 @@ class RelativePoseErrorAutomatic {
         Eigen::Map<TangentVectorT> residuals(residuals_ceres);
 
         SE3T T_1_2_est = T_1_0 * T_2_0.inverse();
-        SE3T T_residual = T_2_1_ref_.cast<T>() * T_1_2_est.inverse();
+        SE3T T_residual = T_2_1_ref_.cast<T>() * T_1_2_est;
         residuals = stiffness_.cast<T>() * SE3T::log(T_residual);
 
         return true;
