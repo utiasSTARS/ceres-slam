@@ -11,10 +11,12 @@
 
 #include <Eigen/Eigenvalues>
 
+typedef ceres_slam::SO3Group<double> SO3;
 typedef ceres_slam::SE3Group<double> SE3;
 
 int main() {
-    uint num_poses = 10;
+    uint num_poses = 1000;
+    bool fix_first_pose_in_sequence = false;
 
     std::vector<SE3> T_k_0;
     std::vector<SE3::AdjointMatrix> covars, manual_covars;
@@ -24,18 +26,24 @@ int main() {
     manual_covars.resize(num_poses);
 
     T_k_0[0] = SE3::Identity();
-    covars[0] = 1e-6 * SE3::AdjointMatrix::Identity();
-    manual_covars[0] = 1e-6 * SE3::AdjointMatrix::Identity();
+    covars[0] = 1e-12 * SE3::AdjointMatrix::Identity();
+    manual_covars[0] = 1e-12 * SE3::AdjointMatrix::Identity();
 
     SE3 meas = SE3::Identity();
-    meas.translation()(0) = 0.1;
-    SE3::AdjointMatrix meas_covar = 1e-2 * SE3::AdjointMatrix::Identity();
+    meas.translation() << 0.1, 0.1, 0.1;  // 10 cm per timestep
+    SO3::TangentVector meas_rot_vec;
+    meas_rot_vec << 0.2, 0.2, 0.2;  // ~10 deg per timestep
+    meas.rotation() = SO3::exp(meas_rot_vec);
+    SE3::AdjointMatrix meas_covar = 1e-3 * SE3::AdjointMatrix::Identity();
     Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_meas(meas_covar);
     SE3::AdjointMatrix meas_stiffness = es_meas.operatorInverseSqrt();
 
     std::cout << "\nInitial ceres covariance for k=0 \n" << covars[0] << "\n";
     std::cout << "\nInitial manual covariance for k=0 \n"
-              << manual_covars[0] << "\n";
+              << manual_covars[0] << "\n\n";
+
+    std::cout << "\nMeasurement transformation \n" << meas << "\n";
+    std::cout << "\nMeasurement covariance \n" << meas_covar << "\n\n";
 
     for (uint k1 = 0; k1 < num_poses - 1; ++k1) {
         ///////////////////////////////////////////////////////////////////////
@@ -58,14 +66,15 @@ int main() {
         problem.AddResidualBlock(meas_cost, NULL, T_k_0[k1].data(),
                                  T_k_0[k2].data());
 
-        // Add prior on first pose
-        // if (k1 == 0) {
-        //     problem.SetParameterBlockConstant(T_k_0[k1].data());
-        // } else {
-        ceres::CostFunction *prior_cost =
-            ceres_slam::PoseErrorAutomatic::Create(T_k_0[k1], prior_stiffness);
-        problem.AddResidualBlock(prior_cost, NULL, T_k_0[k1].data());
-        // }
+        // Add prior on first pose, hold fixed if first in sequence
+        if (k1 == 0 && fix_first_pose_in_sequence) {
+            problem.SetParameterBlockConstant(T_k_0[k1].data());
+        } else {
+            ceres::CostFunction *prior_cost =
+                ceres_slam::PoseErrorAutomatic::Create(T_k_0[k1],
+                                                       prior_stiffness);
+            problem.AddResidualBlock(prior_cost, NULL, T_k_0[k1].data());
+        }
 
         // Set local parameterizations
         ceres::LocalParameterization *se3_perturbation =
@@ -114,15 +123,19 @@ int main() {
                 T_k_0[k2].data(), T_k_0[k2].data(), covars[k2].data());
         }
 
-        manual_covars[k2] =
-            meas_covar +
-            meas.adjoint() * manual_covars[k1] * meas.adjoint().transpose();
-
-        std::cout << "\nCeres covariance for k=" << k2 << "\n"
-                  << covars[k2] << "\n";
-        std::cout << "\nManual covariance for k=" << k2 << "\n"
-                  << manual_covars[k2] << "\n\n";
+        if (k1 == 0 && fix_first_pose_in_sequence) {
+            manual_covars[k2] = meas_covar;
+        } else {
+            manual_covars[k2] =
+                meas_covar +
+                meas.adjoint() * manual_covars[k1] * meas.adjoint().transpose();
+        }
     }
+
+    std::cout << "\nCeres covariance for k=" << num_poses - 1 << "\n"
+              << covars[num_poses - 1] << "\n";
+    std::cout << "\nManual covariance for k=" << num_poses - 1 << "\n"
+              << manual_covars[num_poses - 1] << "\n\n";
 
     std::cout << "Done.\n";
 

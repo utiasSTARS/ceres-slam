@@ -53,7 +53,7 @@ do
     echo ${CNNCMD}
     # ${CNNCMD}
 
-    GTCMD="${EXECUTABLE} ${GTFILES[i]} --window ${WINDOW} --sun-only"
+    GTCMD="${EXECUTABLE} ${GTFILES[i]} --window ${WINDOW}"
     echo ${GTCMD}
     ${GTCMD}
 done

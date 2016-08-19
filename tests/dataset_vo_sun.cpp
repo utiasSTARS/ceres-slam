@@ -79,10 +79,10 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 
     // Add prior on the first pose in the current window based on the
     // result from the previous window
-    // Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
-    //     dataset.pose_covars[k1]);
     Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
-        1e-6 * SE3::AdjointMatrix::Identity());
+        dataset.pose_covars[k1]);
+    // Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_prior(
+    //     1e-6 * SE3::AdjointMatrix::Identity());
 
     SE3::AdjointMatrix pose_prior_stiffness = es_prior.operatorInverseSqrt();
 
