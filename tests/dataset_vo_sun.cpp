@@ -30,13 +30,15 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     ceres::Problem problem;
 
     // Compute the stiffness matrix to apply to the residuals
+    Camera::ObservationCovariance stereo_obs_covar =
+        dataset.stereo_obs_var.asDiagonal();
     Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance> es_stereo(
-        dataset.stereo_obs_var.asDiagonal());
+        stereo_obs_covar);
     Camera::ObservationCovariance stereo_obs_stiffness =
         es_stereo.operatorInverseSqrt();
 
-    Eigen::SelfAdjointEigenSolver<Vector::Covariance> es_sun(
-        dataset.sun_obs_var.asDiagonal());
+    Vector::Covariance sun_obs_covar = dataset.sun_obs_var.asDiagonal();
+    Eigen::SelfAdjointEigenSolver<Vector::Covariance> es_sun(sun_obs_covar);
     Vector::Covariance sun_obs_stiffness = es_sun.operatorInverseSqrt();
 
     // Set up local parameterizations
@@ -54,7 +56,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                 ceres::CostFunction *stereo_cost =
                     ceres_slam::StereoReprojectionErrorAutomatic::Create(
                         dataset.camera, dataset.stereo_obs_list[i],
-                        0.25 * stereo_obs_stiffness);
+                        stereo_obs_stiffness);
                 // Add the stereo cost function to the problem
                 problem.AddResidualBlock(stereo_cost, NULL,
                                          dataset.poses[k].data(),
@@ -105,8 +107,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     // Set solver options
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = false;
-    solver_options.num_threads = 8;
-    solver_options.num_linear_solver_threads = 8;
+    solver_options.num_threads = 4;
+    solver_options.num_linear_solver_threads = 4;
     solver_options.max_num_iterations = 1000;
     solver_options.use_nonmonotonic_steps = true;
     solver_options.trust_region_strategy_type = ceres::DOGLEG;

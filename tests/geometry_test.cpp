@@ -3,8 +3,6 @@
 #include <cstdlib>
 #include <iostream>
 
-const double PI = 3.14159265;
-
 // TODO: Rewrite this as a proper unit test
 
 using Point = ceres_slam::Point3D<double>;

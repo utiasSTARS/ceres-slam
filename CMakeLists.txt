@@ -9,8 +9,11 @@ project(ceres_slam)
 #  MinSizeRel : w/o debug symbols, w/ optimization, stripped binaries
 set(CMAKE_BUILD_TYPE Release)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+message("${CMAKE_MODULE_PATH}")
+
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
+# find_package(OpenCV REQUIRED)
 find_package(Ceres REQUIRED)
 
 set(CMAKE_CXX_FLAGS
@@ -38,17 +41,17 @@ target_link_libraries(geometry_test ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 add_executable(light_test tests/light_test.cpp)
 target_link_libraries(light_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES})
 
-add_executable(dense_stereo_test tests/dense_stereo_test.cpp)
-target_link_libraries(dense_stereo_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES})
+# add_executable(dense_stereo_test tests/dense_stereo_test.cpp)
+# target_link_libraries(dense_stereo_test ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${OpenCV_LIBRARIES} ${CERES_LIBRARIES})
 
-add_executable(dataset_vo tests/dataset_vo.cpp)
-target_link_libraries(dataset_vo ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+# add_executable(dataset_vo tests/dataset_vo.cpp)
+# target_link_libraries(dataset_vo ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(dataset_vo_sun tests/dataset_vo_sun.cpp)
 target_link_libraries(dataset_vo_sun ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
-add_executable(dataset_ba_phong tests/dataset_ba_phong.cpp)
-target_link_libraries(dataset_ba_phong ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+# add_executable(dataset_ba_phong tests/dataset_ba_phong.cpp)
+# target_link_libraries(dataset_ba_phong ${PROJECT_NAME} ${catkin_LIBRARIES} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(blowup_test tests/blowup_test.cpp)
 target_link_libraries(blowup_test ${PROJECT_NAME} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})

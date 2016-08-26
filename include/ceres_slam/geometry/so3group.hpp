@@ -99,7 +99,8 @@ class SO3GroupBase {
     //! Return a copy of this, casted to OtherScalar
     template <typename OtherScalar>
     inline SO3Group<OtherScalar> cast() const {
-        return SO3Group<OtherScalar>(this->matrix().cast<OtherScalar>());
+        return SO3Group<OtherScalar>(
+            this->matrix().template cast<OtherScalar>());
     }
 
     //! Assignment operator
@@ -325,7 +326,7 @@ class SO3GroupBase {
         // std::cout << "angle: " << angle << std::endl;
 
         // If angle is close to zero, use first-order Taylor expansion
-        if (abs(angle) <= std::numeric_limits<Scalar>::epsilon()) {
+        if (fabs(angle) <= std::numeric_limits<Scalar>::epsilon()) {
             TransformationMatrix Phi =
                 C_normalized.matrix() - TransformationMatrix::Identity();
             TangentVector phi = vee(Phi);

@@ -34,7 +34,7 @@ int main() {
     v28_n << 0., 0., 1.;
     // v28_n = T_1_w * v28_n;
     Vertex v28(v28_p, v28_n, m, t);
-    Light::Colour v28_obs = 0.377606521;
+    // Light::Colour v28_obs = 0.377606521;
 
     Vertex v245;
     v245.position() << 0.08868649, 1., 0.7597348;
@@ -43,7 +43,7 @@ int main() {
     // v245.normal() = T_1_w * v245.normal();
     v245.material() = m;
     v245.texture() = t;
-    Light::Colour v245_obs = 0.777672166;
+    // Light::Colour v245_obs = 0.777672166;
 
     Light l;
     l.position() << -2, -2, 2;

@@ -134,8 +134,9 @@ class SE3GroupBase {
     //! Return a copy of this, casted to OtherScalar
     template <typename OtherScalar>
     inline SE3Group<OtherScalar> cast() const {
-        return SE3Group<OtherScalar>(this->translation().cast<OtherScalar>(),
-                                     this->rotation().cast<OtherScalar>());
+        return SE3Group<OtherScalar>(
+            this->translation().template cast<OtherScalar>(),
+            this->rotation().template cast<OtherScalar>());
     }
 
     //! Assignment operator

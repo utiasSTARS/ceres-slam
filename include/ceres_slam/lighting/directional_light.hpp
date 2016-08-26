@@ -45,12 +45,12 @@ class DirectionalLight {
     DirectionalLight()
         : direction_(Vector::Constant(static_cast<Scalar>(1))),
           colour_(static_cast<Scalar>(1)) {
-        direction.normalize();
+        direction_.normalize();
     }
     //! Construct from direction and colour
     DirectionalLight(Vector& direction, Colour& colour)
         : direction_(direction), colour_(colour) {
-        direction.normalize();
+        direction_.normalize();
     }
 
     //! Return the direction of the light(mutable)

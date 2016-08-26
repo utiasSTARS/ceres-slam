@@ -1,5 +1,6 @@
 #include <ceres_slam/point_cloud_aligner.hpp>
 
+#include <random>
 #include <vector>
 
 #include <ceres_slam/geometry/geometry.hpp>
