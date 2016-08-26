@@ -37,8 +37,8 @@ GTFILES=(
 "${DATADIR}/2011_10_03/2011_10_03_drive_0027_sync/2011_10_03_drive_0027_sync_viso2_gt.csv"
 )
 
-for ((i=4; i<5; ++i));
-# for ((i=0; i<${#OLDFILES[@]}; ++i));
+# for ((i=2; i<3; ++i));
+for ((i=0; i<${#OLDFILES[@]}; ++i));
 do
     :
     OLDCMD="${EXECUTABLE} ${OLDFILES[i]} --window ${WINDOW} --sun-only"

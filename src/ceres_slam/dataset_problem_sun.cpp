@@ -62,8 +62,8 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     sun_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
         std::stod(tokens.at(5));
 
-    stereo_obs_var << 0.25, 0.25, 1.;
-    // stereo_obs_var << pow(1., 2), pow(1., 2), pow(2., 2);
+    // stereo_obs_var << 0.25, 0.25, 1.;
+    stereo_obs_var << 1., 1., 4.;
     // sun_obs_var << pow(1., 2.), pow(1e3, 2.), pow(1., 2.);
     // sun_obs_var << pow(0.11, 2.), pow(0.1, 2.), pow(0.15, 2.);
     // sun_obs_var << 1e-6, 1e-6, 1e-6;
