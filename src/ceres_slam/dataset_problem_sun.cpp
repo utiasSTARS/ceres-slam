@@ -66,7 +66,7 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     stereo_obs_var << 1., 1., 4.;
     // sun_obs_var << pow(1., 2.), pow(1e3, 2.), pow(1., 2.);
     // sun_obs_var << pow(0.11, 2.), pow(0.1, 2.), pow(0.15, 2.);
-    // sun_obs_var << 1e-6, 1e-6, 1e-6;
+    sun_obs_var << 1e-2, 1e-2, 1e-2;
 
     std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
               << std::endl
@@ -88,7 +88,7 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
 
     // Set first ground truth pose covariance to something small
     std::cerr << "Setting first ground truth pose covariance" << std::endl;
-    pose_covars[0] = 1e-6 * SE3::AdjointMatrix::Identity();
+    pose_covars[0] = 1e-12 * SE3::AdjointMatrix::Identity();
     std::cout << "Initial covariance:\n" << pose_covars[0] << std::endl;
 
     // Read ground truth sun direction in the global frame
@@ -259,17 +259,18 @@ void DatasetProblemSun::compute_initial_guess(uint k1, uint k2) {
         // }
 
         // Compute the transform from the first to the second point cloud
-        // std::cout << "k = " << k << ", k-1 = " << k-1 << std::endl;
-        // std::cout <<"Initial set has " << pts_km1.size()
-        //           << " elements" << std::endl;
+        // std::cout << "k = " << k << ", k-1 = " << k - 1 << std::endl;
+        // std::cout << "Initial set has " << pts_km1.size() << " elements"
+        //           << std::endl;
 
         SE3 T_k_km1;
         std::vector<uint> inlier_idx =
             point_cloud_aligner.compute_transformation_and_inliers(
                 T_k_km1, pts_km1, pts_k, camera, 400, 4.);
 
-        // std::cout <<"Best inlier set has " << inlier_idx.size()
-        //               << " elements" << std::endl;
+        // std::cout << "Best inlier set has " << inlier_idx.size() << "
+        // elements"
+        //           << std::endl;
         // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
 
         // Compound the transformation estimate onto the previous one
@@ -282,6 +283,11 @@ void DatasetProblemSun::compute_initial_guess(uint k1, uint k2) {
                 // Initialize the position with the guess from the
                 // first point cloud, transformed into the base frame
                 Point point_position = poses[k - 1].inverse() * pts_km1[i];
+                // std::cout << "k-1: " << k - 1 << "\tj: " << j_km1[i]
+                //           << "\n T_w_km1:\n"
+                //           << poses[k - 1].inverse()
+                //           << "\n pt_km1: " << pts_km1[i]
+                //           << "\n point_g: " << point_position << std::endl;
 
                 // Create the point object
                 map_points[j_km1[i]] = point_position;

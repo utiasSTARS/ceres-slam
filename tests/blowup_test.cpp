@@ -35,9 +35,9 @@ int main() {
     // meas_rot_vec << 0.2, 0.2, 0.2;  // ~10 deg per timestep
     meas_rot_vec << 0., 0., 0.;  // ~10 deg per timestep
     meas.rotation() = SO3::exp(meas_rot_vec);
-    SE3::AdjointMatrix meas_covar = 1e-12 * SE3::AdjointMatrix::Identity();
+    SE3::AdjointMatrix meas_covar = 1e-3 * SE3::AdjointMatrix::Identity();
     // meas_covar(0, 0) = 1e-3;
-    meas_covar(5, 5) = 1e-4;
+    // meas_covar(5, 5) = 1e-3;
     Eigen::SelfAdjointEigenSolver<SE3::AdjointMatrix> es_meas(meas_covar);
     SE3::AdjointMatrix meas_stiffness = es_meas.operatorInverseSqrt();
 

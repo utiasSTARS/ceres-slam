@@ -107,8 +107,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     // Set solver options
     ceres::Solver::Options solver_options;
     solver_options.minimizer_progress_to_stdout = false;
-    solver_options.num_threads = 4;
-    solver_options.num_linear_solver_threads = 4;
+    // solver_options.num_threads = 4;
+    // solver_options.num_linear_solver_threads = 4;
     solver_options.max_num_iterations = 1000;
     solver_options.use_nonmonotonic_steps = true;
     solver_options.trust_region_strategy_type = ceres::DOGLEG;
@@ -205,10 +205,22 @@ int main(int argc, char **argv) {
             dataset.reset_points();
         }
 
+        // DEBUG: Output initial guess for the whole dataset
+        // dataset.compute_initial_guess(0, dataset.num_states);
+        // solveWindow(dataset, 0, dataset.num_states, false);
+        // dataset.reset_points();
+
         // Output the initial guess to a CSV file for comparison
         std::vector<std::string> tokens;
         tokens = ceres_slam::split(filename, '.');
-        dataset.write_csv(tokens.at(0) + "_initial.csv");
+        tokens = ceres_slam::split(tokens.at(0), '_');
+        std::string initial_filename = "";
+        for (uint t = 0; t < tokens.size() - 1; ++t) {
+            initial_filename += tokens.at(t) + "_";
+        }
+        initial_filename += "initial.csv";
+        std::cerr << "Outputting to file: " << initial_filename << std::endl;
+        dataset.write_csv(initial_filename);
     }
 
     std::cerr << "Computing VO with sun measurements" << std::endl;
