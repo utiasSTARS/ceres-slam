@@ -55,27 +55,20 @@ class DatasetProblemSun {
     //! List of stereo observations
     std::vector<Camera::Observation> stereo_obs_list;
     //! Variance of stereo observations
-    Camera::ObservationVariance stereo_obs_var;
+    std::vector<Camera::ObservationVariance> stereo_obs_var;
     //! List of sun direction observations
     std::vector<Vector> sun_obs_list;
     //! Variance of sun direction observations
-    Vector::Variance sun_obs_var;
+    std::vector<Vector::Variance> sun_obs_var;
     //! True if state k has a sun observation
     std::vector<bool> state_has_sun_obs;
-    //! Sun direction in the global frame
-    Vector sun_dir_g;
+    //! Sun direction in the global (ENU) frame
+    std::vector<Vector> sun_dir_g;
 
-    //! Read dataset from a CSV file
-    /*!
-        Assuming first row is num_states, num_points,
-        second row is intrinsics,
-        and remaining rows are observations of the form [k,j,u,v,d]
-        where k: pose index
-              j: point index
-              (u,v): left image coordinates
-              d: disparity
-    */
-    const bool read_csv(const std::string filename);
+    //! Read dataset from CSV files
+    const bool read_csv(const std::string track_file,
+                        const std::string ref_sun_file,
+                        const std::string obs_sun_file);
 
     //! Write result to a CSV file
     const bool write_csv(const std::string filename) const;

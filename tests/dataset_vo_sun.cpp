@@ -30,16 +30,9 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     ceres::Problem problem;
 
     // Compute the stiffness matrix to apply to the residuals
-    Camera::ObservationCovariance stereo_obs_covar =
-        dataset.stereo_obs_var.asDiagonal();
-    Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance> es_stereo(
-        stereo_obs_covar);
-    Camera::ObservationCovariance stereo_obs_stiffness =
-        es_stereo.operatorInverseSqrt();
+    Camera::ObservationCovariance stereo_obs_covar, stereo_obs_stiffness;
 
-    Vector::Covariance sun_obs_covar = dataset.sun_obs_var.asDiagonal();
-    Eigen::SelfAdjointEigenSolver<Vector::Covariance> es_sun(sun_obs_covar);
-    Vector::Covariance sun_obs_stiffness = es_sun.operatorInverseSqrt();
+    Vector::Covariance sun_obs_covar, sun_obs_stiffness;
 
     // Set up local parameterizations
     ceres::LocalParameterization *se3_perturbation =
@@ -52,11 +45,18 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
             uint j = dataset.point_ids[i];
             // Only optimize map points that have been initialized
             if (dataset.initialized_point[j]) {
+                // Stiffness for the stereo observation
+                stereo_obs_covar = dataset.stereo_obs_var[j].asDiagonal();
+                Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
+                    es_stereo(stereo_obs_covar);
+                stereo_obs_stiffness = es_stereo.operatorInverseSqrt();
+
                 // Cost function for the stereo observation
                 ceres::CostFunction *stereo_cost =
                     ceres_slam::StereoReprojectionErrorAutomatic::Create(
                         dataset.camera, dataset.stereo_obs_list[i],
                         stereo_obs_stiffness);
+
                 // Add the stereo cost function to the problem
                 problem.AddResidualBlock(stereo_cost, NULL,
                                          dataset.poses[k].data(),
@@ -66,11 +66,18 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 
         // Add sun sensor measurements if available
         if (use_sun && dataset.state_has_sun_obs[k]) {
+            // Stiffness for the sun observation
+            sun_obs_covar = dataset.sun_obs_var[k].asDiagonal();
+            Eigen::SelfAdjointEigenSolver<Vector::Covariance> es_sun(
+                sun_obs_covar);
+            sun_obs_stiffness = es_sun.operatorInverseSqrt();
+
             // Cost function for the sun observation
             ceres::CostFunction *sun_cost =
                 ceres_slam::SunSensorErrorAutomatic::Create(
-                    dataset.sun_obs_list[k], dataset.sun_dir_g,
+                    dataset.sun_obs_list[k], dataset.sun_dir_g[k],
                     sun_obs_stiffness);
+
             // Add the sun sensor cost function to the problem
             problem.AddResidualBlock(sun_cost, NULL, dataset.poses[k].data());
         }
@@ -156,9 +163,10 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 
 int main(int argc, char **argv) {
     std::string usage_string(
-        "usage: dataset_vo_sun <input_file> [--window N=0]");
+        "usage: dataset_vo_sun <track_file> <ref_sun_file> <obs_sun_file> "
+        "[--window N=0]");
 
-    if (argc < 2) {
+    if (argc < 4) {
         std::cerr << usage_string << std::endl;
         return EXIT_FAILURE;
     }
@@ -168,8 +176,10 @@ int main(int argc, char **argv) {
     bool sun_only = false;
 
     // Parse command line arguments
-    std::string filename(argv[1]);
-    for (int a = 2; a < argc; ++a) {
+    std::string track_file(argv[1]);
+    std::string ref_sun_file(argv[2]);
+    std::string obs_sun_file(argv[3]);
+    for (int a = 4; a < argc; ++a) {
         std::string flag(argv[a]);
 
         if (flag == "--window" && argc > a + 1) {
@@ -185,7 +195,7 @@ int main(int argc, char **argv) {
 
     // Read dataset from file
     ceres_slam::DatasetProblemSun dataset;
-    if (!dataset.read_csv(filename)) {
+    if (!dataset.read_csv(track_file, ref_sun_file, obs_sun_file)) {
         return EXIT_FAILURE;
     }
 
@@ -211,16 +221,7 @@ int main(int argc, char **argv) {
         // dataset.reset_points();
 
         // Output the initial guess to a CSV file for comparison
-        std::vector<std::string> tokens;
-        tokens = ceres_slam::split(filename, '.');
-        tokens = ceres_slam::split(tokens.at(0), '_');
-        std::string initial_filename = "";
-        for (uint t = 0; t < tokens.size() - 1; ++t) {
-            initial_filename += tokens.at(t) + "_";
-        }
-        initial_filename += "initial.csv";
-        std::cerr << "Outputting to file: " << initial_filename << std::endl;
-        dataset.write_csv(initial_filename);
+        dataset.write_csv(track_file);
     }
 
     std::cerr << "Computing VO with sun measurements" << std::endl;
@@ -233,8 +234,13 @@ int main(int argc, char **argv) {
     }
 
     // Output optimized state to file
-    std::cerr << "Outputting to file: " << filename << std::endl;
-    dataset.write_csv(filename);
+    std::vector<std::string> track_tokens, obs_sun_tokens;
+    track_tokens = ceres_slam::split(track_file, '.');
+    obs_sun_tokens = ceres_slam::split(obs_sun_file, '.');
+    obs_sun_tokens = ceres_slam::split(obs_sun_tokens.at(0), '_');
+    std::string sun_filename =
+        track_tokens.at(0) + "_" + obs_sun_tokens.at(obs_sun_tokens.size() - 1);
+    dataset.write_csv(sun_filename);
 
     return EXIT_SUCCESS;
 }

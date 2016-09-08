@@ -13,9 +13,13 @@
 
 namespace ceres_slam {
 
-const bool DatasetProblemSun::read_csv(std::string filename) {
-    std::cerr << "Loading file " << filename << std::endl;
-    CSVReader reader(filename);
+const bool DatasetProblemSun::read_csv(const std::string track_file,
+                                       const std::string ref_sun_file,
+                                       const std::string obs_sun_file) {
+    //////////////////////////////////////////////////////////////////////////
+    // Read stereo observations and metadata
+    std::cerr << "Loading file " << track_file << std::endl;
+    CSVReader reader(track_file);
 
     std::vector<std::string> tokens;
 
@@ -35,7 +39,9 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     initialized_point.resize(num_points);
     reset_points();
 
+    sun_dir_g.resize(num_states);
     sun_obs_list.resize(num_states);
+    sun_obs_var.resize(num_states);
     for (uint k = 0; k < num_states; ++k) {
         state_has_sun_obs.push_back(false);
     }
@@ -54,24 +60,11 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     camera = std::make_shared<Camera>(fu, fv, cu, cv, b);
     std::cerr << *camera << std::endl;
 
-    // Read observation variance
-    std::cerr << "Reading observation variances" << std::endl;
-    tokens = reader.getLine();
-    stereo_obs_var << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
-        std::stod(tokens.at(2));
-    sun_obs_var << std::stod(tokens.at(3)), std::stod(tokens.at(4)),
-        std::stod(tokens.at(5));
-
     // stereo_obs_var << 0.25, 0.25, 1.;
-    stereo_obs_var << 1., 1., 4.;
+    // stereo_obs_var << 1., 1., 4.;
     // sun_obs_var << pow(1., 2.), pow(1e3, 2.), pow(1., 2.);
     // sun_obs_var << pow(0.11, 2.), pow(0.1, 2.), pow(0.15, 2.);
-    sun_obs_var << 1e-2, 1e-2, 1e-2;
-
-    std::cerr << "Stereo observation variance: " << stereo_obs_var.transpose()
-              << std::endl
-              << "Sun direction observation variance: "
-              << sun_obs_var.transpose() << std::endl;
+    // sun_obs_var << 1e-2, 1e-2, 1e-2;
 
     // Read first ground truth pose
     std::cerr << "Reading first ground truth pose" << std::endl;
@@ -91,39 +84,28 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
     pose_covars[0] = 1e-12 * SE3::AdjointMatrix::Identity();
     std::cout << "Initial covariance:\n" << pose_covars[0] << std::endl;
 
-    // Read ground truth sun direction in the global frame
-    std::cerr << "Reading ground truth sun direction... " << std::endl;
-    tokens = reader.getLine();
-    sun_dir_g << std::stod(tokens.at(0)), std::stod(tokens.at(1)),
-        std::stod(tokens.at(2));
-    std::cerr << sun_dir_g << std::endl;
-
     // Read in the observations
     std::cerr << "Reading observation data... ";
     while (!reader.atEOF()) {
         tokens = reader.getLine();
-        uint k = std::stod(tokens.at(0));
-        if (tokens.size() > 4) {
-            // This is a stereo observation
-            state_ids.push_back(k);
-            point_ids.push_back(std::stoi(tokens.at(1)));
-            double u = std::stod(tokens.at(2));
-            double v = std::stod(tokens.at(3));
-            double d = std::stod(tokens.at(4));
-            stereo_obs_list.push_back(Camera::Observation(u, v, d));
-        } else {
-            // This is a sun direction observation
-            state_has_sun_obs.at(k) = true;
-            sun_obs_list.at(k) << std::stod(tokens.at(1)),
-                std::stod(tokens.at(2)), std::stod(tokens.at(3));
-        }
+        uint k = std::stoi(tokens.at(0));
+        state_ids.push_back(k);
+        point_ids.push_back(std::stoi(tokens.at(1)));
+        double u = std::stod(tokens.at(2));
+        double v = std::stod(tokens.at(3));
+        double d = std::stod(tokens.at(4));
+        double uvar = std::stod(tokens.at(5));
+        double vvar = std::stod(tokens.at(6));
+        double dvar = std::stod(tokens.at(7));
+        stereo_obs_list.push_back(Camera::Observation(u, v, d));
+        stereo_obs_var.push_back(Camera::ObservationVariance(uvar, vvar, dvar));
     }
     std::cerr << "read " << stereo_obs_list.size() << " stereo observations"
               << std::endl;
 
     // Generate lists of observation indices for each state and feature
     std::cerr
-        << "Generating observation indices for each state and feature... ";
+        << "Generating observation indices for each state and feature...\n";
     state_indices_.resize(num_states);
     feature_indices_.resize(num_points);
 
@@ -135,6 +117,55 @@ const bool DatasetProblemSun::read_csv(std::string filename) {
         feature_indices_.at(j).push_back(idx);
     }
 
+    //////////////////////////////////////////////////////////////////////////
+    // Read ephemeris sun vectors in global ENU coordinates
+    std::cerr << "Reading sun ephemeris data (in ENU coordinates)...\n";
+    std::cerr << "Loading file " << ref_sun_file << std::endl;
+    CSVReader reader2(ref_sun_file);
+
+    std::vector<std::string> tokens2;
+
+    // Quit if you can't open the file
+    if (!reader2.isOpen()) {
+        return false;
+    }
+
+    while (!reader2.atEOF()) {
+        tokens2 = reader2.getLine();
+        uint k = stoi(tokens2.at(0));
+        double e = stod(tokens2.at(1));
+        double n = stod(tokens2.at(2));
+        double u = stod(tokens2.at(3));
+        sun_dir_g.at(k) << e, n, u;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    // Read sun observations in camera coordinates
+    std::cerr << "Reading sun observations (in camera coordinates)...\n";
+    std::cerr << "Loading file " << obs_sun_file << std::endl;
+    CSVReader reader3(obs_sun_file);
+
+    std::vector<std::string> tokens3;
+
+    // Quit if you can't open the file
+    if (!reader3.isOpen()) {
+        return false;
+    }
+
+    while (!reader3.atEOF()) {
+        tokens3 = reader3.getLine();
+        uint k = stoi(tokens3.at(0));
+        double x = stod(tokens3.at(1));
+        double y = stod(tokens3.at(2));
+        double z = stod(tokens3.at(3));
+        double xvar = stod(tokens3.at(4));
+        double yvar = stod(tokens3.at(5));
+        double zvar = stod(tokens3.at(6));
+        sun_obs_list.at(k) << x, y, z;
+        sun_obs_var.at(k) << xvar, yvar, zvar;
+        state_has_sun_obs.at(k) = true;
+    }
+
     std::cerr << "done." << std::endl;
 
     return true;
@@ -144,6 +175,10 @@ const bool DatasetProblemSun::write_csv(std::string filename) const {
     std::vector<std::string> tokens = split(filename, '.');
     std::string filename_poses = tokens.at(0) + "_poses.csv";
     std::string filename_map = tokens.at(0) + "_map.csv";
+
+    std::cout << "Outputting to files:"
+              << "\n\t" << filename_poses << "\n\t" << filename_map
+              << std::endl;
 
     // Open files
     std::ofstream pose_file(filename_poses);
@@ -299,4 +334,4 @@ void DatasetProblemSun::compute_initial_guess(uint k1, uint k2) {
     }
 }
 
-}  // namespace ceres_slam
+}  // namespace ceres_slaml
