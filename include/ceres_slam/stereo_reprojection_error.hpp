@@ -19,7 +19,7 @@ class StereoReprojectionErrorAutomatic {
         const Camera::ConstPtr camera, const Camera::Observation& observation,
         const Camera::ObservationCovariance& stiffness)
         : camera_(camera), observation_(observation), stiffness_(stiffness) {
-        kitti_weight =
+        kitti_weight_ =
             0.05 / (fabs(observation(0) - camera->cu()) / camera->cu() + 0.05);
     }
 
@@ -58,10 +58,10 @@ class StereoReprojectionErrorAutomatic {
         const Camera::ConstPtr camera, const Camera::Observation& observation,
         const Camera::ObservationCovariance& stiffness) {
         return (new ceres::AutoDiffCostFunction<
-                StereoReprojectionErrorAutomatic,
-                3,   // Residual dimension
-                12,  // Compact SE(3) vehicle pose (3 trans + 9 rot)
-                3>   // Map point position
+            StereoReprojectionErrorAutomatic,
+            3,   // Residual dimension
+            12,  // Compact SE(3) vehicle pose (3 trans + 9 rot)
+            3>   // Map point position
                 (new StereoReprojectionErrorAutomatic(camera, observation,
                                                       stiffness)));
     }
@@ -74,7 +74,7 @@ class StereoReprojectionErrorAutomatic {
     //! Observation stiffness matrix (inverse sqrt of covariance matrix)
     Camera::ObservationCovariance stiffness_;
     //! KITTI bias correction weight
-    double kitti_weight;
+    double kitti_weight_;
 
 };  // class StereoReprojectionErrorAutomatic
 

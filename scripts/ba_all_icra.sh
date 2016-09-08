@@ -42,8 +42,14 @@ DRIVES=(
 "0034"
 )
 
-# for ((i=3; i<4; ++i));
-for ((i=0; i<${#DRIVES[@]}; ++i));
+OBS_SUNFILE_NAMES=(
+"sun_dir_gtsun.csv"
+# "sun_dir_gtsun_noisy.csv"
+# "sun_dir_cnn.csv"
+)
+
+for ((i=4; i<5; ++i));
+# for ((i=0; i<${#DRIVES[@]}; ++i));
 do
     :
     DRIVESTR="${DATES[i]}_drive_${DRIVES[i]}_sync"
@@ -52,15 +58,12 @@ do
     TRACKFILE="${DRIVEDIR}/${DRIVESTR}_viso2.csv"
     REF_SUNFILE="${DRIVEDIR}/sun_dir_ephemeris.csv"
 
-    OBS_SUNFILE_GTSUN="${DRIVEDIR}/sun_dir_gtsun.csv"
-    CMD_GTSUN="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE_GTSUN} --window ${WINDOW} --sun-only"
-    echo ${CMD_GTSUN}
-    ${CMD_GTSUN}
-
-    OBS_SUNFILE_CNN="${DRIVEDIR}/sun_dir_cnn.csv"
-    CMD_CNN="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE_CNN} --window ${WINDOW} --sun-only"
-    echo ${CMD_CNN}
-    # ${CMD_CNN}
-
-
+    for ((i=0; i<${#OBS_SUNFILE_NAMES[@]}; ++i));
+    do
+        :
+        OBS_SUNFILE="${DRIVEDIR}/${OBS_SUNFILE_NAMES[i]}"
+        CMD="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE} --window ${WINDOW}"
+        echo ${CMD}
+        ${CMD}
+    done
 done
