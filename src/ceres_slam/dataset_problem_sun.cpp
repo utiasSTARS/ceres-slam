@@ -60,12 +60,6 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
     camera = std::make_shared<Camera>(fu, fv, cu, cv, b);
     std::cerr << *camera << std::endl;
 
-    // stereo_obs_var << 0.25, 0.25, 1.;
-    // stereo_obs_var << 1., 1., 4.;
-    // sun_obs_var << pow(1., 2.), pow(1e3, 2.), pow(1., 2.);
-    // sun_obs_var << pow(0.11, 2.), pow(0.1, 2.), pow(0.15, 2.);
-    // sun_obs_var << 1e-2, 1e-2, 1e-2;
-
     // Read first ground truth pose
     std::cerr << "Reading first ground truth pose" << std::endl;
     tokens = reader.getLine();
@@ -98,6 +92,7 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
         double vvar = std::stod(tokens.at(6));
         double dvar = std::stod(tokens.at(7));
         stereo_obs_list.push_back(Camera::Observation(u, v, d));
+        // stereo_obs_var.push_back(Camera::ObservationVariance(1., 1., 4.));
         stereo_obs_var.push_back(Camera::ObservationVariance(uvar, vvar, dvar));
     }
     std::cerr << "read " << stereo_obs_list.size() << " stereo observations"
@@ -162,6 +157,7 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
         double yvar = stod(tokens3.at(5));
         double zvar = stod(tokens3.at(6));
         sun_obs_list.at(k) << x, y, z;
+        // sun_obs_var.at(k) << 1e-2, 1e-2, 1e-2;
         sun_obs_var.at(k) << xvar, yvar, zvar;
         state_has_sun_obs.at(k) = true;
     }

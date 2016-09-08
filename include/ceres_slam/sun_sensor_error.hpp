@@ -32,7 +32,6 @@ class SunSensorErrorAutomatic {
         typedef SE3Group<T> SE3T;
         typedef Vector3D<T> VectorT;
         typedef Eigen::Matrix<T, 3, 1> ResidualVectorT;
-        typedef Eigen::Matrix<T, 2, 1> InPlaneVectorT;
 
         // Camera pose in the global frame
         Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
@@ -47,21 +46,8 @@ class SunSensorErrorAutomatic {
         // Compute the residual
         Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
 
-        // Threshold the in-plane cosine distance to reject outliers
-        InPlaneVectorT expected_xz_c, observed_xz_c;
-        expected_xz_c << expected_sun_dir_c(0), expected_sun_dir_c(2);
-        expected_xz_c.normalize();
-        observed_xz_c << observed_sun_dir_c(0), observed_sun_dir_c(2);
-        observed_xz_c.normalize();
-
-        double y_sig = 1. / stiffness_(1, 1);
-
-        if (T(1) - expected_xz_c.dot(observed_xz_c) < T(0.3) &&
-            fabs(expected_sun_dir_c(1) - observed_sun_dir_c(1)) <
-                T(3. * y_sig)) {
-            expected_sun_dir_c(0) = expected_xz_c(0);
-            expected_sun_dir_c(1) = T(0.);
-            expected_sun_dir_c(2) = expected_xz_c(1);
+        // Threshold the cosine distance to reject outliers
+        if (T(1) - expected_sun_dir_c.dot(observed_sun_dir_c) < T(0.3)) {
             residuals = stiffness_.cast<T>() *
                         (expected_sun_dir_c - observed_sun_dir_c);
         } else {

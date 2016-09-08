@@ -53,7 +53,7 @@ do
     REF_SUNFILE="${DRIVEDIR}/sun_dir_ephemeris.csv"
 
     OBS_SUNFILE_GTSUN="${DRIVEDIR}/sun_dir_gtsun.csv"
-    CMD_GTSUN="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE_GTSUN} --window ${WINDOW}"
+    CMD_GTSUN="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE_GTSUN} --window ${WINDOW} --sun-only"
     echo ${CMD_GTSUN}
     ${CMD_GTSUN}
 
