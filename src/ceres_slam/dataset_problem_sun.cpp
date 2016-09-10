@@ -41,7 +41,7 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
 
     sun_dir_g.resize(num_states);
     sun_obs_list.resize(num_states);
-    sun_obs_var.resize(num_states);
+    sun_obs_covars.resize(num_states);
     for (uint k = 0; k < num_states; ++k) {
         state_has_sun_obs.push_back(false);
     }
@@ -88,15 +88,21 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
         double u = std::stod(tokens.at(2));
         double v = std::stod(tokens.at(3));
         double d = std::stod(tokens.at(4));
-        double uvar = std::stod(tokens.at(5));
-        double vvar = std::stod(tokens.at(6));
-        double dvar = std::stod(tokens.at(7));
+        Camera::ObservationCovariance uvd_covar;
+        uvd_covar << std::stod(tokens.at(5)), std::stod(tokens.at(6)),
+            std::stod(tokens.at(7)), std::stod(tokens.at(8)),
+            std::stod(tokens.at(9)), std::stod(tokens.at(10)),
+            std::stod(tokens.at(11)), std::stod(tokens.at(12)),
+            std::stod(tokens.at(13));
+
         stereo_obs_list.push_back(Camera::Observation(u, v, d));
-        // stereo_obs_var.push_back(Camera::ObservationVariance(1., 1., 4.));
-        stereo_obs_var.push_back(Camera::ObservationVariance(uvar, vvar, dvar));
+        stereo_obs_covars.push_back(uvd_covar);
     }
+
     std::cerr << "read " << stereo_obs_list.size() << " stereo observations"
               << std::endl;
+    std::cout << "First stereo measurment covariance:\n"
+              << stereo_obs_covars[0] << std::endl;
 
     // Generate lists of observation indices for each state and feature
     std::cerr
@@ -153,15 +159,19 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
         double x = stod(tokens3.at(1));
         double y = stod(tokens3.at(2));
         double z = stod(tokens3.at(3));
-        double xvar = stod(tokens3.at(4));
-        double yvar = stod(tokens3.at(5));
-        double zvar = stod(tokens3.at(6));
+        Vector::Covariance xyz_covar;
+        xyz_covar << stod(tokens3.at(4)), stod(tokens3.at(5)),
+            stod(tokens3.at(6)), stod(tokens3.at(7)), stod(tokens3.at(8)),
+            stod(tokens3.at(9)), stod(tokens3.at(10)), stod(tokens3.at(11)),
+            stod(tokens3.at(12));
+
         sun_obs_list.at(k) << x, y, z;
-        // sun_obs_var.at(k) << 1e-2, 1e-2, 1e-2;
-        sun_obs_var.at(k) << xvar, yvar, zvar;
+        sun_obs_covars.at(k) = xyz_covar;
         state_has_sun_obs.at(k) = true;
     }
 
+    std::cout << "First sun measurment covariance:\n"
+              << sun_obs_covars[0] << std::endl;
     std::cerr << "done." << std::endl;
 
     return true;

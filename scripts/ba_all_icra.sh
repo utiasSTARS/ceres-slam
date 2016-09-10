@@ -50,7 +50,7 @@ OBS_SUNFILE_NAMES=(
 # "sun_dir_cnn.csv"
 )
 
-# for ((i=4; i<5; ++i));
+# for ((i=0; i<1; ++i));
 for ((i=0; i<${#DRIVES[@]}; ++i));
 do
     :
@@ -60,7 +60,7 @@ do
     TRACKFILE="${DRIVEDIR}/${DRIVESTR}_viso2.csv"
     REF_SUNFILE="${DRIVEDIR}/sun_dir_ephemeris.csv"
 
-    # for ((j=1; j<2; ++j));
+    # for ((j=0; j<1; ++j));
     for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
     do
         :

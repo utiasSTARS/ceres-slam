@@ -30,9 +30,9 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     ceres::Problem problem;
 
     // Compute the stiffness matrix to apply to the residuals
-    Camera::ObservationCovariance stereo_obs_covar, stereo_obs_stiffness;
+    Camera::ObservationCovariance stereo_obs_stiffness;
 
-    Vector::Covariance sun_obs_covar, sun_obs_stiffness;
+    Vector::Covariance sun_obs_stiffness;
 
     // Set up local parameterizations
     ceres::LocalParameterization *se3_perturbation =
@@ -46,9 +46,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
             // Only optimize map points that have been initialized
             if (dataset.initialized_point[j]) {
                 // Stiffness for the stereo observation
-                stereo_obs_covar = dataset.stereo_obs_var[j].asDiagonal();
                 Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
-                    es_stereo(stereo_obs_covar);
+                    es_stereo(dataset.stereo_obs_covars[j]);
                 stereo_obs_stiffness = es_stereo.operatorInverseSqrt();
 
                 // Cost function for the stereo observation
@@ -67,9 +66,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
         // Add sun sensor measurements if available
         if (use_sun && dataset.state_has_sun_obs[k]) {
             // Stiffness for the sun observation
-            sun_obs_covar = dataset.sun_obs_var[k].asDiagonal();
             Eigen::SelfAdjointEigenSolver<Vector::Covariance> es_sun(
-                sun_obs_covar);
+                dataset.sun_obs_covars[k]);
             sun_obs_stiffness = es_sun.operatorInverseSqrt();
 
             // Cost function for the sun observation

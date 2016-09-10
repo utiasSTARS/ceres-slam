@@ -55,11 +55,11 @@ class DatasetProblemSun {
     //! List of stereo observations
     std::vector<Camera::Observation> stereo_obs_list;
     //! Variance of stereo observations
-    std::vector<Camera::ObservationVariance> stereo_obs_var;
+    std::vector<Camera::ObservationCovariance> stereo_obs_covars;
     //! List of sun direction observations
     std::vector<Vector> sun_obs_list;
     //! Variance of sun direction observations
-    std::vector<Vector::Variance> sun_obs_var;
+    std::vector<Vector::Covariance> sun_obs_covars;
     //! True if state k has a sun observation
     std::vector<bool> state_has_sun_obs;
     //! Sun direction in the global (ENU) frame
