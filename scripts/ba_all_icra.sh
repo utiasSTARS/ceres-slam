@@ -1,7 +1,7 @@
 #!/bin/bash
 
 HOMEDIR=~
-DATADIR="${HOMEDIR}/odometry_raw"
+DATADIR="${HOMEDIR}/Desktop/odometry_raw"
 EXECUTABLE=../build/dataset_vo_sun
 WINDOW=2
 
@@ -43,8 +43,10 @@ DRIVES=(
 )
 
 OBS_SUNFILE_NAMES=(
-"sun_dir_gtsun.csv"
-"sun_dir_gtsun_noisy.csv"
+"sun_dir_gtsun0.csv"
+"sun_dir_gtsun10.csv"
+"sun_dir_gtsun20.csv"
+"sun_dir_gtsun30.csv"
 # "sun_dir_cnn.csv"
 )
 
@@ -58,6 +60,7 @@ do
     TRACKFILE="${DRIVEDIR}/${DRIVESTR}_viso2.csv"
     REF_SUNFILE="${DRIVEDIR}/sun_dir_ephemeris.csv"
 
+    # for ((j=1; j<2; ++j));
     for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
     do
         :
