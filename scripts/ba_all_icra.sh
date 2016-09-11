@@ -50,8 +50,8 @@ OBS_SUNFILE_NAMES=(
 # "sun_dir_starscnn.csv"
 )
 
-for ((i=6; i<7; ++i));
-# for ((i=0; i<${#DRIVES[@]}; ++i));
+# for ((i=6; i<7; ++i));
+for ((i=0; i<${#DRIVES[@]}; ++i));
 do
     :
     DRIVESTR="${DATES[i]}_drive_${DRIVES[i]}_sync"

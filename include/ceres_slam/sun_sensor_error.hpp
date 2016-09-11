@@ -38,34 +38,32 @@ class SunSensorErrorAutomatic {
         // Camera pose in the global frame
         Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
 
+        // Rotate the frames to avoid singularities where most of the data are
+        typename SE3Group<double>::TransformationMatrix T_c2_c_matrix;
+        T_c2_c_matrix << 1., 0., 0., 0., 0., 0., 1., 0., 0., -1., 0., 0., 0.,
+            0., 0., 1.;
+        SE3T T_c2_c(T_c2_c_matrix.cast<T>());
+
         // Expected sun direction in the camera frame
         VectorT expected_sun_dir_g = expected_sun_dir_g_.cast<T>();
-        VectorT expected_sun_dir_c = T_c_g * expected_sun_dir_g;
+        VectorT expected_sun_dir_c = T_c2_c * T_c_g * expected_sun_dir_g;
 
         // Do the casting here for convenience
         VectorT observed_sun_dir_c = observed_sun_dir_c_.cast<T>();
+        observed_sun_dir_c = T_c2_c * observed_sun_dir_c;
+
+        // Convert to azimuth and zenith
+        T expected_az = acos(-expected_sun_dir_c(1));
+        T expected_zen = atan2(expected_sun_dir_c(0), expected_sun_dir_c(2));
+
+        T observed_az = acos(-observed_sun_dir_c(1));
+        T observed_zen = atan2(observed_sun_dir_c(0), observed_sun_dir_c(2));
 
         // Compute the residual
         Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
 
         // Threshold the cosine distance to reject outliers
         if (T(1) - expected_sun_dir_c.dot(observed_sun_dir_c) < T(0.3)) {
-            // Option 1: 3-dimensional Euclidean residual. Not well
-            //           described by a 3D Gaussian because there are
-            //           really only 2 degrees of freedom
-            // residuals = stiffness_.cast<T>() *
-            //             (expected_sun_dir_c - observed_sun_dir_c);
-
-            // Option 2: 2-dimensional angular residual (e.g., az-zen).
-            //           Well described by a diagonal covariance matrix.
-            T expected_az = acos(-expected_sun_dir_c(1));
-            T expected_zen =
-                atan2(expected_sun_dir_c(0), expected_sun_dir_c(2));
-
-            T observed_az = acos(-observed_sun_dir_c(1));
-            T observed_zen =
-                atan2(observed_sun_dir_c(0), observed_sun_dir_c(2));
-
             T residual_az = expected_az - observed_az;
             T residual_zen = expected_zen - observed_zen;
             // T residual_zen = T(0);
