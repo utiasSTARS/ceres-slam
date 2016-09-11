@@ -9,6 +9,9 @@
 
 namespace ceres_slam {
 
+//! Pi definition
+const double pi = std::atan(1.) * 4.;
+
 //! Templated version of fmax for use with ceres
 template <typename Scalar>
 Scalar fmax(Scalar a, Scalar b) {

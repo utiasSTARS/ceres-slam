@@ -159,14 +159,12 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
         double x = stod(tokens3.at(1));
         double y = stod(tokens3.at(2));
         double z = stod(tokens3.at(3));
-        Vector::Covariance xyz_covar;
-        xyz_covar << stod(tokens3.at(4)), stod(tokens3.at(5)),
-            stod(tokens3.at(6)), stod(tokens3.at(7)), stod(tokens3.at(8)),
-            stod(tokens3.at(9)), stod(tokens3.at(10)), stod(tokens3.at(11)),
-            stod(tokens3.at(12));
+        SunCovariance az_zen_covar;
+        az_zen_covar << stod(tokens3.at(4)), stod(tokens3.at(5)),
+            stod(tokens3.at(6)), stod(tokens3.at(7));
 
         sun_obs_list.at(k) << x, y, z;
-        sun_obs_covars.at(k) = xyz_covar;
+        sun_obs_covars.at(k) = az_zen_covar;
         state_has_sun_obs.at(k) = true;
     }
 

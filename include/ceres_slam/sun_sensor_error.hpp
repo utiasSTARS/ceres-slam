@@ -1,5 +1,5 @@
-#ifndef CERES_SLAM_SUN_SENSOR_ERROR_H_
-#define CERES_SLAM_SUN_SENSOR_ERROR_H_
+#ifndef CERES_SLAM_SUN_SENSOR_ERROR_HPP_
+#define CERES_SLAM_SUN_SENSOR_ERROR_HPP_
 
 #include <ceres/ceres.h>
 
@@ -13,11 +13,13 @@ class SunSensorErrorAutomatic {
    public:
     //! Vector type
     typedef Vector3D<double> Vector;
+    //! Residual covariance type
+    typedef Eigen::Matrix<double, 2, 2, Eigen::RowMajor> ResidualCovariance;
 
     //! Constructor
     SunSensorErrorAutomatic(const Vector& observed_sun_dir_c,
                             const Vector& expected_sun_dir_g,
-                            const Vector::Covariance& stiffness)
+                            const ResidualCovariance& stiffness)
         : observed_sun_dir_c_(observed_sun_dir_c),
           expected_sun_dir_g_(expected_sun_dir_g),
           stiffness_(stiffness) {
@@ -31,7 +33,7 @@ class SunSensorErrorAutomatic {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
         typedef Vector3D<T> VectorT;
-        typedef Eigen::Matrix<T, 3, 1> ResidualVectorT;
+        typedef Eigen::Matrix<T, 2, 1> ResidualVectorT;
 
         // Camera pose in the global frame
         Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
@@ -48,14 +50,45 @@ class SunSensorErrorAutomatic {
 
         // Threshold the cosine distance to reject outliers
         if (T(1) - expected_sun_dir_c.dot(observed_sun_dir_c) < T(0.3)) {
-            residuals = stiffness_.cast<T>() *
-                        (expected_sun_dir_c - observed_sun_dir_c);
+            // Option 1: 3-dimensional Euclidean residual. Not well
+            //           described by a 3D Gaussian because there are
+            //           really only 2 degrees of freedom
+            // residuals = stiffness_.cast<T>() *
+            //             (expected_sun_dir_c - observed_sun_dir_c);
+
+            // Option 2: 2-dimensional angular residual (e.g., az-zen).
+            //           Well described by a diagonal covariance matrix.
+            T expected_az = acos(-expected_sun_dir_c(1));
+            T expected_zen =
+                atan2(expected_sun_dir_c(0), expected_sun_dir_c(2));
+
+            T observed_az = acos(-observed_sun_dir_c(1));
+            T observed_zen =
+                atan2(observed_sun_dir_c(0), observed_sun_dir_c(2));
+
+            T residual_az = expected_az - observed_az;
+            T residual_zen = expected_zen - observed_zen;
+            // T residual_zen = T(0);
+
+            // Correct azimuth wraparound by choosing the smallest angular
+            // distance.
+            // Note that atan2 returns values in the range [-pi,pi],
+            // so we don't need to do a modulo 2*pi on the error since
+            // abs(error) is at most 2*pi
+            if (residual_az > T(pi)) {
+                residual_az = residual_az - T(2 * pi);
+            } else if (residual_az < -T(pi)) {
+                residual_az = residual_az + T(2 * pi);
+            }
+
+            residuals << residual_az, residual_zen;
+            residuals = stiffness_.cast<T>() * residuals;
         } else {
             residuals = ResidualVectorT::Zero();
         }
 
         // std::cout << "residuals:\n";
-        // for (uint i = 0; i < 3; ++i) {
+        // for (uint i = 0; i < 2; ++i) {
         //     std::cout << residuals[i] << "\n";
         // }
 
@@ -66,9 +99,9 @@ class SunSensorErrorAutomatic {
     //! the client code.
     static ceres::CostFunction* Create(const Vector& observed_sun_dir_c,
                                        const Vector& expected_sun_dir_g,
-                                       const Vector::Covariance& stiffness) {
+                                       const ResidualCovariance& stiffness) {
         return (new ceres::AutoDiffCostFunction<SunSensorErrorAutomatic,
-                                                3,   // Residual dimension
+                                                2,   // Residual dimension
                                                 12>  // Compact SE(3) vehicle
                                                      // pose (3 trans + 9 rot)
                 (new SunSensorErrorAutomatic(observed_sun_dir_c,
@@ -81,9 +114,9 @@ class SunSensorErrorAutomatic {
     //! Expected sun direction in the global frame
     Vector expected_sun_dir_g_;
     //! Observation stiffness matrix (inverse sqrt of covariance matrix)
-    Vector::Covariance stiffness_;
+    ResidualCovariance stiffness_;
 };  // class SunSensorErrorAutomatic
 
 }  // namespace ceres_slam
 
-#endif /* end of include guard: CERES_SLAM_SUN_SENSOR_ERROR_H_ */
+#endif /* end of include guard: CERES_SLAM_SUN_SENSOR_ERROR_HPP_ */

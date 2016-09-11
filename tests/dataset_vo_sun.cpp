@@ -20,6 +20,7 @@ using SE3 = ceres_slam::DatasetProblemSun::SE3;
 using Point = ceres_slam::DatasetProblemSun::Point;
 using Vector = ceres_slam::DatasetProblemSun::Vector;
 using Camera = ceres_slam::DatasetProblemSun::Camera;
+using SunCovariance = ceres_slam::DatasetProblemSun::SunCovariance;
 
 void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                  bool use_sun) {
@@ -32,7 +33,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     // Compute the stiffness matrix to apply to the residuals
     Camera::ObservationCovariance stereo_obs_stiffness;
 
-    Vector::Covariance sun_obs_stiffness;
+    ceres_slam::DatasetProblemSun::SunCovariance sun_obs_stiffness;
 
     // Set up local parameterizations
     ceres::LocalParameterization *se3_perturbation =
@@ -66,7 +67,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
         // Add sun sensor measurements if available
         if (use_sun && dataset.state_has_sun_obs[k]) {
             // Stiffness for the sun observation
-            Eigen::SelfAdjointEigenSolver<Vector::Covariance> es_sun(
+            Eigen::SelfAdjointEigenSolver<SunCovariance> es_sun(
                 dataset.sun_obs_covars[k]);
             sun_obs_stiffness = es_sun.operatorInverseSqrt();
 

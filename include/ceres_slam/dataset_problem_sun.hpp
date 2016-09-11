@@ -24,6 +24,8 @@ class DatasetProblemSun {
     typedef Point3D<double> Point;
     //! Vector type
     typedef Vector3D<double> Vector;
+    //! Sun covariance type
+    typedef Eigen::Matrix<double, 2, 2, Eigen::RowMajor> SunCovariance;
 
     //! Default constructor
     DatasetProblemSun() {}
@@ -59,7 +61,7 @@ class DatasetProblemSun {
     //! List of sun direction observations
     std::vector<Vector> sun_obs_list;
     //! Variance of sun direction observations
-    std::vector<Vector::Covariance> sun_obs_covars;
+    std::vector<SunCovariance> sun_obs_covars;
     //! True if state k has a sun observation
     std::vector<bool> state_has_sun_obs;
     //! Sun direction in the global (ENU) frame
