@@ -178,15 +178,17 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
 const bool DatasetProblemSun::write_csv(std::string filename) const {
     std::vector<std::string> tokens = split(filename, '.');
     std::string filename_poses = tokens.at(0) + "_poses.csv";
-    std::string filename_map = tokens.at(0) + "_map.csv";
+    // std::string filename_map = tokens.at(0) + "_map.csv";
 
-    std::cout << "Outputting to files:"
-              << "\n\t" << filename_poses << "\n\t" << filename_map
-              << std::endl;
+    // std::cout << "Outputting to files:"
+    //           << "\n\t" << filename_poses << "\n\t" << filename_map
+    //           << std::endl;
+    std::cout << "Outputting to file:"
+              << "\n\t" << filename_poses << std::endl;
 
     // Open files
     std::ofstream pose_file(filename_poses);
-    std::ofstream map_file(filename_map);
+    // std::ofstream map_file(filename_map);
 
     // Quit if you can't open the files
     if (!pose_file.is_open()) {
@@ -194,10 +196,11 @@ const bool DatasetProblemSun::write_csv(std::string filename) const {
                   << std::endl;
         return false;
     }
-    if (!map_file.is_open()) {
-        std::cerr << "Error: Couldn't open file " << filename_map << std::endl;
-        return false;
-    }
+    // if (!map_file.is_open()) {
+    //     std::cerr << "Error: Couldn't open file " << filename_map <<
+    //     std::endl;
+    //     return false;
+    // }
 
     // Convert poses to CSV entries
     pose_file << "T_00, T_01, T_02, T_03,"
@@ -209,16 +212,16 @@ const bool DatasetProblemSun::write_csv(std::string filename) const {
     }
 
     // Convert initialized points to CSV entries
-    map_file << "point_id, x, y, z" << std::endl;
-    for (uint j = 0; j < map_points.size(); ++j) {
-        if (initialized_point[j]) {
-            map_file << j << "," << map_points[j].str() << std::endl;
-        }
-    }
+    // map_file << "point_id, x, y, z" << std::endl;
+    // for (uint j = 0; j < map_points.size(); ++j) {
+    //     if (initialized_point[j]) {
+    //         map_file << j << "," << map_points[j].str() << std::endl;
+    //     }
+    // }
 
     // Close files
     pose_file.close();
-    map_file.close();
+    // map_file.close();
 
     return true;
 }

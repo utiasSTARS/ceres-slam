@@ -12,6 +12,7 @@
 #include <ceres_slam/stereo_camera.hpp>
 #include <ceres_slam/stereo_reprojection_error.hpp>
 #include <ceres_slam/sun_sensor_error.hpp>
+#include <ceres_slam/sun_sensor_error_2d.hpp>
 #include <ceres_slam/utils/utils.hpp>
 
 #include <Eigen/Eigenvalues>
@@ -23,7 +24,8 @@ using Camera = ceres_slam::DatasetProblemSun::Camera;
 using SunCovariance = ceres_slam::DatasetProblemSun::SunCovariance;
 
 void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
-                 bool use_sun) {
+                 bool use_sun, bool azimuth_only,
+                 double cosine_dist_thresh = 2.) {
     // Build the problem
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")/"
               << dataset.num_states << ": ";
@@ -66,19 +68,36 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 
         // Add sun sensor measurements if available
         if (use_sun && dataset.state_has_sun_obs[k]) {
-            // Stiffness for the sun observation
-            Eigen::SelfAdjointEigenSolver<SunCovariance> es_sun(
-                dataset.sun_obs_covars[k]);
-            sun_obs_stiffness = es_sun.operatorInverseSqrt();
+            if (azimuth_only) {
+                // Stiffness for the sun observation
+                double az_stiffness =
+                    1. / sqrt(dataset.sun_obs_covars[k](0, 0));
 
-            // Cost function for the sun observation
-            ceres::CostFunction *sun_cost =
-                ceres_slam::SunSensorErrorAutomatic::Create(
-                    dataset.sun_obs_list[k], dataset.sun_dir_g[k],
-                    sun_obs_stiffness);
+                // Cost function for the sun observation
+                ceres::CostFunction *sun_cost =
+                    ceres_slam::SunSensorError2DAutomatic::Create(
+                        dataset.sun_obs_list[k], dataset.sun_dir_g[k],
+                        az_stiffness, cosine_dist_thresh);
 
-            // Add the sun sensor cost function to the problem
-            problem.AddResidualBlock(sun_cost, NULL, dataset.poses[k].data());
+                // Add the sun sensor cost function to the problem
+                problem.AddResidualBlock(sun_cost, NULL,
+                                         dataset.poses[k].data());
+            } else {
+                // Stiffness for the sun observation
+                Eigen::SelfAdjointEigenSolver<SunCovariance> es_sun(
+                    dataset.sun_obs_covars[k]);
+                sun_obs_stiffness = es_sun.operatorInverseSqrt();
+
+                // Cost function for the sun observation
+                ceres::CostFunction *sun_cost =
+                    ceres_slam::SunSensorErrorAutomatic::Create(
+                        dataset.sun_obs_list[k], dataset.sun_dir_g[k],
+                        sun_obs_stiffness, cosine_dist_thresh);
+
+                // Add the sun sensor cost function to the problem
+                problem.AddResidualBlock(sun_cost, NULL,
+                                         dataset.poses[k].data());
+            }
         }
     }
 
@@ -163,7 +182,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 int main(int argc, char **argv) {
     std::string usage_string(
         "usage: dataset_vo_sun <track_file> <ref_sun_file> <obs_sun_file> "
-        "[--window N=0]");
+        "[--window N=0] [--cosine-dist-thresh t=100] [--azimuth-only] "
+        "[--sun-only]");
 
     if (argc < 4) {
         std::cerr << usage_string << std::endl;
@@ -173,6 +193,8 @@ int main(int argc, char **argv) {
     // Defaults
     uint window_size = 0;
     bool sun_only = false;
+    double cosine_dist_thresh = 100.;
+    bool azimuth_only = false;
 
     // Parse command line arguments
     std::string track_file(argv[1]);
@@ -182,10 +204,16 @@ int main(int argc, char **argv) {
         std::string flag(argv[a]);
 
         if (flag == "--window" && argc > a + 1) {
-            window_size = std::atoi(argv[a + 1]);
+            window_size = std::stoi(argv[a + 1]);
+            ++a;
+
+        } else if (flag == "--cosine-dist-thresh" && argc > a + 1) {
+            cosine_dist_thresh = std::stod(argv[a + 1]);
             ++a;
         } else if (flag == "--sun-only") {
             sun_only = true;
+        } else if (flag == "--azimuth-only") {
+            azimuth_only = true;
         } else {
             std::cerr << usage_string << std::endl;
             return EXIT_FAILURE;
@@ -210,7 +238,7 @@ int main(int argc, char **argv) {
             uint k2 = fmin(k1 + window_size, dataset.num_states);
             // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
             dataset.compute_initial_guess(k1, k2);
-            solveWindow(dataset, k1, k2, false);
+            solveWindow(dataset, k1, k2, false, azimuth_only);
             dataset.reset_points();
         }
 
@@ -228,7 +256,7 @@ int main(int argc, char **argv) {
         uint k2 = fmin(k1 + window_size, dataset.num_states);
         // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
         dataset.compute_initial_guess(k1, k2);
-        solveWindow(dataset, k1, k2, true);
+        solveWindow(dataset, k1, k2, true, azimuth_only, cosine_dist_thresh);
         dataset.reset_points();
     }
 

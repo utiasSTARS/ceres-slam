@@ -19,10 +19,12 @@ class SunSensorErrorAutomatic {
     //! Constructor
     SunSensorErrorAutomatic(const Vector& observed_sun_dir_c,
                             const Vector& expected_sun_dir_g,
-                            const ResidualCovariance& stiffness)
+                            const ResidualCovariance& stiffness,
+                            const double cosine_dist_thresh)
         : observed_sun_dir_c_(observed_sun_dir_c),
           expected_sun_dir_g_(expected_sun_dir_g),
-          stiffness_(stiffness) {
+          stiffness_(stiffness),
+          cosine_dist_thresh_(cosine_dist_thresh) {
         observed_sun_dir_c_.normalize();
         expected_sun_dir_g_.normalize();
     }
@@ -53,17 +55,18 @@ class SunSensorErrorAutomatic {
         observed_sun_dir_c = T_c2_c * observed_sun_dir_c;
 
         // Convert to azimuth and zenith
-        T expected_az = acos(-expected_sun_dir_c(1));
-        T expected_zen = atan2(expected_sun_dir_c(0), expected_sun_dir_c(2));
+        T expected_zen = acos(-expected_sun_dir_c(1));
+        T expected_az = atan2(expected_sun_dir_c(0), expected_sun_dir_c(2));
 
-        T observed_az = acos(-observed_sun_dir_c(1));
-        T observed_zen = atan2(observed_sun_dir_c(0), observed_sun_dir_c(2));
+        T observed_zen = acos(-observed_sun_dir_c(1));
+        T observed_az = atan2(observed_sun_dir_c(0), observed_sun_dir_c(2));
 
         // Compute the residual
         Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
 
         // Threshold the cosine distance to reject outliers
-        if (T(1) - expected_sun_dir_c.dot(observed_sun_dir_c) < T(0.3)) {
+        if (T(1) - expected_sun_dir_c.dot(observed_sun_dir_c) <
+            T(cosine_dist_thresh_)) {
             T residual_az = expected_az - observed_az;
             T residual_zen = expected_zen - observed_zen;
             // T residual_zen = T(0);
@@ -97,13 +100,15 @@ class SunSensorErrorAutomatic {
     //! the client code.
     static ceres::CostFunction* Create(const Vector& observed_sun_dir_c,
                                        const Vector& expected_sun_dir_g,
-                                       const ResidualCovariance& stiffness) {
-        return (new ceres::AutoDiffCostFunction<SunSensorErrorAutomatic,
-                                                2,   // Residual dimension
-                                                12>  // Compact SE(3) vehicle
-                                                     // pose (3 trans + 9 rot)
-                (new SunSensorErrorAutomatic(observed_sun_dir_c,
-                                             expected_sun_dir_g, stiffness)));
+                                       const ResidualCovariance& stiffness,
+                                       const double cosine_dist_thresh) {
+        return (
+            new ceres::AutoDiffCostFunction<SunSensorErrorAutomatic,
+                                            2,   // Residual dimension
+                                            12>  // Compact SE(3) vehicle
+                                                 // pose (3 trans + 9 rot)
+            (new SunSensorErrorAutomatic(observed_sun_dir_c, expected_sun_dir_g,
+                                         stiffness, cosine_dist_thresh)));
     }
 
    private:
@@ -113,6 +118,8 @@ class SunSensorErrorAutomatic {
     Vector expected_sun_dir_g_;
     //! Observation stiffness matrix (inverse sqrt of covariance matrix)
     ResidualCovariance stiffness_;
+    //! Cosine distance threshold for outlier rejection
+    double cosine_dist_thresh_;
 };  // class SunSensorErrorAutomatic
 
 }  // namespace ceres_slam
