@@ -42,7 +42,10 @@ DRIVES=(
 "0034"
 )
 
-SUNINTERVAL_DIR="every5"
+SUNINTERVAL_DIR=(
+"every1"
+# "every5"
+)
 
 OBS_SUNFILE_NAMES=(
 "sun_dir_gtsun0.csv"
@@ -53,46 +56,53 @@ OBS_SUNFILE_NAMES=(
 "sun_dir_suncnn.csv"
 )
 
-# for ((i=3; i<4; ++i));
-for ((i=0; i<${#DRIVES[@]}; ++i));
+for ((k=0; k<${#SUNINTERVAL_DIR[@]}; ++k))
 do
     :
-    DRIVE_STR="${DATES[i]}_drive_${DRIVES[i]}_sync"
-    DRIVE_DIR="${DATA_DIR}/${DATES[i]}/${DRIVE_STR}"
-
-    TRACKFILE="${DRIVE_DIR}/${DRIVE_STR}_viso2.csv"
-    REF_SUNFILE="${DRIVE_DIR}/sun_dir_ephemeris.csv"
-
-    for ((j=5; j<6; ++j));
-    # for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
+    for ((i=0; i<1; ++i));
+    # for ((i=0; i<${#DRIVES[@]}; ++i));
     do
         :
-        if ((j!=5 || j==5 && (i==0 || i==4 || i==5)))
-        then
-            OBS_SUNFILE="${DRIVE_DIR}/${SUNINTERVAL_DIR}/${OBS_SUNFILE_NAMES[j]}"
-            CMD="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE} --window ${WINDOW}"
+        DRIVE_STR="${DATES[i]}_drive_${DRIVES[i]}_sync"
+        DRIVE_DIR="${DATA_DIR}/${DATES[i]}/${DRIVE_STR}"
 
-            if ((j!=0))
+        TRACKFILE="${DRIVE_DIR}/${DRIVE_STR}_viso2.csv"
+        REF_SUNFILE="${DRIVE_DIR}/sun_dir_ephemeris.csv"
+
+        for ((j=4; j<5; ++j));
+        # for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
+        do
+            :
+            if ((j!=5 || j==5 && (i==0 || i==4 || i==5)))
             then
-                CMD="${CMD} --sun-only"
-            fi
+                OBS_SUNFILE="${DRIVE_DIR}/${SUNINTERVAL_DIR[k]}/${OBS_SUNFILE_NAMES[j]}"
+                CMD="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE} --window ${WINDOW}"
 
-            if((j==4))
-            then
-                CMD="${CMD} --cosine-dist-thresh 0.015"
-            fi
+                # Only do the no-sun case once
+                # if ((j!=0))
+                # then
+                    CMD="${CMD} --sun-only"
+                # fi
 
-            if((j==5))
-            then
-                CMD="${CMD} --cosine-dist-thresh 0.05 --azimuth-only"
-            fi
+                # 20 deg (0.05) threshold for CNNs
+                if((j==4 || j==5))
+                then
+                    CMD="${CMD} --cosine-dist-thresh 0.05"
+                fi
 
-            echo ${CMD}
-            ${CMD}
-        fi
+                # Sun-CNN only gives azimuth
+                if((j==5))
+                then
+                    CMD="${CMD} --azimuth-only"
+                fi
+
+                echo ${CMD}
+                ${CMD}
+            fi
+        done
+
+        MVCMD="mv ${DRIVE_DIR}/*_poses.csv ${DRIVE_DIR}/${SUNINTERVAL_DIR}/"
+        echo ${MVCMD}
+        ${MVCMD}
     done
-
-    MVCMD="mv ${DRIVE_DIR}/*_poses.csv ${DRIVE_DIR}/${SUNINTERVAL_DIR}/"
-    echo ${MVCMD}
-    ${MVCMD}
 done
