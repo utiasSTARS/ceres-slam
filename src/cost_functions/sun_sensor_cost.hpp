@@ -1,10 +1,10 @@
-#ifndef CERES_SLAM_SUN_SENSOR_ERROR_HPP_
-#define CERES_SLAM_SUN_SENSOR_ERROR_HPP_
+#ifndef CERES_SLAM_SUN_SENSOR_COST_HPP_
+#define CERES_SLAM_SUN_SENSOR_COST_HPP_
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/geometry/geometry.hpp>
-#include <ceres_slam/utils/utils.hpp>
+#include "../liegroups/se3group.hpp"
+#include "../utils/utils.hpp"
 
 namespace ceres_slam {
 
@@ -18,9 +18,9 @@ class SunSensorCostAutomatic {
 
     //! Constructor
     SunSensorCostAutomatic(const Vector& observed_sun_dir_c,
-                            const Vector& expected_sun_dir_g,
-                            const ResidualCovariance& stiffness,
-                            const double cosine_dist_thresh)
+                           const Vector& expected_sun_dir_g,
+                           const ResidualCovariance& stiffness,
+                           const double cosine_dist_thresh)
         : observed_sun_dir_c_(observed_sun_dir_c),
           expected_sun_dir_g_(expected_sun_dir_g),
           stiffness_(stiffness),
@@ -34,7 +34,7 @@ class SunSensorCostAutomatic {
     bool operator()(const T* const T_c_g_ceres, T* residuals_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
-        typedef Vector3D<T> VectorT;
+        typedef Eigen::Matrix<T, 3, 1> VectorT;
         typedef Eigen::Matrix<T, 2, 1> ResidualVectorT;
 
         // Camera pose in the global frame
@@ -48,11 +48,12 @@ class SunSensorCostAutomatic {
 
         // Expected sun direction in the camera frame
         VectorT expected_sun_dir_g = expected_sun_dir_g_.cast<T>();
-        VectorT expected_sun_dir_c = T_c2_c * T_c_g * expected_sun_dir_g;
+        VectorT expected_sun_dir_c =
+            (T_c2_c * T_c_g).rotation() * expected_sun_dir_g;
 
         // Do the casting here for convenience
         VectorT observed_sun_dir_c = observed_sun_dir_c_.cast<T>();
-        observed_sun_dir_c = T_c2_c * observed_sun_dir_c;
+        observed_sun_dir_c = T_c2_c.rotation() * observed_sun_dir_c;
 
         // Convert to azimuth and zenith
         T expected_zen = acos(-expected_sun_dir_c(1));
@@ -108,7 +109,7 @@ class SunSensorCostAutomatic {
                                             12>  // Compact SE(3) vehicle
                                                  // pose (3 trans + 9 rot)
             (new SunSensorCostAutomatic(observed_sun_dir_c, expected_sun_dir_g,
-                                         stiffness, cosine_dist_thresh)));
+                                        stiffness, cosine_dist_thresh)));
     }
 
    private:
@@ -124,4 +125,4 @@ class SunSensorCostAutomatic {
 
 }  // namespace ceres_slam
 
-#endif /* end of include guard: CERES_SLAM_SUN_SENSOR_ERROR_HPP_ */
+#endif /* end of include guard: CERES_SLAM_SUN_SENSOR_COST_HPP_ */

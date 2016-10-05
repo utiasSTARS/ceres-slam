@@ -24,10 +24,15 @@ include_directories(
   ${CERES_INCLUDE_DIRS}
 )
 
-file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES "src/*.cpp")
-
-add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
-target_link_libraries(${PROJECT_NAME} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+# file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES "src/*.cpp")
+# add_library(${PROJECT_NAME} ${${PROJECT_NAME}_SOURCES})
+# target_link_libraries(${PROJECT_NAME} ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
 
 add_executable(liegroup_test "examples/liegroup_test.cpp")
-target_link_libraries(liegroup_test ${PROJECT_NAME})
+target_link_libraries(liegroup_test ${EIGEN_LIBRARIES})
+
+add_executable(camera_test "examples/camera_test.cpp")
+target_link_libraries(camera_test ${EIGEN_LIBRARIES})
+
+add_executable(blowup_test "examples/blowup_test.cpp")
+target_link_libraries(blowup_test ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})

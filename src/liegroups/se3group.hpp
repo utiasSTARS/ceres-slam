@@ -30,7 +30,7 @@ template <typename _Scalar, int _Options>
 struct traits<ceres_slam::SE3Group<_Scalar, _Options> > {
     typedef _Scalar Scalar;
     typedef ceres_slam::SO3Group<Scalar> RotationStorageType;
-    typedef ceres_slam::Vector3D<Scalar> TranslationStorageType;
+    typedef Eigen::Matrix<Scalar, 3, 1> TranslationStorageType;
 };
 
 template <typename _Scalar, int _Options>
@@ -38,7 +38,7 @@ struct traits<Map<ceres_slam::SE3Group<_Scalar, _Options> > >
     : traits<ceres_slam::SE3Group<_Scalar, _Options> > {
     typedef _Scalar Scalar;
     typedef Map<ceres_slam::SO3Group<Scalar>, _Options> RotationStorageType;
-    typedef Map<ceres_slam::Vector3D<Scalar>, _Options> TranslationStorageType;
+    typedef Map<Eigen::Matrix<Scalar, 3, 1>, _Options> TranslationStorageType;
 };
 
 template <typename _Scalar, int _Options>
@@ -47,7 +47,7 @@ struct traits<Map<const ceres_slam::SE3Group<_Scalar, _Options> > >
     typedef _Scalar Scalar;
     typedef Map<const ceres_slam::SO3Group<Scalar>, _Options>
         RotationStorageType;
-    typedef Map<const ceres_slam::Vector3D<Scalar>, _Options>
+    typedef Map<const Eigen::Matrix<Scalar, 3, 1>, _Options>
         TranslationStorageType;
 };
 }

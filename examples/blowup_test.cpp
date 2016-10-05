@@ -3,13 +3,12 @@
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/dataset_problem_sun.hpp>
-#include <ceres_slam/geometry/geometry.hpp>
-#include <ceres_slam/perturbations.hpp>
-#include <ceres_slam/pose_error.hpp>
-#include <ceres_slam/relative_pose_error.hpp>
-
 #include <Eigen/Eigenvalues>
+
+#include "../src/cost_functions/pose_cost.hpp"
+#include "../src/cost_functions/relative_pose_cost.hpp"
+#include "../src/liegroups/se3group.hpp"
+#include "../src/local_parameterizations/se3_local_param.hpp"
 
 typedef ceres_slam::SO3Group<double> SO3;
 typedef ceres_slam::SE3Group<double> SE3;
@@ -64,8 +63,7 @@ int main() {
 
         // Add relative pose measurement from k1 to k2
         ceres::CostFunction *meas_cost =
-            ceres_slam::RelativePoseCostAutomatic::Create(meas,
-                                                           meas_stiffness);
+            ceres_slam::RelativePoseCostAutomatic::Create(meas, meas_stiffness);
         problem.AddResidualBlock(meas_cost, NULL, T_k_0[k1].data(),
                                  T_k_0[k2].data());
 
@@ -75,15 +73,15 @@ int main() {
         } else {
             ceres::CostFunction *prior_cost =
                 ceres_slam::PoseCostAutomatic::Create(T_k_0[k1],
-                                                       prior_stiffness);
+                                                      prior_stiffness);
             problem.AddResidualBlock(prior_cost, NULL, T_k_0[k1].data());
         }
 
         // Set local parameterizations
-        ceres::LocalParameterization *se3_perturbation =
-            ceres_slam::SE3Perturbation::Create();
-        problem.SetParameterization(T_k_0[k1].data(), se3_perturbation);
-        problem.SetParameterization(T_k_0[k2].data(), se3_perturbation);
+        ceres::LocalParameterization *se3_local_param =
+            ceres_slam::SE3LocalParameterization::Create();
+        problem.SetParameterization(T_k_0[k1].data(), se3_local_param);
+        problem.SetParameterization(T_k_0[k2].data(), se3_local_param);
 
         ///////////////////////////////////////////////////////////////////////
         // Solve

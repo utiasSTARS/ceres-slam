@@ -1,10 +1,10 @@
-#ifndef CERES_SLAM_SUN_SENSOR_ERROR_2D_HPP_
-#define CERES_SLAM_SUN_SENSOR_ERROR_2D_HPP_
+#ifndef CERES_SLAM_SUN_SENSOR_COST_2D_HPP_
+#define CERES_SLAM_SUN_SENSOR_COST_2D_HPP_
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/geometry/geometry.hpp>
-#include <ceres_slam/utils/utils.hpp>
+#include "../liegroups/se3group.hpp"
+#include "../utils/utils.hpp"
 
 namespace ceres_slam {
 
@@ -16,9 +16,9 @@ class SunSensorCost2DAutomatic {
 
     //! Constructor
     SunSensorCost2DAutomatic(const Vector& observed_sun_dir_c,
-                              const Vector& expected_sun_dir_g,
-                              const double stiffness,
-                              const double cosine_dist_thresh)
+                             const Vector& expected_sun_dir_g,
+                             const double stiffness,
+                             const double cosine_dist_thresh)
         : observed_sun_dir_c_(observed_sun_dir_c),
           expected_sun_dir_g_(expected_sun_dir_g),
           stiffness_(stiffness) {
@@ -32,14 +32,14 @@ class SunSensorCost2DAutomatic {
     bool operator()(const T* const T_c_g_ceres, T* residuals_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
-        typedef Vector3D<T> VectorT;
+        typedef Eigen::Matrix<T, 3, 1> VectorT;
 
         // Camera pose in the global frame
         Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
 
         // Expected sun direction in the camera frame
         VectorT expected_sun_dir_g = expected_sun_dir_g_.cast<T>();
-        VectorT expected_sun_dir_c = T_c_g * expected_sun_dir_g;
+        VectorT expected_sun_dir_c = T_c_g.rotation() * expected_sun_dir_g;
 
         // Do the casting here for convenience
         VectorT observed_sun_dir_c = observed_sun_dir_c_.cast<T>();
@@ -86,8 +86,8 @@ class SunSensorCost2DAutomatic {
                                                 12>  // Compact SE(3) vehicle
                                                      // pose (3 trans + 9 rot)
                 (new SunSensorCost2DAutomatic(observed_sun_dir_c,
-                                               expected_sun_dir_g, stiffness,
-                                               cosine_dist_thresh)));
+                                              expected_sun_dir_g, stiffness,
+                                              cosine_dist_thresh)));
     }
 
    private:
@@ -103,4 +103,4 @@ class SunSensorCost2DAutomatic {
 
 }  // namespace ceres_slam
 
-#endif /* end of include guard: CERES_SLAM_SUN_SENSOR_ERROR_2D_HPP_ */
+#endif /* end of include guard: CERES_SLAM_SUN_SENSOR_COST_2D_HPP_ */

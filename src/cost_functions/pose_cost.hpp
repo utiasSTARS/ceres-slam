@@ -1,9 +1,9 @@
-#ifndef CERES_SLAM_POSE_ERROR_HPP_
-#define CERES_SLAM_POSE_ERROR_HPP_
+#ifndef CERES_SLAM_POSE_COST_HPP_
+#define CERES_SLAM_POSE_COST_HPP_
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/geometry/geometry.hpp>
+#include "../liegroups/se3group.hpp"
 
 namespace ceres_slam {
 
@@ -14,8 +14,7 @@ class PoseCostAutomatic {
     typedef SE3Group<double> SE3;
 
     //! Constructor
-    PoseCostAutomatic(const SE3& T_k_0_ref,
-                       const SE3::AdjointMatrix& stiffness)
+    PoseCostAutomatic(const SE3& T_k_0_ref, const SE3::AdjointMatrix& stiffness)
         : T_k_0_ref_(T_k_0_ref), stiffness_(stiffness){};
 
     //! Templated evaluator operator for use with ceres::Jet
@@ -75,4 +74,4 @@ class PoseCostAutomatic {
 
 }  // namespace ceres_slam
 
-#endif /* end of include guard: CERES_SLAM_POSE_ERROR_HPP_ */
+#endif /* end of include guard: CERES_SLAM_POSE_COST_HPP_ */

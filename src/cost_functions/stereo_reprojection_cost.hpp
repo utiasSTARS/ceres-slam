@@ -1,5 +1,5 @@
-#ifndef CERES_SLAM_STEREO_REPROJECTION_Cost_H_
-#define CERES_SLAM_STEREO_REPROJECTION_Cost_H_
+#ifndef CERES_SLAM_STEREO_REPROJECTION_COST_H_
+#define CERES_SLAM_STEREO_REPROJECTION_COST_H_
 
 #include <ceres/ceres.h>
 
@@ -26,7 +26,7 @@ class StereoReprojectionCostAutomatic {
                     T* residuals_ceres) const {
         // Local typedefs for convenience
         typedef SE3Group<T> SE3T;
-        typedef Point3D<T> PointT;
+        typedef Eigen::Matrix<T, 3, 1> PointT;
         typedef Eigen::Matrix<T, 3, 1> ResidualVectorT;
         typedef StereoCamera<T> CameraT;
         typedef typename CameraT::Observation ObservationT;
@@ -75,4 +75,4 @@ class StereoReprojectionCostAutomatic {
 
 }  // namespace ceres_slam
 
-#endif  // CERES_SLAM_STEREO_REPROJECTION_Cost_H_
+#endif  // CERES_SLAM_STEREO_REPROJECTION_COST_H_

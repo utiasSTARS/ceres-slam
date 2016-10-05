@@ -1,9 +1,9 @@
-#ifndef CERES_SLAM_RELATIVE_POSE_ERROR_HPP_
-#define CERES_SLAM_RELATIVE_POSE_ERROR_HPP_
+#ifndef CERES_SLAM_RELATIVE_POSE_COST_HPP_
+#define CERES_SLAM_RELATIVE_POSE_COST_HPP_
 
 #include <ceres/ceres.h>
 
-#include <ceres_slam/geometry/geometry.hpp>
+#include "../liegroups/se3group.hpp"
 
 namespace ceres_slam {
 
@@ -15,7 +15,7 @@ class RelativePoseCostAutomatic {
 
     //! Constructor
     RelativePoseCostAutomatic(const SE3& T_2_1_ref,
-                               const SE3::AdjointMatrix& stiffness)
+                              const SE3::AdjointMatrix& stiffness)
         : T_2_1_ref_(T_2_1_ref), stiffness_(stiffness){};
 
     //! Templated evaluator operator for use with ceres::Jet
@@ -60,4 +60,4 @@ class RelativePoseCostAutomatic {
 
 }  // namespace ceres_slam
 
-#endif /* end of include guard: CERES_SLAM_RELATIVE_POSE_ERROR_HPP_ */
+#endif /* end of include guard: CERES_SLAM_RELATIVE_POSE_COST_HPP_ */

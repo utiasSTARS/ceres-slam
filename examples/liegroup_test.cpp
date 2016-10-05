@@ -1,18 +1,16 @@
 #include <Eigen/Core>
-#include <ceres_slam/geometry/geometry.hpp>
 #include <cstdlib>
 #include <iostream>
+
+#include "../src/liegroups/se3group.hpp"
+#include "../src/liegroups/so3group.hpp"
+#include "../src/utils/utils.hpp"
 
 // TODO: Rewrite this as a proper unit test
 
 using SO3 = ceres_slam::SO3Group<double>;
 using SE3 = ceres_slam::SE3Group<double>;
 using Vector = SO3::Vector;
-
-void print_array(double* array, int n) {
-    for (int i = 0; i < n; ++i) std::cout << *(array + i) << ", ";
-    std::cout << std::endl;
-}
 
 int main() {
     ///////////////////////////////////////////////////////////////////////////
@@ -28,7 +26,7 @@ int main() {
     v2 += v1;
     std::cout << "v2: " << v2 << std::endl;
     std::cout << "v2_data: ";
-    print_array(v2_data, 3);
+    ceres_slam::print_array(v2_data, 3);
 
     Vector v3 = v2;
     std::cout << "v3: " << v3 << std::endl;
@@ -84,7 +82,7 @@ int main() {
     C4 = C4 * C2;
     std::cout << "C4 = C4 * C2: " << C4 << std::endl;
     std::cout << "C4_data: ";
-    print_array(C4_data, 9);
+    ceres_slam::print_array(C4_data, 9);
     std::cout << "C4 * v2: " << C4 * v2 << std::endl;
 
     SO3 C5;
@@ -99,11 +97,11 @@ int main() {
 
     const double C6_data[9] = {0, -1, 0, 1, 0, 0, 0, 0, 1};
     Eigen::Map<const SO3> C6(C6_data);
-    SO3::TransformJacobian C6p6_jac;
+    SO3::TransformJacobian C6v3_jac;
     std::cout << "C6: " << C6 << std::endl;
-    std::cout << "C6.transform(p6): " << C6.transform(p6, &C6p6_jac)
+    std::cout << "C6.transform(v3): " << C6.transform(v3, &C6v3_jac)
               << std::endl;
-    std::cout << C6p6_jac << std::endl;
+    std::cout << C6v3_jac << std::endl;
 
     ///////////////////////////////////////////////////////////////////////////
     // SE(3) tests
@@ -128,7 +126,7 @@ int main() {
     std::cout << "T3.str(): " << T3.str() << std::endl;
     std::cout << "T3.inverse(): " << T3.inverse() << std::endl;
     std::cout << "T3.data(): ";
-    print_array(T3.data(), 12);
+    ceres_slam::print_array(T3.data(), 12);
 
     std::cout << "T2 * T3: " << T2 * T3 << std::endl;
     std::cout << "T2 * v1: " << T2 * v1 << std::endl;
@@ -158,7 +156,7 @@ int main() {
     T4 = T4 * T2;
     std::cout << "T4 = T4 * T2: " << T4 << std::endl;
     std::cout << "T4_data: ";
-    print_array(T4_data, 12);
+    ceres_slam::print_array(T4_data, 12);
     std::cout << "T4 * v2: " << T4 * v2 << std::endl;
     std::cout << "T4.inverse(): " << T4.inverse() << std::endl;
     std::cout << "T4.adjoint(): " << std::endl << T4.adjoint() << std::endl;
@@ -195,11 +193,12 @@ int main() {
     std::cout << "C_1_0.matrix() * C_0_w.matrix(): " << std::endl
               << C_1_0.matrix() * C_0_w.matrix() << std::endl;
     std::cout << "C_1_0 * C_0_w: " << std::endl << C_1_0 * C_0_w << std::endl;
-    std::cout
-        << "T_1_0_ceres_matrix.block<3,3>(0,0) * T_0_w_matrix.block<3,3>(0,0): "
-        << std::endl
-        << T_1_0_ceres_matrix.block<3, 3>(0, 0) * T_0_w_matrix.block<3, 3>(0, 0)
-        << std::endl;
+    std::cout << "T_1_0_ceres_matrix.block<3,3>(0,0) * T_0_w_matrix.block<3, "
+                 "3>(0, 0): "
+              << std::endl
+              << T_1_0_ceres_matrix.block<3, 3>(0, 0) *
+                     T_0_w_matrix.block<3, 3>(0, 0)
+              << std::endl;
 
     SE3 T_0_w(T_0_w_matrix);
     SE3 T_1_0(T_1_0_ceres_matrix);

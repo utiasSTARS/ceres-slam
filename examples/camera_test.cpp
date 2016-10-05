@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include <ceres_slam/stereo_camera.hpp>
+#include "../src/sensor_models/stereo_camera.hpp"
 
 // TODO: Rewrite this as a proper unit test
 

@@ -17,9 +17,9 @@ class StereoCamera {
     //! Dimension of the observation (u, v, d)
     static const int obs_dim = 3;
     //! Point type
-    typedef Eigen::Matrix<Scalar, obs_dim, 1> Point;
+    typedef Eigen::Matrix<Scalar, 3, 1> Point;
     //! Point Jacobian type
-    typedef Eigen::Matrix<Scalar, Point::dim, obs_dim, Eigen::RowMajor>
+    typedef Eigen::Matrix<Scalar, 3, obs_dim, Eigen::RowMajor>
         TriangulationJacobian;
     //! Observation type
     typedef Eigen::Matrix<Scalar, obs_dim, 1> Observation;
@@ -29,7 +29,7 @@ class StereoCamera {
     typedef Eigen::Matrix<Scalar, obs_dim, obs_dim, Eigen::RowMajor>
         ObservationCovariance;
     //! Observation Jacobian type
-    typedef Eigen::Matrix<Scalar, obs_dim, Point::dim, Eigen::RowMajor>
+    typedef Eigen::Matrix<Scalar, obs_dim, 3, Eigen::RowMajor>
         ProjectionJacobian;
 
     //! Copy constructor
