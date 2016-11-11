@@ -93,7 +93,7 @@ int main() {
         solver_options.use_nonmonotonic_steps = true;
         solver_options.trust_region_strategy_type = ceres::DOGLEG;
         solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
-        solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
+        solver_options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
         // solver_options.check_gradients = true;
 
         ceres::Solver::Summary summary;

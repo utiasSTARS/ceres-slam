@@ -36,3 +36,6 @@ target_link_libraries(camera_test ${EIGEN_LIBRARIES})
 
 add_executable(blowup_test "examples/blowup_test.cpp")
 target_link_libraries(blowup_test ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
+
+add_executable(loop_test "examples/loop_test.cpp")
+target_link_libraries(loop_test ${EIGEN_LIBRARIES} ${CERES_LIBRARIES})
