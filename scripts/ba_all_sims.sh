@@ -6,25 +6,27 @@ EXECUTABLE=../build/dataset_vo_sun
 WINDOW=2
 
 TRAJECTORIES=(
-"circular100"
+"circular200"
 )
 
 SUNINTERVAL_DIR=(
 "every1"
-# "every5"
+"every5"
 )
 
 OBS_SUNFILE_NAMES=(
 "sun_dir_gtsun0.csv"
-# "sun_dir_gtsun10.csv"
+"sun_dir_gtsun10.csv"
 # "sun_dir_gtsun20.csv"
 # "sun_dir_gtsun30.csv"
 )
 
-for ((k=0; k<${#SUNINTERVAL_DIR[@]}; ++k))
+for ((i=0; i<${#TRAJECTORIES[@]}; ++i));
 do
     :
-    for ((i=0; i<${#TRAJECTORIES[@]}; ++i));
+    DID_NO_SUN_CASE=false
+    
+    for ((k=0; k<${#SUNINTERVAL_DIR[@]}; ++k))
     do
         :
         TRAJ_DIR="${DATA_DIR}/${TRAJECTORIES[i]}"
@@ -39,16 +41,17 @@ do
             CMD="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE} --window ${WINDOW}"
 
             # Only do the no-sun case once
-            if ((j!=0))
+            if ((!${DID_NO_SUN_CASE}))
             then
                 CMD="${CMD} --sun-only"
+                DID_NO_SUN_CASE=true
             fi
 
             echo ${CMD}
             ${CMD}
         done
 
-        MVCMD="mv ${TRAJ_DIR}/*_poses.csv ${TRAJ_DIR}/${SUNINTERVAL_DIR}/"
+        MVCMD="mv ${TRAJ_DIR}/*_poses.csv ${TRAJ_DIR}/${SUNINTERVAL_DIR[k]}/"
         echo ${MVCMD}
         ${MVCMD}
     done

@@ -113,6 +113,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 
     SE3::AdjointMatrix pose_prior_stiffness = es_prior.operatorInverseSqrt();
 
+    // std::cout << "\nCovariance for k=" << k1 << "\n"
+    //           << dataset.pose_covars[k1] << std::endl;
     // std::cout << "\nStiffness for k=" << k1 << "\n"
     //           << pose_prior_stiffness << std::endl;
 
