@@ -54,13 +54,15 @@ OBS_SUNFILE_NAMES=(
 "sun_dir_gtsun30.csv"
 "sun_dir_starscnn.csv"
 "sun_dir_suncnn.csv"
+"sun_dir_lalonde.csv"
+"sun_dir_lalondevo.csv"
 )
 
-for ((k=0; k<${#SUNINTERVAL_DIR[@]}; ++k))
+for ((k=0; k<${#SUNINTERVAL_DIR[@]}; ++k));
 do
     :
-    for ((i=0; i<1; ++i));
-    # for ((i=0; i<${#DRIVES[@]}; ++i));
+    # for ((i=0; i<1; ++i));
+    for ((i=0; i<${#DRIVES[@]}; ++i));
     do
         :
         DRIVE_STR="${DATES[i]}_drive_${DRIVES[i]}_sync"
@@ -69,7 +71,7 @@ do
         TRACKFILE="${DRIVE_DIR}/${DRIVE_STR}_viso2.csv"
         REF_SUNFILE="${DRIVE_DIR}/sun_dir_ephemeris.csv"
 
-        for ((j=4; j<5; ++j));
+        for ((j=6; j<8; ++j));
         # for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
         do
             :
@@ -86,6 +88,12 @@ do
 
                 # 20 deg (0.05) threshold for CNNs
                 if((j==4 || j==5))
+                then
+                    CMD="${CMD} --cosine-dist-thresh 0.05"
+                fi
+
+                # 20 deg (0.05) threshold for Lalondes
+                if((j==6 || j==7))
                 then
                     CMD="${CMD} --cosine-dist-thresh 0.05"
                 fi

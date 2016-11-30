@@ -6,7 +6,10 @@ EXECUTABLE=../build/dataset_vo_sun
 WINDOW=2
 
 TRAJECTORIES=(
-"circular200"
+# "circle200"
+"triangle200"
+# "square200"
+"penta200"
 )
 
 SUNINTERVAL_DIR=(
@@ -17,15 +20,13 @@ SUNINTERVAL_DIR=(
 OBS_SUNFILE_NAMES=(
 "sun_dir_gtsun0.csv"
 "sun_dir_gtsun10.csv"
-# "sun_dir_gtsun20.csv"
-# "sun_dir_gtsun30.csv"
+"sun_dir_gtsun20.csv"
+"sun_dir_gtsun30.csv"
 )
 
 for ((i=0; i<${#TRAJECTORIES[@]}; ++i));
 do
     :
-    DID_NO_SUN_CASE=false
-    
     for ((k=0; k<${#SUNINTERVAL_DIR[@]}; ++k))
     do
         :
@@ -41,10 +42,9 @@ do
             CMD="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE} --window ${WINDOW}"
 
             # Only do the no-sun case once
-            if ((!${DID_NO_SUN_CASE}))
+            if ((j!=0))
             then
                 CMD="${CMD} --sun-only"
-                DID_NO_SUN_CASE=true
             fi
 
             echo ${CMD}
