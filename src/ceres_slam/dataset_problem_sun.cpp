@@ -311,9 +311,13 @@ void DatasetProblemSun::compute_initial_guess(uint k1, uint k2) {
                 T_k_km1, pts_km1, pts_k, camera, 400, 4.);
 
         // std::cout << "Best inlier set has " << inlier_idx.size() << "
-        // elements"
+        // elements."
         //           << std::endl;
         // std::cout << "T_1_0 = " << std::endl << T_k_km1 << std::endl;
+
+        if (inlier_idx.size() < 3) {
+            std::cout << "WARNING: Fewer than 3 inliers found." << std::endl;
+        }
 
         // Compound the transformation estimate onto the previous one
         poses[k] = T_k_km1 * poses[k - 1];
