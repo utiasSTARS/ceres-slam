@@ -71,8 +71,8 @@ do
         TRACKFILE="${DRIVE_DIR}/${DRIVE_STR}_viso2.csv"
         REF_SUNFILE="${DRIVE_DIR}/sun_dir_ephemeris.csv"
 
-        for ((j=6; j<8; ++j));
-        # for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
+        # for ((j=6; j<8; ++j));
+        for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
         do
             :
             if ((j!=5 || j==5 && (i==0 || i==4 || i==5)))
@@ -81,10 +81,10 @@ do
                 CMD="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE} --window ${WINDOW}"
 
                 # Only do the no-sun case once
-                # if ((j!=0))
-                # then
+                if ((j!=0))
+                then
                     CMD="${CMD} --sun-only"
-                # fi
+                fi
 
                 # 20 deg (0.05) threshold for CNNs
                 if((j==4 || j==5))
