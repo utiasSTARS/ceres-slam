@@ -59,12 +59,12 @@ OBS_SUNFILE_NAMES=(
 "sun_dir_lalondevo.csv"
 )
 
-# for ((k=2; k<3; ++k));
-for ((k=0; k<${#SUNINTERVAL_DIR[@]}; ++k));
+for ((k=0; k<1; ++k));
+# for ((k=0; k<${#SUNINTERVAL_DIR[@]}; ++k));
 do
     :
-    # for ((i=4; i<5; ++i));
-    for ((i=0; i<${#DRIVES[@]}; ++i));
+    for ((i=4; i<5; ++i));
+    # for ((i=0; i<${#DRIVES[@]}; ++i));
     do
         :
         DRIVE_STR="${DATES[i]}_drive_${DRIVES[i]}_sync"
@@ -73,8 +73,8 @@ do
         TRACKFILE="${DRIVE_DIR}/${DRIVE_STR}_viso2.csv"
         REF_SUNFILE="${DRIVE_DIR}/sun_dir_ephemeris.csv"
 
-        # for ((j=5; j<6; ++j));
-        for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
+        for ((j=4; j<5; ++j));
+        # for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
         do
             :
             OBS_SUNFILE="${DRIVE_DIR}/${SUNINTERVAL_DIR[k]}/${OBS_SUNFILE_NAMES[j]}"
@@ -99,7 +99,7 @@ do
             fi
 
             # Sun-CNN only gives azimuth
-            if((j==5))
+            if((j==4 || j==5))
             then
                 CMD="${CMD} --azimuth-only"
             fi

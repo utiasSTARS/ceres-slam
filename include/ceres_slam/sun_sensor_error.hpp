@@ -42,8 +42,10 @@ class SunSensorErrorAutomatic {
 
         // Rotate the frames to avoid singularities where most of the data are
         typename SE3Group<double>::TransformationMatrix T_c2_c_matrix;
-        T_c2_c_matrix << 1., 0., 0., 0., 0., 0., 1., 0., 0., -1., 0., 0., 0.,
-            0., 0., 1.;
+        T_c2_c_matrix << 1., 0., 0., 0., 
+                         0., 0., 1., 0., 
+                         0., -1., 0., 0., 
+                         0., 0., 0., 1.;
         SE3T T_c2_c(T_c2_c_matrix.cast<T>());
 
         // Expected sun direction in the camera frame

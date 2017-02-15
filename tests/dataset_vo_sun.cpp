@@ -138,9 +138,9 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     // solver_options.num_linear_solver_threads = 4;
     solver_options.max_num_iterations = 1000;
     solver_options.use_nonmonotonic_steps = true;
-    solver_options.trust_region_strategy_type = ceres::DOGLEG;
-    solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
-    solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
+    // solver_options.trust_region_strategy_type = ceres::DOGLEG;
+    // solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
+    // solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
     // solver_options.check_gradients = true;
 
     // Create sumary container
