@@ -12,7 +12,6 @@
 #include <ceres_slam/stereo_camera.hpp>
 #include <ceres_slam/stereo_reprojection_error.hpp>
 #include <ceres_slam/sun_sensor_error.hpp>
-#include <ceres_slam/sun_sensor_error_2d.hpp>
 #include <ceres_slam/utils/utils.hpp>
 
 #include <Eigen/Eigenvalues>
@@ -24,8 +23,9 @@ using Camera = ceres_slam::DatasetProblemSun::Camera;
 using SunCovariance = ceres_slam::DatasetProblemSun::SunCovariance;
 
 void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
-                 bool use_sun, bool azimuth_only,
-                 double cosine_dist_thresh = 2.) {
+                 bool use_sun, 
+                 double az_err_thresh=2.*ceres_slam::pi, 
+                 double zen_err_thresh=0.5*ceres_slam::pi) {
     // Build the problem
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")/"
               << dataset.num_states << ": ";
@@ -68,36 +68,20 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 
         // Add sun sensor measurements if available
         if (use_sun && dataset.state_has_sun_obs[k]) {
-            if (azimuth_only) {
-                // Stiffness for the sun observation
-                double az_stiffness =
-                    1. / sqrt(dataset.sun_obs_covars[k](0, 0));
+            // Stiffness for the sun observation
+            Eigen::SelfAdjointEigenSolver<SunCovariance> es_sun(
+                dataset.sun_obs_covars[k]);
+            sun_obs_stiffness = es_sun.operatorInverseSqrt();
 
-                // Cost function for the sun observation
-                ceres::CostFunction *sun_cost =
-                    ceres_slam::SunSensorError2DAutomatic::Create(
-                        dataset.sun_obs_list[k], dataset.sun_dir_g[k],
-                        az_stiffness, cosine_dist_thresh);
+            // Cost function for the sun observation
+            ceres::CostFunction *sun_cost =
+                ceres_slam::SunSensorErrorAutomatic::Create(
+                    dataset.sun_obs_list[k], dataset.sun_dir_g[k],
+                    sun_obs_stiffness, az_err_thresh, zen_err_thresh);
 
-                // Add the sun sensor cost function to the problem
-                problem.AddResidualBlock(sun_cost, NULL,
-                                         dataset.poses[k].data());
-            } else {
-                // Stiffness for the sun observation
-                Eigen::SelfAdjointEigenSolver<SunCovariance> es_sun(
-                    dataset.sun_obs_covars[k]);
-                sun_obs_stiffness = es_sun.operatorInverseSqrt();
-
-                // Cost function for the sun observation
-                ceres::CostFunction *sun_cost =
-                    ceres_slam::SunSensorErrorAutomatic::Create(
-                        dataset.sun_obs_list[k], dataset.sun_dir_g[k],
-                        sun_obs_stiffness, cosine_dist_thresh);
-
-                // Add the sun sensor cost function to the problem
-                problem.AddResidualBlock(sun_cost, NULL,
-                                         dataset.poses[k].data());
-            }
+            // Add the sun sensor cost function to the problem
+            problem.AddResidualBlock(sun_cost, NULL,
+                                        dataset.poses[k].data());
         }
     }
 
@@ -138,9 +122,9 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     // solver_options.num_linear_solver_threads = 4;
     solver_options.max_num_iterations = 1000;
     solver_options.use_nonmonotonic_steps = true;
-    // solver_options.trust_region_strategy_type = ceres::DOGLEG;
-    // solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
-    // solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
+    solver_options.trust_region_strategy_type = ceres::DOGLEG;
+    solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
+    solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
     // solver_options.check_gradients = true;
 
     // Create sumary container
@@ -184,7 +168,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 int main(int argc, char **argv) {
     std::string usage_string(
         "usage: dataset_vo_sun <track_file> <ref_sun_file> <obs_sun_file> "
-        "[--window N=0] [--cosine-dist-thresh t=100] [--azimuth-only] "
+        "[--window (2)] [--az-err-thresh (180)] [--zen-err-thresh (90)] "
         "[--sun-only]");
 
     if (argc < 4) {
@@ -193,10 +177,10 @@ int main(int argc, char **argv) {
     }
 
     // Defaults
-    uint window_size = 0;
+    uint window_size = 2;
     bool sun_only = false;
-    double cosine_dist_thresh = 2.;
-    bool azimuth_only = false;
+    double az_err_thresh = 2. * ceres_slam::pi;
+    double zen_err_thresh = 0.5 * ceres_slam::pi;
 
     // Parse command line arguments
     std::string track_file(argv[1]);
@@ -208,14 +192,16 @@ int main(int argc, char **argv) {
         if (flag == "--window" && argc > a + 1) {
             window_size = std::stoi(argv[a + 1]);
             ++a;
-
-        } else if (flag == "--cosine-dist-thresh" && argc > a + 1) {
-            cosine_dist_thresh = std::stod(argv[a + 1]);
+        } else if (flag == "--az-err-thresh" && argc > a + 1) {
+            // Accept in degrees, but convert to radians
+            az_err_thresh = std::stod(argv[a + 1]) * ceres_slam::pi / 180.;
+            ++a;
+        } else if (flag == "--zen-err-thresh" && argc > a + 1) {
+            // Accept in degrees, but convert to radians
+            zen_err_thresh = std::stod(argv[a + 1]) * ceres_slam::pi / 180.;
             ++a;
         } else if (flag == "--sun-only") {
             sun_only = true;
-        } else if (flag == "--azimuth-only") {
-            azimuth_only = true;
         } else {
             std::cerr << usage_string << std::endl;
             return EXIT_FAILURE;
@@ -240,7 +226,7 @@ int main(int argc, char **argv) {
             uint k2 = fmin(k1 + window_size, dataset.num_states);
             // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
             dataset.compute_initial_guess(k1, k2);
-            solveWindow(dataset, k1, k2, false, azimuth_only);
+            solveWindow(dataset, k1, k2, false);
             dataset.reset_points();
         }
 
@@ -258,7 +244,7 @@ int main(int argc, char **argv) {
         uint k2 = fmin(k1 + window_size, dataset.num_states);
         // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
         dataset.compute_initial_guess(k1, k2);
-        solveWindow(dataset, k1, k2, true, azimuth_only, cosine_dist_thresh);
+        solveWindow(dataset, k1, k2, true, az_err_thresh, zen_err_thresh);
         dataset.reset_points();
     }
 

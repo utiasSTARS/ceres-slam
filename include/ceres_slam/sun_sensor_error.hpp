@@ -20,11 +20,13 @@ class SunSensorErrorAutomatic {
     SunSensorErrorAutomatic(const Vector& observed_sun_dir_c,
                             const Vector& expected_sun_dir_g,
                             const ResidualCovariance& stiffness,
-                            const double cosine_dist_thresh)
+                            const double az_err_thresh,
+                            const double zen_err_thresh)
         : observed_sun_dir_c_(observed_sun_dir_c),
           expected_sun_dir_g_(expected_sun_dir_g),
           stiffness_(stiffness),
-          cosine_dist_thresh_(cosine_dist_thresh) {
+          az_err_thresh_(az_err_thresh),
+          zen_err_thresh_(zen_err_thresh) {
         observed_sun_dir_c_.normalize();
         expected_sun_dir_g_.normalize();
     }
@@ -67,29 +69,31 @@ class SunSensorErrorAutomatic {
         // Compute the residual
         Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
 
-        // Threshold the cosine distance to reject outliers
-        if (T(1) - expected_sun_dir_c.dot(observed_sun_dir_c) <
-            T(cosine_dist_thresh_)) {
-            T residual_az = expected_az - observed_az;
-            T residual_zen = expected_zen - observed_zen;
-            // T residual_zen = T(0);
+        T residual_az = expected_az - observed_az;
+        T residual_zen = expected_zen - observed_zen;
 
-            // Correct azimuth wraparound by choosing the smallest angular
-            // distance.
-            // Note that atan2 returns values in the range [-pi,pi],
-            // so we don't need to do a modulo 2*pi on the error since
-            // abs(error) is at most 2*pi
-            if (residual_az > T(pi)) {
-                residual_az = residual_az - T(2 * pi);
-            } else if (residual_az < -T(pi)) {
-                residual_az = residual_az + T(2 * pi);
-            }
-
-            residuals << residual_az, residual_zen;
-            residuals = stiffness_.cast<T>() * residuals;
-        } else {
-            residuals = ResidualVectorT::Zero();
+        // Correct azimuth wraparound by choosing the smallest angular
+        // distance.
+        // Note that atan2 returns values in the range [-pi,pi],
+        // so we don't need to do a modulo 2*pi on the error since
+        // abs(error) is at most 2*pi
+        if (residual_az > T(pi)) {
+            residual_az = residual_az - T(2 * pi);
+        } else if (residual_az < -T(pi)) {
+            residual_az = residual_az + T(2 * pi);
         }
+
+        // Threshold the errors to reject outliers
+        if (fabs(residual_az) > T(az_err_thresh_)) {
+            residual_az = T(0.);
+        }
+         
+        if (fabs(residual_zen) > T(zen_err_thresh_)) {
+            residual_zen = T(0.);
+        }
+
+        residuals << residual_az, residual_zen;
+        residuals = stiffness_.cast<T>() * residuals;
 
         // std::cout << "residuals:\n";
         // for (uint i = 0; i < 2; ++i) {
@@ -104,14 +108,15 @@ class SunSensorErrorAutomatic {
     static ceres::CostFunction* Create(const Vector& observed_sun_dir_c,
                                        const Vector& expected_sun_dir_g,
                                        const ResidualCovariance& stiffness,
-                                       const double cosine_dist_thresh) {
+                                       const double az_err_thresh,
+                                       const double zen_err_thresh) {
         return (
             new ceres::AutoDiffCostFunction<SunSensorErrorAutomatic,
                                             2,   // Residual dimension
                                             12>  // Compact SE(3) vehicle
                                                  // pose (3 trans + 9 rot)
             (new SunSensorErrorAutomatic(observed_sun_dir_c, expected_sun_dir_g,
-                                         stiffness, cosine_dist_thresh)));
+                                         stiffness, az_err_thresh, zen_err_thresh)));
     }
 
    private:
@@ -121,8 +126,8 @@ class SunSensorErrorAutomatic {
     Vector expected_sun_dir_g_;
     //! Observation stiffness matrix (inverse sqrt of covariance matrix)
     ResidualCovariance stiffness_;
-    //! Cosine distance threshold for outlier rejection
-    double cosine_dist_thresh_;
+    //! Thresholds for outlier rejection
+    double az_err_thresh_, zen_err_thresh_;
 };  // class SunSensorErrorAutomatic
 
 }  // namespace ceres_slam
