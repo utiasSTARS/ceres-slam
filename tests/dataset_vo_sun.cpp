@@ -195,7 +195,7 @@ int main(int argc, char **argv) {
     // Defaults
     uint window_size = 0;
     bool sun_only = false;
-    double cosine_dist_thresh = 100.;
+    double cosine_dist_thresh = 2.;
     bool azimuth_only = false;
 
     // Parse command line arguments

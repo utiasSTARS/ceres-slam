@@ -40,21 +40,22 @@ class SunSensorErrorAutomatic {
         // Camera pose in the global frame
         Eigen::Map<const SE3T> T_c_g(T_c_g_ceres);
 
-        // Rotate the frames to avoid singularities where most of the data are
-        typename SE3Group<double>::TransformationMatrix T_c2_c_matrix;
-        T_c2_c_matrix << 1., 0., 0., 0., 
-                         0., 0., 1., 0., 
-                         0., -1., 0., 0., 
-                         0., 0., 0., 1.;
-        SE3T T_c2_c(T_c2_c_matrix.cast<T>());
+        // // Rotate the frames to avoid singularities where most of the data are
+        // typename SE3Group<double>::TransformationMatrix T_c2_c_matrix;
+        // T_c2_c_matrix << 1., 0., 0., 0., 
+        //                  0., 0., 1., 0., 
+        //                  0., -1., 0., 0., 
+        //                  0., 0., 0., 1.;
+        // SE3T T_c2_c(T_c2_c_matrix.cast<T>());
 
         // Expected sun direction in the camera frame
         VectorT expected_sun_dir_g = expected_sun_dir_g_.cast<T>();
-        VectorT expected_sun_dir_c = T_c2_c * T_c_g * expected_sun_dir_g;
+        // VectorT expected_sun_dir_c = T_c2_c * T_c_g * expected_sun_dir_g;
+        VectorT expected_sun_dir_c = T_c_g * expected_sun_dir_g;
 
         // Do the casting here for convenience
         VectorT observed_sun_dir_c = observed_sun_dir_c_.cast<T>();
-        observed_sun_dir_c = T_c2_c * observed_sun_dir_c;
+        // observed_sun_dir_c = T_c2_c * observed_sun_dir_c;
 
         // Convert to azimuth and zenith
         T expected_zen = acos(-expected_sun_dir_c(1));

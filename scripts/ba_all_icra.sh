@@ -44,8 +44,8 @@ DRIVES=(
 
 SUNINTERVAL_DIR=(
 "every1"
-"every5"
-"every10"
+# "every5"
+# "every10"
 )
 
 OBS_SUNFILE_NAMES=(
@@ -55,51 +55,51 @@ OBS_SUNFILE_NAMES=(
 "sun_dir_gtsun30.csv"
 "sun_dir_starscnn.csv"
 "sun_dir_suncnn.csv"
-"sun_dir_lalonde.csv"
-"sun_dir_lalondevo.csv"
+# "sun_dir_lalonde.csv"
+# "sun_dir_lalondevo.csv"
 )
 
-for ((k=0; k<1; ++k));
-# for ((k=0; k<${#SUNINTERVAL_DIR[@]}; ++k));
+# for ((interval=0; interval<1; ++interval));
+for ((interval=0; interval<${#SUNINTERVAL_DIR[@]}; ++interval));
 do
     :
-    for ((i=4; i<5; ++i));
-    # for ((i=0; i<${#DRIVES[@]}; ++i));
+    # for ((drive=0; drive<1; ++drive));
+    for ((drive=0; drive<${#DRIVES[@]}; ++drive));
     do
         :
-        DRIVE_STR="${DATES[i]}_drive_${DRIVES[i]}_sync"
-        DRIVE_DIR="${DATA_DIR}/${DATES[i]}/${DRIVE_STR}"
+        DRIVE_STR="${DATES[drive]}_drive_${DRIVES[drive]}_sync"
+        DRIVE_DIR="${DATA_DIR}/${DATES[drive]}/${DRIVE_STR}"
 
         TRACKFILE="${DRIVE_DIR}/${DRIVE_STR}_viso2.csv"
         REF_SUNFILE="${DRIVE_DIR}/sun_dir_ephemeris.csv"
 
-        for ((j=4; j<5; ++j));
-        # for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
+        for ((sunfile=4; sunfile<5; ++sunfile));
+        # for ((sunfile=0; sunfile<${#OBS_SUNFILE_NAMES[@]}; ++sunfile));
         do
             :
-            OBS_SUNFILE="${DRIVE_DIR}/${SUNINTERVAL_DIR[k]}/${OBS_SUNFILE_NAMES[j]}"
+            OBS_SUNFILE="${DRIVE_DIR}/${SUNINTERVAL_DIR[interval]}/${OBS_SUNFILE_NAMES[sunfile]}"
             CMD="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE} --window ${WINDOW}"
 
             # Only do the no-sun case once
-            if ((j!=0))
-            then
-                CMD="${CMD} --sun-only"
-            fi
+            # if ((j!=0))
+            # then
+            CMD="${CMD} --sun-only"
+            # fi
 
             # 20 deg (0.05) threshold for CNNs
-            if((j==4 || j==5))
+            if((sunfile==4 || sunfile==5))
             then
                 CMD="${CMD} --cosine-dist-thresh 0.05"
             fi
 
-            # 20 deg (0.05) threshold for Lalondes
-            if((j==6 || j==7))
-            then
-                CMD="${CMD} --cosine-dist-thresh 0.05"
-            fi
+            # # 20 deg (0.05) threshold for Lalondes
+            # if((sunfile==6 || sunfile==7))
+            # then
+            #     CMD="${CMD} --cosine-dist-thresh 0.05"
+            # fi
 
             # Sun-CNN only gives azimuth
-            if((j==4 || j==5))
+            if((sunfile==5))
             then
                 CMD="${CMD} --azimuth-only"
             fi
@@ -108,7 +108,7 @@ do
             ${CMD}
         done
 
-        MVCMD="mv ${DRIVE_DIR}/*_poses.csv ${DRIVE_DIR}/${SUNINTERVAL_DIR[k]}/"
+        MVCMD="mv ${DRIVE_DIR}/*_poses.csv ${DRIVE_DIR}/${SUNINTERVAL_DIR[interval]}/"
         echo ${MVCMD}
         ${MVCMD}
     done

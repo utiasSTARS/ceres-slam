@@ -48,6 +48,8 @@ class StereoReprojectionErrorAutomatic {
         Eigen::Map<ResidualVectorT> residuals(residuals_ceres);
         residuals = stiffness_.cast<T>() *
                     (predicted_observation - observation_.cast<T>());
+        // residuals = stiffness_.cast<T>() * T(kitti_weight_) *
+        //             (predicted_observation - observation_.cast<T>());
 
         return true;
     }
