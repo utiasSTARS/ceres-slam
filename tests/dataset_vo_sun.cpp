@@ -24,6 +24,7 @@ using SunCovariance = ceres_slam::DatasetProblemSun::SunCovariance;
 
 void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                  bool use_sun, 
+                 double huber_param=0.,
                  double az_err_thresh=2.*ceres_slam::pi, 
                  double zen_err_thresh=0.5*ceres_slam::pi) {
     // Build the problem
@@ -80,8 +81,15 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                     sun_obs_stiffness, az_err_thresh, zen_err_thresh);
 
             // Add the sun sensor cost function to the problem
-            problem.AddResidualBlock(sun_cost, NULL,
-                                        dataset.poses[k].data());
+            if (huber_param > 0.) {
+                ceres::HuberLoss *robust_loss = new ceres::HuberLoss(huber_param);
+                problem.AddResidualBlock(sun_cost, robust_loss,
+                                         dataset.poses[k].data());
+            } else {
+                problem.AddResidualBlock(sun_cost, NULL,
+                                         dataset.poses[k].data());
+            }
+            
         }
     }
 
@@ -124,7 +132,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     solver_options.use_nonmonotonic_steps = true;
     solver_options.trust_region_strategy_type = ceres::DOGLEG;
     solver_options.dogleg_type = ceres::SUBSPACE_DOGLEG;
-    solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
+    // solver_options.linear_solver_type = ceres::SPARSE_SCHUR;
     // solver_options.check_gradients = true;
 
     // Create sumary container
@@ -168,7 +176,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
 int main(int argc, char **argv) {
     std::string usage_string(
         "usage: dataset_vo_sun <track_file> <ref_sun_file> <obs_sun_file> "
-        "[--window (2)] [--az-err-thresh (180)] [--zen-err-thresh (90)] "
+        "[--window (2)] [--huber-param (0)] "
+        "[--az-err-thresh (180)] [--zen-err-thresh (90)] "
         "[--sun-only]");
 
     if (argc < 4) {
@@ -179,6 +188,7 @@ int main(int argc, char **argv) {
     // Defaults
     uint window_size = 2;
     bool sun_only = false;
+    double huber_param = 0.;
     double az_err_thresh = 2. * ceres_slam::pi;
     double zen_err_thresh = 0.5 * ceres_slam::pi;
 
@@ -191,6 +201,9 @@ int main(int argc, char **argv) {
 
         if (flag == "--window" && argc > a + 1) {
             window_size = std::stoi(argv[a + 1]);
+            ++a;
+        } else if (flag == "--huber-param" && argc > a + 1) {
+            huber_param = std::stod(argv[a + 1]);
             ++a;
         } else if (flag == "--az-err-thresh" && argc > a + 1) {
             // Accept in degrees, but convert to radians
@@ -244,7 +257,7 @@ int main(int argc, char **argv) {
         uint k2 = fmin(k1 + window_size, dataset.num_states);
         // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
         dataset.compute_initial_guess(k1, k2);
-        solveWindow(dataset, k1, k2, true, az_err_thresh, zen_err_thresh);
+        solveWindow(dataset, k1, k2, true, huber_param, az_err_thresh, zen_err_thresh);
         dataset.reset_points();
     }
 
