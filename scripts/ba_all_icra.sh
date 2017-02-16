@@ -42,6 +42,20 @@ DRIVES=(
 "0034"
 )
 
+HUBER_PARAMS=(
+"0.05"
+"0.5"
+"0.5"
+"0.5"
+"0.5"
+"0.5"
+"0.5"
+"0.5"
+"0.5"
+"0.5"
+"0.5"
+)
+
 SUNINTERVAL_DIR=(
 "every1"
 # "every5"
@@ -63,8 +77,8 @@ for ((i=0; i<1; ++i));
 # for ((i=0; i<${#SUNINTERVAL_DIR[@]}; ++i));
 do
     :
-    for ((j=4; j<5; ++j));
-    # for ((j=0; j<${#DRIVES[@]}; ++j));
+    # for ((j=4; j<6; ++j));
+    for ((j=0; j<${#DRIVES[@]}; ++j));
     do
         :
         DRIVE_STR="${DATES[j]}_drive_${DRIVES[j]}_sync"
@@ -81,15 +95,17 @@ do
             CMD="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE} --window ${WINDOW}"
 
             # Only do the no-sun case once
-            # if ((j!=0))
-            # then
-            CMD="${CMD} --sun-only"
-            # fi
+            if ((k!=0))
+            then
+                CMD="${CMD} --sun-only"
+            fi
 
-            # Use a Huber robust cost for non-GT-Sun predictions
+            # Use a Huber robust loss for non-GT-Sun predictions
             if ((k>3))
             then
-                CMD="${CMD} --huber-param 2.0"
+            # CMD="${CMD} --huber-param 1.345"
+            # CMD="${CMD} --huber-param 0.743" # 1/1.345
+                CMD="${CMD} --huber-param ${HUBER_PARAMS[j]}"
             fi
 
             # # 20 deg (0.05) threshold for CNNs

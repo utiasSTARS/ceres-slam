@@ -25,8 +25,8 @@ using SunCovariance = ceres_slam::DatasetProblemSun::SunCovariance;
 void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                  bool use_sun, 
                  double huber_param=0.,
-                 double az_err_thresh=2.*ceres_slam::pi, 
-                 double zen_err_thresh=0.5*ceres_slam::pi) {
+                 double az_err_thresh=1000., 
+                 double zen_err_thresh=1000.) {
     // Build the problem
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")/"
               << dataset.num_states << ": ";
@@ -83,6 +83,7 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
             // Add the sun sensor cost function to the problem
             if (huber_param > 0.) {
                 ceres::HuberLoss *robust_loss = new ceres::HuberLoss(huber_param);
+                // ceres::CauchyLoss *robust_loss = new ceres::CauchyLoss(huber_param);
                 problem.AddResidualBlock(sun_cost, robust_loss,
                                          dataset.poses[k].data());
             } else {
@@ -177,7 +178,7 @@ int main(int argc, char **argv) {
     std::string usage_string(
         "usage: dataset_vo_sun <track_file> <ref_sun_file> <obs_sun_file> "
         "[--window (2)] [--huber-param (0)] "
-        "[--az-err-thresh (180)] [--zen-err-thresh (90)] "
+        "[--az-err-thresh (1000)] [--zen-err-thresh (1000)] "
         "[--sun-only]");
 
     if (argc < 4) {
@@ -189,8 +190,8 @@ int main(int argc, char **argv) {
     uint window_size = 2;
     bool sun_only = false;
     double huber_param = 0.;
-    double az_err_thresh = 2. * ceres_slam::pi;
-    double zen_err_thresh = 0.5 * ceres_slam::pi;
+    double az_err_thresh = 1000.;
+    double zen_err_thresh = 1000.;
 
     // Parse command line arguments
     std::string track_file(argv[1]);
