@@ -1,7 +1,7 @@
 #!/bin/bash
 
 HOME_DIR=~
-DATA_DIR="${HOME_DIR}/Desktop/odometry_raw"
+DATA_DIR="${HOME_DIR}/Desktop/KITTI/processed"
 EXECUTABLE=../build/dataset_vo_sun
 WINDOW=2
 
@@ -43,17 +43,16 @@ DRIVES=(
 )
 
 HUBER_PARAMS=(
-"0.05"
-"0.5"
-"0.5"
-"0.5"
-"0.5"
-"0.5"
-"0.5"
-"0.5"
-"0.5"
-"0.5"
-"0.5"
+"0.1"  # 00
+"0.1"  # 01
+"1.0"  # 02
+"0.1"  # 04
+"1.0"  # 05
+"1.0"  # 06
+"1.0"  # 07
+"1.0"  # 08
+"1.0"  # 09
+"0.1"  # 10
 )
 
 SUNINTERVAL_DIR=(
@@ -73,24 +72,31 @@ OBS_SUNFILE_NAMES=(
 "sun_dir_lalondevo.csv"
 )
 
-for ((i=0; i<1; ++i));
+for ((i=1; i<2; ++i));
 # for ((i=0; i<${#SUNINTERVAL_DIR[@]}; ++i));
 do
     :
-    # for ((j=4; j<6; ++j));
-    for ((j=0; j<${#DRIVES[@]}; ++j));
+    for ((j=4; j<5; ++j));
+    # for ((j=0; j<${#DRIVES[@]}; ++j));
     do
         :
         DRIVE_STR="${DATES[j]}_drive_${DRIVES[j]}_sync"
         DRIVE_DIR="${DATA_DIR}/${DATES[j]}/${DRIVE_STR}"
 
         TRACKFILE="${DRIVE_DIR}/${DRIVE_STR}_viso2.csv"
-        REF_SUNFILE="${DRIVE_DIR}/sun_dir_ephemeris.csv"
 
-        for ((k=4; k<6; ++k));
+        for ((k=6; k<8; ++k));
         # for ((k=0; k<${#OBS_SUNFILE_NAMES[@]}; ++k));
         do
             :
+            if ((k>5))
+            then
+                # Lalondes appear to be UTC+1
+                REF_SUNFILE="${DRIVE_DIR}/sun_dir_ephemeris_utc+1.csv"
+            else
+                REF_SUNFILE="${DRIVE_DIR}/sun_dir_ephemeris.csv"
+            fi
+
             OBS_SUNFILE="${DRIVE_DIR}/${SUNINTERVAL_DIR[i]}/${OBS_SUNFILE_NAMES[k]}"
             CMD="${EXECUTABLE} ${TRACKFILE} ${REF_SUNFILE} ${OBS_SUNFILE} --window ${WINDOW}"
 
@@ -103,20 +109,13 @@ do
             # Use a Huber robust loss for non-GT-Sun predictions
             if ((k>3))
             then
-            # CMD="${CMD} --huber-param 1.345"
-            # CMD="${CMD} --huber-param 0.743" # 1/1.345
+                # CMD="${CMD} --huber-param 1.345"
+                # CMD="${CMD} --huber-param 0.743" # 1/1.345
                 CMD="${CMD} --huber-param ${HUBER_PARAMS[j]}"
             fi
 
-            # # 20 deg (0.05) threshold for CNNs
-            # if((k==4 || k==5))
-            # then
-            #     CMD="${CMD} --az-err-thresh 20"
-            #     CMD="${CMD} --zen-err-thresh 10"
-            # fi
-
-            # # 20 deg (0.05) threshold for Lalondes
-            # if((k==6 || k==7))
+            # 20 deg (0.1) threshold for Lalondes
+            # if((k>5))
             # then
             #     CMD="${CMD} --az-err-thresh 10"
             #     CMD="${CMD} --zen-err-thresh 10"
