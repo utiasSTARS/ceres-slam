@@ -86,7 +86,7 @@ class DatasetProblemSun {
 
     //! Generate initial guess for poses and map points
     //! using scalar-weighted point cloud alignment for stereo VO
-    void compute_initial_guess(uint k1 = 0, uint k2 = 0);
+    bool compute_initial_guess(uint k1 = 0, uint k2 = 0);
 
    private:
     //! List of lists of indices corresponding to each state index

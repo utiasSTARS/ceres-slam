@@ -239,7 +239,7 @@ void DatasetProblemSun::reset_points() {
     std::fill(initialized_point.begin(), initialized_point.end(), false);
 }
 
-void DatasetProblemSun::compute_initial_guess(uint k1, uint k2) {
+bool DatasetProblemSun::compute_initial_guess(uint k1, uint k2) {
     std::vector<Point> pts_km1, pts_k;
     std::vector<uint> j_km1, j_k, idx_km1, idx_k;
     ceres_slam::PointCloudAligner point_cloud_aligner;
@@ -317,6 +317,7 @@ void DatasetProblemSun::compute_initial_guess(uint k1, uint k2) {
 
         if (inlier_idx.size() < 3) {
             std::cout << "WARNING: Fewer than 3 inliers found." << std::endl;
+            return false;
         }
 
         // Compound the transformation estimate onto the previous one
@@ -343,6 +344,8 @@ void DatasetProblemSun::compute_initial_guess(uint k1, uint k2) {
             }
         }
     }
+
+    return true;
 }
 
 }  // namespace ceres_slaml

@@ -10,10 +10,6 @@ TRAJECTORIES=(
 "triangle200"
 "square200"
 "penta200"
-"circle300"
-"triangle300"
-"square300"
-"penta300"
 )
 
 SUNINTERVAL_DIR=(
@@ -29,6 +25,7 @@ OBS_SUNFILE_NAMES=(
 "sun_dir_gtsun30.csv"
 )
 
+# for ((i=0; i<1; ++i));
 for ((i=0; i<${#TRAJECTORIES[@]}; ++i));
 do
     :
@@ -51,6 +48,9 @@ do
             then
                 CMD="${CMD} --sun-only"
             fi
+
+            # CMD="${CMD} --huber-param 1.345"
+            # CMD="${CMD} --huber-param 0.743" # 1/1.345
 
             echo ${CMD}
             ${CMD}

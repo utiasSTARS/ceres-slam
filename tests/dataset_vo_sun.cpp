@@ -239,8 +239,14 @@ int main(int argc, char **argv) {
         for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
             uint k2 = fmin(k1 + window_size, dataset.num_states);
             // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
-            dataset.compute_initial_guess(k1, k2);
-            solveWindow(dataset, k1, k2, false);
+            if (dataset.compute_initial_guess(k1, k2)) {
+                solveWindow(dataset, k1, k2, false);
+            } else {
+                std::cerr << "WARNING: Initial guess failed. Copying previous pose and covariance." << std::endl;
+                dataset.poses[k2-1] = dataset.poses[k1];
+                dataset.pose_covars[k2-1] = dataset.pose_covars[k1];
+            }
+
             dataset.reset_points();
         }
 
@@ -257,8 +263,14 @@ int main(int argc, char **argv) {
     for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
         uint k2 = fmin(k1 + window_size, dataset.num_states);
         // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
-        dataset.compute_initial_guess(k1, k2);
-        solveWindow(dataset, k1, k2, true, huber_param, az_err_thresh, zen_err_thresh);
+        if (dataset.compute_initial_guess(k1, k2)) {
+            solveWindow(dataset, k1, k2, true, huber_param, az_err_thresh, zen_err_thresh);
+        } else {
+            std::cerr << "WARNING: Initial guess failed. Copying previous pose and covariance." << std::endl;
+            dataset.poses[k2-1] = dataset.poses[k1];
+            dataset.pose_covars[k2-1] = dataset.pose_covars[k1];
+        }
+
         dataset.reset_points();
     }
 

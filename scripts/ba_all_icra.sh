@@ -72,12 +72,12 @@ OBS_SUNFILE_NAMES=(
 "sun_dir_lalondevo.csv"
 )
 
-for ((i=1; i<2; ++i));
+for ((i=0; i<1; ++i));
 # for ((i=0; i<${#SUNINTERVAL_DIR[@]}; ++i));
 do
     :
-    for ((j=4; j<5; ++j));
-    # for ((j=0; j<${#DRIVES[@]}; ++j));
+    # for ((j=4; j<5; ++j));
+    for ((j=0; j<${#DRIVES[@]}; ++j));
     do
         :
         DRIVE_STR="${DATES[j]}_drive_${DRIVES[j]}_sync"
@@ -85,7 +85,7 @@ do
 
         TRACKFILE="${DRIVE_DIR}/${DRIVE_STR}_viso2.csv"
 
-        for ((k=6; k<8; ++k));
+        for ((k=4; k<5; ++k));
         # for ((k=0; k<${#OBS_SUNFILE_NAMES[@]}; ++k));
         do
             :
@@ -114,7 +114,7 @@ do
                 CMD="${CMD} --huber-param ${HUBER_PARAMS[j]}"
             fi
 
-            # 20 deg (0.1) threshold for Lalondes
+            # # Outlier threshold on Lalondes
             # if((k>5))
             # then
             #     CMD="${CMD} --az-err-thresh 10"
