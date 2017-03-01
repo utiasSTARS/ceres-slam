@@ -57,7 +57,7 @@ OBS_SUNFILE_NAMES=(
 "sun_dir_starscnn.csv"
 )
 
-for ((i=2; i<3; ++i))
+for ((i=9; i<10; ++i))
 # for ((i=0; i<${#TRAJECTORIES[@]}; ++i));
 do
     :
@@ -69,7 +69,8 @@ do
         TRACKFILE="${TRAJ_DIR}/${TRAJECTORIES[i]}_viso2.csv"
         REF_SUNFILE="${TRAJ_DIR}/sun_dir_ephemeris.csv"
 
-        for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
+        for ((j=1; j<3; ++j));
+        # for ((j=0; j<${#OBS_SUNFILE_NAMES[@]}; ++j));
         do
             :
             OBS_SUNFILE="${TRAJ_DIR}/${SUNINTERVAL_DIR[k]}/${OBS_SUNFILE_NAMES[j]}"

@@ -59,6 +59,7 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
     double b = std::stod(tokens.at(4));
     camera = std::make_shared<Camera>(fu, fv, cu, cv, b);
     std::cerr << *camera << std::endl;
+    std::cerr << "...done." << std::endl;
 
     // Read first ground truth pose
     std::cerr << "Reading first ground truth pose" << std::endl;
@@ -72,11 +73,13 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
     // First pose is either identity, or the first ground truth pose
     poses[0] = SE3(T_0_g);
     std::cout << poses[0] << std::endl;
+    std::cerr << "...done." << std::endl;
 
     // Set first ground truth pose covariance to something small
     std::cerr << "Setting first ground truth pose covariance" << std::endl;
     pose_covars[0] = 1e-12 * SE3::AdjointMatrix::Identity();
     std::cout << "Initial covariance:\n" << pose_covars[0] << std::endl;
+    std::cerr << "...done." << std::endl;
 
     // Read in the observations
     std::cerr << "Reading observation data... ";
@@ -103,6 +106,7 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
               << std::endl;
     std::cout << "First stereo measurment covariance:\n"
               << stereo_obs_covars[0] << std::endl;
+    std::cerr << "...done." << std::endl;
 
     // Generate lists of observation indices for each state and feature
     std::cerr
@@ -117,6 +121,7 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
         uint j = point_ids.at(idx);
         feature_indices_.at(j).push_back(idx);
     }
+    std::cerr << "...done." << std::endl;
 
     //////////////////////////////////////////////////////////////////////////
     // Read ephemeris sun vectors in global ENU coordinates
@@ -139,6 +144,7 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
         double u = stod(tokens2.at(3));
         sun_dir_g.at(k) << e, n, u;
     }
+    std::cerr << "...done." << std::endl;
 
     //////////////////////////////////////////////////////////////////////////
     // Read sun observations in camera coordinates
@@ -170,7 +176,7 @@ const bool DatasetProblemSun::read_csv(const std::string track_file,
 
     std::cout << "First sun measurment covariance:\n"
               << sun_obs_covars[0] << std::endl;
-    std::cerr << "done." << std::endl;
+    std::cerr << "...done." << std::endl;
 
     return true;
 }

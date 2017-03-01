@@ -6,7 +6,7 @@ EXECUTABLE=../build/dataset_vo_sun
 WINDOW=2
 
 TRAJECTORIES=(
-"circle200"
+# "circle200"
 "triangle200"
 "square200"
 "penta200"
