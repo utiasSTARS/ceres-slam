@@ -1,7 +1,7 @@
 #!/bin/bash
 
 HOME_DIR=~
-DATA_DIR="${HOME_DIR}/Desktop/KITTI/processed"
+DATA_DIR="${HOME_DIR}/Desktop/sun-bcnn-data"
 EXECUTABLE=../build/dataset_vo_sun
 WINDOW=2
 
@@ -58,7 +58,7 @@ HUBER_PARAMS=(
 SUNINTERVAL_DIR=(
 "every1"
 # "every5"
-"every10"
+# "every10"
 )
 
 OBS_SUNFILE_NAMES=(
@@ -72,12 +72,10 @@ OBS_SUNFILE_NAMES=(
 "sun_dir_lalondevo.csv"
 )
 
-for ((i=1; i<2; ++i));
-# for ((i=0; i<${#SUNINTERVAL_DIR[@]}; ++i));
+for ((i=0; i<${#SUNINTERVAL_DIR[@]}; ++i));
 do
     :
-    for ((j=2; j<3; ++j));
-    # for ((j=0; j<${#DRIVES[@]}; ++j));
+    for ((j=0; j<${#DRIVES[@]}; ++j));
     do
         :
         DRIVE_STR="${DATES[j]}_drive_${DRIVES[j]}_sync"
@@ -85,7 +83,7 @@ do
 
         TRACKFILE="${DRIVE_DIR}/${DRIVE_STR}_viso2.csv"
 
-        for ((k=4; k<8; ++k));
+        for ((k=4; k<5; ++k));
         # for ((k=0; k<${#OBS_SUNFILE_NAMES[@]}; ++k));
         do
             :
