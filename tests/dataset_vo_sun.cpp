@@ -23,10 +23,11 @@ using Camera = ceres_slam::DatasetProblemSun::Camera;
 using SunCovariance = ceres_slam::DatasetProblemSun::SunCovariance;
 
 void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
-                 bool use_sun, 
-                 double huber_param=0.,
-                 double az_err_thresh=1000., 
-                 double zen_err_thresh=1000.) {
+                 bool use_sun,
+                 double huber_param = 0.,
+                 double az_err_thresh = 1000.,
+                 double zen_err_thresh = 1000.)
+{
     // Build the problem
     std::cerr << "Working on interval [" << k1 << "," << k2 << ")/"
               << dataset.num_states << ": ";
@@ -43,12 +44,15 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
         ceres_slam::SE3Perturbation::Create();
 
     // Add observations and cost functions
-    for (uint k = k1; k < k2; ++k) {
-        for (uint i : dataset.obs_indices_at_state(k)) {
+    for (uint k = k1; k < k2; ++k)
+    {
+        for (uint i : dataset.obs_indices_at_state(k))
+        {
             // Map point ID for this observation
             uint j = dataset.point_ids[i];
             // Only optimize map points that have been initialized
-            if (dataset.initialized_point[j]) {
+            if (dataset.initialized_point[j])
+            {
                 // Stiffness for the stereo observation
                 Eigen::SelfAdjointEigenSolver<Camera::ObservationCovariance>
                     es_stereo(dataset.stereo_obs_covars[j]);
@@ -68,7 +72,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
         }
 
         // Add sun sensor measurements if available
-        if (use_sun && dataset.state_has_sun_obs[k]) {
+        if (use_sun && dataset.state_has_sun_obs[k])
+        {
             // Stiffness for the sun observation
             Eigen::SelfAdjointEigenSolver<SunCovariance> es_sun(
                 dataset.sun_obs_covars[k]);
@@ -81,16 +86,18 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
                     sun_obs_stiffness, az_err_thresh, zen_err_thresh);
 
             // Add the sun sensor cost function to the problem
-            if (huber_param > 0.) {
+            if (huber_param > 0.)
+            {
                 ceres::HuberLoss *robust_loss = new ceres::HuberLoss(huber_param);
                 // ceres::CauchyLoss *robust_loss = new ceres::CauchyLoss(huber_param);
                 problem.AddResidualBlock(sun_cost, robust_loss,
                                          dataset.poses[k].data());
-            } else {
+            }
+            else
+            {
                 problem.AddResidualBlock(sun_cost, NULL,
                                          dataset.poses[k].data());
             }
-            
         }
     }
 
@@ -117,7 +124,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     problem.AddResidualBlock(pose_prior_cost, NULL, dataset.poses[k1].data());
 
     // Use local parameterization on SE(3) for all poses
-    for (uint k = k1; k < k2; ++k) {
+    for (uint k = k1; k < k2; ++k)
+    {
         problem.SetParameterization(dataset.poses[k].data(), se3_perturbation);
     }
 
@@ -151,7 +159,8 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     ceres::Covariance::Options covariance_options;
     covariance_options.num_threads = solver_options.num_threads;
     // covariance_options.algorithm_type = ceres::DENSE_SVD;
-    covariance_options.algorithm_type = ceres::SUITE_SPARSE_QR;
+    covariance_options.sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
+    covariance_options.algorithm_type = ceres::SPARSE_QR;
     // covariance_options.null_space_rank = -1;
 
     ceres::Covariance covariance(covariance_options);
@@ -160,11 +169,14 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     covar_blocks.push_back(std::make_pair(dataset.poses[k1 + 1].data(),
                                           dataset.poses[k1 + 1].data()));
 
-    if (!covariance.Compute(covar_blocks, &problem)) {
+    if (!covariance.Compute(covar_blocks, &problem))
+    {
         std::cout << "WARNING: Covariance computation failed! "
                   << "Using previous state covariance." << std::endl;
         dataset.pose_covars[k1 + 1] = dataset.pose_covars[k1];
-    } else {
+    }
+    else
+    {
         covariance.GetCovarianceBlockInTangentSpace(
             dataset.poses[k1 + 1].data(), dataset.poses[k1 + 1].data(),
             dataset.pose_covars[k1 + 1].data());
@@ -174,14 +186,16 @@ void solveWindow(ceres_slam::DatasetProblemSun &dataset, uint k1, uint k2,
     //           << dataset.pose_covars[k1 + 1] << "\n\n";
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     std::string usage_string(
         "usage: dataset_vo_sun <track_file> <ref_sun_file> <obs_sun_file> "
         "[--window (2)] [--huber-param (0)] "
         "[--az-err-thresh (1000)] [--zen-err-thresh (1000)] "
         "[--sun-only]");
 
-    if (argc < 4) {
+    if (argc < 4)
+    {
         std::cerr << usage_string << std::endl;
         return EXIT_FAILURE;
     }
@@ -197,26 +211,38 @@ int main(int argc, char **argv) {
     std::string track_file(argv[1]);
     std::string ref_sun_file(argv[2]);
     std::string obs_sun_file(argv[3]);
-    for (int a = 4; a < argc; ++a) {
+    for (int a = 4; a < argc; ++a)
+    {
         std::string flag(argv[a]);
 
-        if (flag == "--window" && argc > a + 1) {
+        if (flag == "--window" && argc > a + 1)
+        {
             window_size = std::stoi(argv[a + 1]);
             ++a;
-        } else if (flag == "--huber-param" && argc > a + 1) {
+        }
+        else if (flag == "--huber-param" && argc > a + 1)
+        {
             huber_param = std::stod(argv[a + 1]);
             ++a;
-        } else if (flag == "--az-err-thresh" && argc > a + 1) {
+        }
+        else if (flag == "--az-err-thresh" && argc > a + 1)
+        {
             // Accept in degrees, but convert to radians
             az_err_thresh = std::stod(argv[a + 1]) * ceres_slam::pi / 180.;
             ++a;
-        } else if (flag == "--zen-err-thresh" && argc > a + 1) {
+        }
+        else if (flag == "--zen-err-thresh" && argc > a + 1)
+        {
             // Accept in degrees, but convert to radians
             zen_err_thresh = std::stod(argv[a + 1]) * ceres_slam::pi / 180.;
             ++a;
-        } else if (flag == "--sun-only") {
+        }
+        else if (flag == "--sun-only")
+        {
             sun_only = true;
-        } else {
+        }
+        else
+        {
             std::cerr << usage_string << std::endl;
             return EXIT_FAILURE;
         }
@@ -224,27 +250,34 @@ int main(int argc, char **argv) {
 
     // Read dataset from file
     ceres_slam::DatasetProblemSun dataset;
-    if (!dataset.read_csv(track_file, ref_sun_file, obs_sun_file)) {
+    if (!dataset.read_csv(track_file, ref_sun_file, obs_sun_file))
+    {
         return EXIT_FAILURE;
     }
 
     // Special case: window_size == 0 means full batch
-    if (window_size == 0) {
+    if (window_size == 0)
+    {
         window_size = dataset.num_states;
     }
 
     // Compute initial guess
-    if (!sun_only) {
+    if (!sun_only)
+    {
         std::cerr << "Computing VO without sun measurements" << std::endl;
-        for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
+        for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1)
+        {
             uint k2 = fmin(k1 + window_size, dataset.num_states);
             // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
-            if (dataset.compute_initial_guess(k1, k2)) {
+            if (dataset.compute_initial_guess(k1, k2))
+            {
                 solveWindow(dataset, k1, k2, false);
-            } else {
+            }
+            else
+            {
                 std::cerr << "WARNING: Initial guess failed. Copying previous pose and covariance." << std::endl;
-                dataset.poses[k2-1] = dataset.poses[k1];
-                dataset.pose_covars[k2-1] = dataset.pose_covars[k1];
+                dataset.poses[k2 - 1] = dataset.poses[k1];
+                dataset.pose_covars[k2 - 1] = dataset.pose_covars[k1];
             }
 
             dataset.reset_points();
@@ -260,15 +293,19 @@ int main(int argc, char **argv) {
     }
 
     std::cerr << "Computing VO with sun measurements" << std::endl;
-    for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1) {
+    for (uint k1 = 0; k1 <= dataset.num_states - window_size; ++k1)
+    {
         uint k2 = fmin(k1 + window_size, dataset.num_states);
         // std::cout << "k1 = " << k1 << ", k2 = " << k2 << std::endl;
-        if (dataset.compute_initial_guess(k1, k2)) {
+        if (dataset.compute_initial_guess(k1, k2))
+        {
             solveWindow(dataset, k1, k2, true, huber_param, az_err_thresh, zen_err_thresh);
-        } else {
+        }
+        else
+        {
             std::cerr << "WARNING: Initial guess failed. Copying previous pose and covariance." << std::endl;
-            dataset.poses[k2-1] = dataset.poses[k1];
-            dataset.pose_covars[k2-1] = dataset.pose_covars[k1];
+            dataset.poses[k2 - 1] = dataset.poses[k1];
+            dataset.pose_covars[k2 - 1] = dataset.pose_covars[k1];
         }
 
         dataset.reset_points();
